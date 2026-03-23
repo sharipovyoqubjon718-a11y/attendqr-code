@@ -19,20 +19,42 @@ function saveSyncedLogIds(ids: Set<string>) {
   localStorage.setItem(SYNCED_LOG_IDS_KEY, JSON.stringify([...ids]));
 }
 
+// Cached pending count to avoid expensive recomputation
+let cachedPendingCount: number | null = null;
+let cacheTimestamp = 0;
+
+export function invalidateSyncCache() {
+  cachedPendingCount = null;
+}
+
 export function getSyncStatus(): SyncStatus {
-  const syncedIds = getSyncedLogIds();
-  const logs = getLogs();
-  const pendingLogs = logs.filter(l => !syncedIds.has(l.id)).length;
+  const now = Date.now();
+  // Only recompute every 10 seconds to avoid blocking UI with large datasets
+  if (cachedPendingCount === null || now - cacheTimestamp > 10000) {
+    const syncedIds = getSyncedLogIds();
+    const logs = getLogs();
+    cachedPendingCount = logs.filter(l => !syncedIds.has(l.id)).length;
+    cacheTimestamp = now;
+  }
   const stored = localStorage.getItem(SYNC_STATUS_KEY);
   const lastSyncAt = stored ? JSON.parse(stored).lastSyncAt : null;
-  return { lastSyncAt, pendingLogs, isSyncing: false };
+  return { lastSyncAt, pendingLogs: cachedPendingCount, isSyncing: false };
 }
 
 export function isOnline(): boolean {
   return navigator.onLine;
 }
 
-export async function syncToCloud(): Promise<{ success: boolean; message: string }> {
+export function clearPendingSync() {
+  // Mark all current logs as synced
+  const logs = getLogs();
+  const syncedIds = getSyncedLogIds();
+  logs.forEach(l => syncedIds.add(l.id));
+  saveSyncedLogIds(syncedIds);
+  invalidateSyncCache();
+}
+
+export async function syncToCloud(force = false): Promise<{ success: boolean; message: string }> {
   if (!isOnline()) {
     return { success: false, message: 'Пайвасти интернет нест' };
   }
@@ -47,7 +69,6 @@ export async function syncToCloud(): Promise<{ success: boolean; message: string
       qr_code: s.qrCode,
     }));
 
-    // Upsert students in batches of 100
     for (let i = 0; i < studentRows.length; i += 100) {
       const batch = studentRows.slice(i, i + 100);
       const { error } = await supabase.from('students').upsert(batch, { onConflict: 'id' });
@@ -60,31 +81,35 @@ export async function syncToCloud(): Promise<{ success: boolean; message: string
     const unsyncedLogs = logs.filter(l => !syncedIds.has(l.id));
 
     if (unsyncedLogs.length > 0) {
-      const logRows = unsyncedLogs.map(l => ({
+      // For force sync, process all; otherwise limit to 500 per sync to avoid blocking
+      const toSync = force ? unsyncedLogs : unsyncedLogs.slice(0, 500);
+      
+      const logRows = toSync.map(l => ({
         id: l.id,
         student_id: l.studentId,
         type: l.type,
         timestamp: l.timestamp,
       }));
 
-      // Upsert logs in batches of 100
       for (let i = 0; i < logRows.length; i += 100) {
         const batch = logRows.slice(i, i + 100);
         const { error } = await supabase.from('attendance_logs').upsert(batch, { onConflict: 'id' });
         if (error) throw new Error(`Хатои синхронизатсияи сабтҳо: ${error.message}`);
       }
 
-      // Mark as synced
-      unsyncedLogs.forEach(l => syncedIds.add(l.id));
+      toSync.forEach(l => syncedIds.add(l.id));
       saveSyncedLogIds(syncedIds);
     }
 
-    // Save sync status
     localStorage.setItem(SYNC_STATUS_KEY, JSON.stringify({ lastSyncAt: new Date().toISOString() }));
+    invalidateSyncCache();
 
+    const remaining = unsyncedLogs.length - (force ? unsyncedLogs.length : Math.min(unsyncedLogs.length, 500));
     return {
       success: true,
-      message: `${students.length} хонанда ва ${unsyncedLogs.length} сабт синхронизатсия шуд`,
+      message: remaining > 0
+        ? `${Math.min(unsyncedLogs.length, 500)} сабт синхронизатсия шуд, ${remaining} боқӣ монд`
+        : `${students.length} хонанда ва ${unsyncedLogs.length} сабт синхронизатсия шуд`,
     };
   } catch (err: any) {
     return { success: false, message: err.message || 'Хатои номаълум' };
