@@ -104,7 +104,7 @@ export default function Students() {
                   <TableCell className="font-medium">{s.name}</TableCell>
                   <TableCell><Badge variant="secondary">{s.className}</Badge></TableCell>
                   <TableCell>
-                    <QRCodeSVG value={s.id} size={48} />
+                    <QRCodeSVG value={s.id} size={48} level="L" />
                   </TableCell>
                 </TableRow>
               ))}
