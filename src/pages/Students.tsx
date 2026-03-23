@@ -27,37 +27,37 @@ export default function Students() {
     printWindow.document.write(`
       <html><head><title>QR кодҳои хонандагон</title>
       <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-        .card { text-align: center; border: 1px solid #ddd; border-radius: 8px; padding: 12px; page-break-inside: avoid; }
-        .card svg { margin: 0 auto; }
-        .name { font-weight: bold; margin-top: 8px; font-size: 12px; }
-        .id { color: #666; font-size: 11px; font-family: monospace; }
-        @media print { body { padding: 0; } }
+        body { font-family: Arial, Helvetica, sans-serif; padding: 20px; margin: 0; }
+        h1 { text-align: center; margin-bottom: 24px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .card { text-align: center; border: 1.5px solid #999; border-radius: 6px; padding: 16px 10px 12px; page-break-inside: avoid; }
+        .card canvas { display: block; margin: 0 auto; }
+        .name { font-weight: 800; margin-top: 10px; font-size: 15px; line-height: 1.3; }
+        @media print { body { padding: 10px; } .grid { gap: 12px; } }
       </style></head><body>
       <h1>QR кодҳои хонандагон</h1>
       <div class="grid">
         ${filtered.map(s => `
           <div class="card">
-            <svg id="qr-${s.id}"></svg>
-            <div class="name">${s.name}</div>
-            <div class="id">${s.id} — ${s.className}</div>
+            <div id="qr-${s.id}"></div>
+            <div class="name">${s.name} (${s.id})</div>
           </div>
         `).join('')}
       </div>
       <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"><\/script>
       <script>
-        document.querySelectorAll('[id^="qr-"]').forEach(el => {
+        const containers = document.querySelectorAll('[id^="qr-"]');
+        let done = 0;
+        containers.forEach(el => {
           const id = el.id.replace('qr-', '');
           const canvas = document.createElement('canvas');
-          QRCode.toCanvas(canvas, id, { width: 100 }, () => {
-            el.replaceWith(canvas);
-            if (document.querySelectorAll('canvas').length === document.querySelectorAll('[id^="qr-"]').length + document.querySelectorAll('canvas').length - document.querySelectorAll('[id^="qr-"]').length) {
-              setTimeout(() => window.print(), 500);
-            }
+          QRCode.toCanvas(canvas, id, { width: 160, margin: 1, errorCorrectionLevel: 'L' }, () => {
+            el.appendChild(canvas);
+            done++;
+            if (done === containers.length) setTimeout(() => window.print(), 400);
           });
         });
-        setTimeout(() => window.print(), 1500);
+        setTimeout(() => window.print(), 2000);
       <\/script>
       </body></html>
     `);
