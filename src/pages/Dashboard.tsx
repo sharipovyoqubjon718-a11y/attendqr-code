@@ -8,17 +8,17 @@ export default function Dashboard() {
   const weeklyData = getWeeklyData();
 
   const statCards = [
-    { label: "Total Students", value: stats.total, icon: Users, color: "text-primary" },
-    { label: "Present Today", value: stats.present, icon: UserCheck, color: "text-success" },
-    { label: "Absent Today", value: stats.absent, icon: UserX, color: "text-destructive" },
-    { label: "Attendance Rate", value: `${stats.rate}%`, icon: TrendingUp, color: "text-primary" },
+    { label: "Миқдори умумии хонандагон", value: stats.total, icon: Users, color: "text-primary" },
+    { label: "Имрӯз ҳозир", value: stats.present, icon: UserCheck, color: "text-success" },
+    { label: "Ғоиб", value: stats.absent, icon: UserX, color: "text-destructive" },
+    { label: "Сатҳи давомот", value: `${stats.rate}%`, icon: TrendingUp, color: "text-primary" },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Dashboard</h2>
-        <p className="text-muted-foreground">Overview of today's attendance</p>
+        <h2 className="font-display text-2xl font-bold text-foreground">Панели идоракунӣ</h2>
+        <p className="text-muted-foreground">Хулосаи давоматӣ имрӯз</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -41,7 +41,7 @@ export default function Dashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-display">Weekly Attendance</CardTitle>
+          <CardTitle className="font-display">Давомоти ҳафтагӣ</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80">
@@ -52,8 +52,8 @@ export default function Dashboard() {
                 <YAxis className="text-muted-foreground" fontSize={12} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="present" fill="hsl(168, 70%, 38%)" name="Present" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="absent" fill="hsl(0, 72%, 55%)" name="Absent" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="present" fill="hsl(168, 70%, 38%)" name="Ҳозир" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="absent" fill="hsl(0, 72%, 55%)" name="Ғоиб" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

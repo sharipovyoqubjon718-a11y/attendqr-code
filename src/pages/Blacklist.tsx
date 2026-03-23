@@ -14,15 +14,15 @@ export default function Blacklist() {
           <ShieldAlert className="h-5 w-5 text-destructive" />
         </div>
         <div>
-          <h2 className="font-display text-2xl font-bold text-foreground">Blacklist</h2>
-          <p className="text-muted-foreground">Students absent 3+ days in the last 7 weekdays</p>
+          <h2 className="font-display text-2xl font-bold text-foreground">Рӯйхати сиёҳ</h2>
+          <p className="text-muted-foreground">Хонандагоне ки дар 7 рӯзи кории охир 3+ рӯз ғоиб буданд</p>
         </div>
       </div>
 
       {blacklisted.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <ShieldAlert className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p>No students on the blacklist. Great attendance!</p>
+          <p>Ягон хонанда дар рӯйхати сиёҳ нест. Давомоти хуб!</p>
         </div>
       ) : (
         <div className="border rounded-lg overflow-hidden">
@@ -30,11 +30,11 @@ export default function Blacklist() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-destructive/5">
-                  <TableHead className="font-semibold">Student ID</TableHead>
-                  <TableHead className="font-semibold">Name</TableHead>
-                  <TableHead className="font-semibold">Class</TableHead>
-                  <TableHead className="font-semibold">Days Absent</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold">ID хонанда</TableHead>
+                  <TableHead className="font-semibold">Ном</TableHead>
+                  <TableHead className="font-semibold">Синф</TableHead>
+                  <TableHead className="font-semibold">Рӯзҳои ғоибӣ</TableHead>
+                  <TableHead className="font-semibold">Ҳолат</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -45,11 +45,11 @@ export default function Blacklist() {
                     <TableCell><Badge variant="secondary">{s.className}</Badge></TableCell>
                     <TableCell>
                       <span className="font-bold text-destructive">{s.absentDays}</span>
-                      <span className="text-muted-foreground text-sm"> / 7 days</span>
+                      <span className="text-muted-foreground text-sm"> / 7 рӯз</span>
                     </TableCell>
                     <TableCell>
                       <Badge variant="destructive">
-                        {s.absentDays >= 5 ? 'Critical' : 'Warning'}
+                        {s.absentDays >= 5 ? 'Критикӣ' : 'Огоҳӣ'}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -58,7 +58,7 @@ export default function Blacklist() {
             </Table>
           </div>
           <div className="p-3 text-sm text-muted-foreground border-t">
-            {blacklisted.length} student{blacklisted.length !== 1 ? 's' : ''} flagged
+            {blacklisted.length} хонанда қайд шудааст
           </div>
         </div>
       )}
