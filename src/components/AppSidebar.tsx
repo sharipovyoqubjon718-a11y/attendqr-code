@@ -15,11 +15,11 @@ import {
 } from "@/components/ui/sidebar";
 
 const navItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Students", url: "/students", icon: Users },
-  { title: "QR Scanner", url: "/scanner", icon: QrCode },
-  { title: "Attendance Logs", url: "/logs", icon: ClipboardList },
-  { title: "Blacklist", url: "/blacklist", icon: ShieldAlert },
+  { title: "Панели идоракунӣ", url: "/", icon: LayoutDashboard },
+  { title: "Хонандагон", url: "/students", icon: Users },
+  { title: "Сканер", url: "/scanner", icon: QrCode },
+  { title: "Сабти давомот", url: "/logs", icon: ClipboardList },
+  { title: "Рӯйхати сиёҳ", url: "/blacklist", icon: ShieldAlert },
 ];
 
 export function AppSidebar() {
@@ -46,7 +46,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Навигатсия</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (

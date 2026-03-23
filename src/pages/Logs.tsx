@@ -26,13 +26,13 @@ export default function Logs() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Attendance Logs</h2>
-        <p className="text-muted-foreground">{logs.length} records</p>
+        <h2 className="font-display text-2xl font-bold text-foreground">Сабти давомот</h2>
+        <p className="text-muted-foreground">{logs.length} сабт</p>
       </div>
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search by name or ID..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        <Input placeholder="Ҷустуҷӯ бо ном ё ID..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 
       <div className="border rounded-lg overflow-hidden">
@@ -40,20 +40,20 @@ export default function Logs() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="font-semibold">Student ID</TableHead>
-                <TableHead className="font-semibold">Name</TableHead>
-                <TableHead className="font-semibold">Type</TableHead>
-                <TableHead className="font-semibold">Date & Time</TableHead>
+                <TableHead className="font-semibold">ID хонанда</TableHead>
+                <TableHead className="font-semibold">Ном</TableHead>
+                <TableHead className="font-semibold">Навъ</TableHead>
+                <TableHead className="font-semibold">Сана ва вақт</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.slice(0, 100).map((log) => (
                 <TableRow key={log.id}>
                   <TableCell className="font-mono text-sm">{log.studentId}</TableCell>
-                  <TableCell className="font-medium">{students.get(log.studentId) || 'Unknown'}</TableCell>
+                  <TableCell className="font-medium">{students.get(log.studentId) || 'Номаълум'}</TableCell>
                   <TableCell>
                     <Badge variant={log.type === 'check-in' ? 'default' : 'secondary'}>
-                      {log.type}
+                      {log.type === 'check-in' ? 'Бақайдгирӣ' : 'Баромад'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
@@ -66,7 +66,7 @@ export default function Logs() {
         </div>
         {filtered.length > 100 && (
           <div className="p-3 text-center text-sm text-muted-foreground border-t">
-            Showing 100 of {filtered.length} results.
+            100 аз {filtered.length} натиҷа нишон дода шудааст.
           </div>
         )}
       </div>

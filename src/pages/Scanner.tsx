@@ -23,7 +23,7 @@ export default function Scanner() {
   const processCode = useCallback((code: string) => {
     const student = getStudentById(code.trim());
     if (!student) {
-      setResult({ status: 'error', message: `Unknown student ID: ${code}` });
+      setResult({ status: 'error', message: `ID-и хонанда номаълум: ${code}` });
       return;
     }
 
@@ -42,7 +42,7 @@ export default function Scanner() {
 
     setResult({
       status: 'success',
-      message: `${type === 'check-in' ? 'Checked in' : 'Checked out'} successfully`,
+      message: `${type === 'check-in' ? 'Бақайдгирӣ' : 'Баромад'} бомуваффақият анҷом ёфт`,
       studentName: student.name,
       type,
     });
@@ -69,7 +69,7 @@ export default function Scanner() {
       );
       setScanning(true);
     } catch (err) {
-      setResult({ status: 'error', message: 'Camera access denied or not available. Use manual entry.' });
+      setResult({ status: 'error', message: 'Дастрасӣ ба камера рад шуд ё дастнорас аст. Дохилкунии дастӣ истифода баред.' });
     }
   }, [processCode]);
 
@@ -96,8 +96,8 @@ export default function Scanner() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">QR Scanner</h2>
-        <p className="text-muted-foreground">Scan student QR codes for check-in/out</p>
+        <h2 className="font-display text-2xl font-bold text-foreground">Сканери QR</h2>
+        <p className="text-muted-foreground">Лутфан QR кодро дар пеши камера гиред</p>
       </div>
 
       {/* Result feedback */}
@@ -112,17 +112,22 @@ export default function Scanner() {
             <div>
               {result.studentName && <p className="font-semibold text-foreground">{result.studentName}</p>}
               <p className="text-sm text-muted-foreground">{result.message}</p>
-              {result.type && <Badge variant="secondary" className="mt-1">{result.type}</Badge>}
+              {result.type && <Badge variant="secondary" className="mt-1">{result.type === 'check-in' ? 'Бақайдгирӣ' : 'Баромад'}</Badge>}
             </div>
           </CardContent>
         </Card>
       )}
 
+      {/* Instruction */}
+      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 text-center">
+        <p className="text-primary font-semibold">Лутфан киюаркодро дар пеши камера гиред</p>
+      </div>
+
       {/* Camera scanner */}
       <Card>
         <CardHeader>
           <CardTitle className="font-display flex items-center gap-2">
-            <Camera className="h-5 w-5" /> Camera Scanner
+            <Camera className="h-5 w-5" /> Сканери камера
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -134,11 +139,11 @@ export default function Scanner() {
           />
           {!scanning ? (
             <Button onClick={startScanner} className="w-full" size="lg">
-              <QrCode className="mr-2 h-5 w-5" /> Start Camera Scanner
+              <QrCode className="mr-2 h-5 w-5" /> Оғоз кардани сканер
             </Button>
           ) : (
             <Button onClick={stopScanner} variant="secondary" className="w-full" size="lg">
-              Stop Scanner
+              Қатъ кардани сканер
             </Button>
           )}
         </CardContent>
@@ -147,17 +152,17 @@ export default function Scanner() {
       {/* Manual entry */}
       <Card>
         <CardHeader>
-          <CardTitle className="font-display">Manual Entry</CardTitle>
+          <CardTitle className="font-display">Дохилкунии дастӣ</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleManualSubmit} className="flex gap-2">
             <Input
-              placeholder="Enter Student ID (e.g. STU0001)"
+              placeholder="ID-и хонандаро ворид кунед (мас. STU0001)"
               value={manualId}
               onChange={(e) => setManualId(e.target.value)}
               className="flex-1"
             />
-            <Button type="submit">Submit</Button>
+            <Button type="submit">Фиристодан</Button>
           </form>
         </CardContent>
       </Card>
