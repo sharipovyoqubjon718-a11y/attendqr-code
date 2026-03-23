@@ -11,7 +11,18 @@ export function SyncButton() {
   const [syncStatus, setSyncStatus] = useState(getSyncStatus());
 
   useEffect(() => {
-    const handleOnline = () => setOnline(true);
+    const handleOnline = () => {
+      setOnline(true);
+      // Auto-sync when internet is restored
+      setSyncing(true);
+      syncToCloud().then((result) => {
+        setSyncing(false);
+        setSyncStatus(getSyncStatus());
+        if (result.success && getSyncStatus().pendingLogs > 0) {
+          toast.success("Маълумот ба таври худкор синхронизатсия шуд");
+        }
+      });
+    };
     const handleOffline = () => setOnline(false);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
