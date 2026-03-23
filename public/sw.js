@@ -1,4 +1,4 @@
-const CACHE_NAME = 'attendqr-v1';
+const CACHE_NAME = 'attendqr-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -21,7 +21,33 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  
+  // For navigation requests, try network first, fall back to cache
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          return response;
+        })
+        .catch(() => caches.match('/'))
+    );
+    return;
+  }
+
+  // For other requests, try cache first, then network (and cache the result)
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request).then((response) => {
+        if (response.ok && request.url.startsWith(self.location.origin)) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      }).catch(() => new Response('Offline', { status: 503 }));
+    })
   );
 });
