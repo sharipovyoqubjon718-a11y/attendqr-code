@@ -9,6 +9,7 @@ import Students from "@/pages/Students";
 import Scanner from "@/pages/Scanner";
 import Logs from "@/pages/Logs";
 import Blacklist from "@/pages/Blacklist";
+import AddStudent from "@/pages/AddStudent";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/scanner" element={<Scanner />} />
             <Route path="/logs" element={<Logs />} />
             <Route path="/blacklist" element={<Blacklist />} />
+            <Route path="/add-student" element={<AddStudent />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>

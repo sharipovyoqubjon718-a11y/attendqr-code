@@ -1,4 +1,5 @@
-import { LayoutDashboard, Users, QrCode, ClipboardList, ShieldAlert } from "lucide-react";
+
+import { LayoutDashboard, Users, QrCode, ClipboardList, ShieldAlert, UserPlus } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -17,6 +18,7 @@ import {
 const navItems = [
   { title: "Панели идоракунӣ", url: "/", icon: LayoutDashboard },
   { title: "Хонандагон", url: "/students", icon: Users },
+  { title: "Иловаи хонанда", url: "/add-student", icon: UserPlus },
   { title: "Сканер", url: "/scanner", icon: QrCode },
   { title: "Сабти давомот", url: "/logs", icon: ClipboardList },
   { title: "Рӯйхати сиёҳ", url: "/blacklist", icon: ShieldAlert },
