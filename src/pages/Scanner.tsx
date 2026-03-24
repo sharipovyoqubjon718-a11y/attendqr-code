@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { getStudentById, addLog, getLogs } from "@/lib/store";
+import { getStudentById, addLog, getLogs, isSessionActive } from "@/lib/store";
+import { toast } from "@/components/ui/sonner";
 
 type ScanResult = {
   status: 'success' | 'error';
@@ -18,12 +19,18 @@ export default function Scanner() {
   const [result, setResult] = useState<ScanResult | null>(null);
   const [manualId, setManualId] = useState("");
   const scannerRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const processCode = useCallback((code: string) => {
+    if (!isSessionActive()) {
+      setResult({ status: 'error', message: 'Дарс оғоз нашудааст. Аввал аз панели идоракунӣ "Оғози дарс"-ро пахш кунед.' });
+      toast.error('Дарс оғоз нашудааст!');
+      return;
+    }
+
     const student = getStudentById(code.trim());
     if (!student) {
       setResult({ status: 'error', message: `ID-и хонанда номаълум: ${code}` });
+      toast.error(`ID-и хонанда номаълум: ${code}`);
       return;
     }
 
@@ -40,36 +47,73 @@ export default function Scanner() {
       timestamp: new Date().toISOString(),
     });
 
+    const msg = type === 'check-in' ? 'Бақайдгирӣ' : 'Баромад';
     setResult({
       status: 'success',
-      message: `${type === 'check-in' ? 'Бақайдгирӣ' : 'Баромад'} бомуваффақият анҷом ёфт`,
+      message: `${msg} бомуваффақият анҷом ёфт`,
       studentName: student.name,
       type,
     });
+    toast.success(`${student.name} — ${msg}`);
   }, []);
 
   const startScanner = useCallback(async () => {
-    if (!containerRef.current) return;
     try {
       const { Html5Qrcode } = await import("html5-qrcode");
-      const scanner = new Html5Qrcode("qr-reader");
+
+      // Clean up any previous instance
+      if (scannerRef.current) {
+        try { await scannerRef.current.stop(); } catch {}
+        scannerRef.current = null;
+      }
+
+      const scanner = new Html5Qrcode("qr-reader-container", { verbose: false });
       scannerRef.current = scanner;
-      
-      await scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
+
+      // Try to get back camera first
+      let cameraId: string | undefined;
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          // Prefer back/environment camera
+          const backCam = devices.find(d =>
+            d.label.toLowerCase().includes('back') ||
+            d.label.toLowerCase().includes('rear') ||
+            d.label.toLowerCase().includes('environment')
+          );
+          cameraId = backCam?.id || devices[devices.length - 1].id;
+        }
+      } catch {}
+
+      const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
+
+      if (cameraId) {
+        await scanner.start(cameraId, config, (decodedText) => {
           processCode(decodedText);
           scanner.pause();
-          setTimeout(() => {
-            try { scanner.resume(); } catch {}
-          }, 2000);
-        },
-        () => {}
-      );
+          setTimeout(() => { try { scanner.resume(); } catch {} }, 2500);
+        }, () => {});
+      } else {
+        await scanner.start(
+          { facingMode: "environment" },
+          config,
+          (decodedText) => {
+            processCode(decodedText);
+            scanner.pause();
+            setTimeout(() => { try { scanner.resume(); } catch {} }, 2500);
+          },
+          () => {}
+        );
+      }
+
       setScanning(true);
-    } catch (err) {
-      setResult({ status: 'error', message: 'Дастрасӣ ба камера рад шуд ё дастнорас аст. Дохилкунии дастӣ истифода баред.' });
+    } catch (err: any) {
+      console.error("Scanner start error:", err);
+      setResult({
+        status: 'error',
+        message: 'Дастрасӣ ба камера рад шуд. Лутфан иҷозатро дар танзимоти браузер диҳед ё дохилкунии дастӣ истифода баред.'
+      });
+      toast.error('Камера дастнорас аст');
     }
   }, [processCode]);
 
@@ -82,7 +126,12 @@ export default function Scanner() {
   }, []);
 
   useEffect(() => {
-    return () => { if (scannerRef.current) { try { scannerRef.current.stop(); } catch {} } };
+    return () => {
+      if (scannerRef.current) {
+        try { scannerRef.current.stop(); } catch {}
+        scannerRef.current = null;
+      }
+    };
   }, []);
 
   const handleManualSubmit = (e: React.FormEvent) => {
@@ -112,16 +161,22 @@ export default function Scanner() {
             <div>
               {result.studentName && <p className="font-semibold text-foreground">{result.studentName}</p>}
               <p className="text-sm text-muted-foreground">{result.message}</p>
-              {result.type && <Badge variant="secondary" className="mt-1">{result.type === 'check-in' ? 'Бақайдгирӣ' : 'Баромад'}</Badge>}
+              {result.type && (
+                <Badge variant="secondary" className="mt-1">
+                  {result.type === 'check-in' ? 'Бақайдгирӣ' : 'Баромад'}
+                </Badge>
+              )}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Instruction */}
-      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 text-center">
-        <p className="text-primary font-semibold">Лутфан киюаркодро дар пеши камера гиред</p>
-      </div>
+      {/* Session warning */}
+      {!isSessionActive() && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-center">
+          <p className="text-destructive font-semibold">⚠️ Дарс оғоз нашудааст. Аввал аз панели идоракунӣ "Оғози дарс"-ро пахш кунед.</p>
+        </div>
+      )}
 
       {/* Camera scanner */}
       <Card>
@@ -132,8 +187,7 @@ export default function Scanner() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div
-            ref={containerRef}
-            id="qr-reader"
+            id="qr-reader-container"
             className="w-full rounded-lg overflow-hidden bg-muted"
             style={{ minHeight: scanning ? 300 : 0, display: scanning ? 'block' : 'none' }}
           />
