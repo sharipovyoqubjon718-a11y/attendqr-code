@@ -1,25 +1,80 @@
-import { Users, UserCheck, UserX, TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Users, UserCheck, UserX, TrendingUp, Play, Square } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getTodayStats, getWeeklyData } from "@/lib/store";
+import { Button } from "@/components/ui/button";
+import { getTodayStats, getWeeklyData, startSession, endSession, isSessionActive } from "@/lib/store";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { toast } from "@/components/ui/sonner";
 
 export default function Dashboard() {
-  const stats = getTodayStats();
+  const [sessionActive, setSessionActive] = useState(isSessionActive());
+  const [stats, setStats] = useState(getTodayStats());
   const weeklyData = getWeeklyData();
 
+  // Refresh stats periodically when session is active
+  useEffect(() => {
+    if (!sessionActive) return;
+    const interval = setInterval(() => {
+      setStats(getTodayStats());
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [sessionActive]);
+
+  const handleStartSession = () => {
+    startSession();
+    setSessionActive(true);
+    setStats(getTodayStats());
+    toast.success('Дарс оғоз шуд!');
+  };
+
+  const handleEndSession = () => {
+    endSession();
+    setSessionActive(false);
+    setStats(getTodayStats());
+    toast.success('Дарс анҷом ёфт! Ҳисобот нигоҳ дошта шуд.');
+  };
+
+  const displayStats = sessionActive
+    ? stats
+    : { total: stats.total, present: 0, absent: 0, rate: 0 };
+
   const statCards = [
-    { label: "Миқдори умумии хонандагон", value: stats.total, icon: Users, color: "text-primary" },
-    { label: "Имрӯз ҳозир", value: stats.present, icon: UserCheck, color: "text-success" },
-    { label: "Ғоиб", value: stats.absent, icon: UserX, color: "text-destructive" },
-    { label: "Сатҳи давомот", value: `${stats.rate}%`, icon: TrendingUp, color: "text-primary" },
+    { label: "Миқдори умумии хонандагон", value: displayStats.total, icon: Users, color: "text-primary" },
+    { label: "Имрӯз ҳозир", value: displayStats.present, icon: UserCheck, color: "text-success" },
+    { label: "Ғоиб", value: displayStats.absent, icon: UserX, color: "text-destructive" },
+    { label: "Сатҳи давомот", value: `${displayStats.rate}%`, icon: TrendingUp, color: "text-primary" },
   ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Панели идоракунӣ</h2>
-        <p className="text-muted-foreground">Хулосаи давоматӣ имрӯз</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="font-display text-2xl font-bold text-foreground">Панели идоракунӣ</h2>
+          <p className="text-muted-foreground">Хулосаи давоматӣ имрӯз</p>
+        </div>
+        <div>
+          {!sessionActive ? (
+            <Button onClick={handleStartSession} size="lg" className="gap-2">
+              <Play className="h-5 w-5" /> Оғози дарс
+            </Button>
+          ) : (
+            <Button onClick={handleEndSession} size="lg" variant="destructive" className="gap-2">
+              <Square className="h-5 w-5" /> Анҷоми дарс
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Session status */}
+      {sessionActive ? (
+        <div className="bg-success/10 border border-success/20 rounded-lg p-3 text-center">
+          <p className="text-success font-semibold">✅ Дарс идома дорад — сканер фаъол аст</p>
+        </div>
+      ) : (
+        <div className="bg-muted border border-border rounded-lg p-3 text-center">
+          <p className="text-muted-foreground">Дарс оғоз нашудааст. Тугмаи "Оғози дарс"-ро пахш кунед.</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((s) => (

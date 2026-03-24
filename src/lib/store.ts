@@ -183,3 +183,24 @@ export function getWeeklyData() {
   }
   return data;
 }
+
+// Session management
+const SESSION_KEY = 'sams_session_active';
+
+export function startSession() {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ active: true, startedAt: new Date().toISOString() }));
+}
+
+export function endSession() {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ active: false, endedAt: new Date().toISOString() }));
+}
+
+export function isSessionActive(): boolean {
+  const stored = localStorage.getItem(SESSION_KEY);
+  if (!stored) return false;
+  try {
+    return JSON.parse(stored).active === true;
+  } catch {
+    return false;
+  }
+}
