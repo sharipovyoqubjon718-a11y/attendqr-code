@@ -12,8 +12,10 @@ import AddStudentDialog from "@/components/AddStudentDialog";
 export default function Students() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"table" | "gallery">("gallery");
-  const students = useMemo(() => getStudents(), []);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const students = useMemo(() => getStudents(), [refreshKey]);
   const galleryRef = useRef<HTMLDivElement>(null);
+  const handleStudentAdded = useCallback(() => setRefreshKey(k => k + 1), []);
 
   const filtered = useMemo(
     () => students.filter(s =>
