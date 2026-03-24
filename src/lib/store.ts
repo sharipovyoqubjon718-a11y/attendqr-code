@@ -97,6 +97,14 @@ export function addLog(log: AttendanceLog) {
   localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
 }
 
+export function addStudent(student: Student): boolean {
+  const students = getStudents();
+  if (students.some(s => s.id === student.id)) return false;
+  students.push(student);
+  localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+  return true;
+}
+
 export function getStudentById(id: string): Student | undefined {
   return getStudents().find(s => s.id === id);
 }

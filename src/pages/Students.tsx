@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { Search, Printer, LayoutGrid, Table as TableIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button";
 import { getStudents } from "@/lib/store";
 import { QRCodeSVG } from "qrcode.react";
 import gdbhLogo from "@/assets/gdbh-logo.png";
+import AddStudentDialog from "@/components/AddStudentDialog";
 
 export default function Students() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"table" | "gallery">("gallery");
-  const students = useMemo(() => getStudents(), []);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const students = useMemo(() => getStudents(), [refreshKey]);
   const galleryRef = useRef<HTMLDivElement>(null);
+  const handleStudentAdded = useCallback(() => setRefreshKey(k => k + 1), []);
 
   const filtered = useMemo(
     () => students.filter(s =>
@@ -183,6 +186,7 @@ export default function Students() {
           <Button onClick={handlePrint} variant="secondary" size="sm">
             <Printer className="mr-1.5 h-4 w-4" /> Чоп кардани QR-кодҳо
           </Button>
+          <AddStudentDialog onStudentAdded={handleStudentAdded} />
         </div>
       </div>
 
