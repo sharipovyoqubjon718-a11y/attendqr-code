@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getStudents } from "@/lib/store";
 import { QRCodeSVG } from "qrcode.react";
 import gdbhLogo from "@/assets/gdbh-logo.png";
+import AddStudentDialog from "@/components/AddStudentDialog";
 
 export default function Students() {
   const [search, setSearch] = useState("");
