@@ -27,6 +27,7 @@ const App = () => (
             <Route path="/scanner" element={<Scanner />} />
             <Route path="/logs" element={<Logs />} />
             <Route path="/blacklist" element={<Blacklist />} />
+            <Route path="/add-student" element={<AddStudent />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>
