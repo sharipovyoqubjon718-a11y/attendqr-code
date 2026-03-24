@@ -9,6 +9,7 @@ import Students from "@/pages/Students";
 import Scanner from "@/pages/Scanner";
 import Logs from "@/pages/Logs";
 import Blacklist from "@/pages/Blacklist";
+import AddStudent from "@/pages/AddStudent";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
