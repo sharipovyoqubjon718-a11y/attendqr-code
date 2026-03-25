@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { getStudentById, addLog, getLogs, isSessionActive } from "@/lib/store";
+import { getStudentById, addLog, getLogs, isSessionActive, formatTajikTime } from "@/lib/store";
 import { toast } from "@/components/ui/sonner";
 
 type ScanResult = {
@@ -12,6 +12,7 @@ type ScanResult = {
   message: string;
   studentName?: string;
   type?: 'check-in' | 'check-out';
+  time?: string;
 };
 
 export default function Scanner() {
@@ -27,10 +28,19 @@ export default function Scanner() {
       return;
     }
 
-    const student = getStudentById(code.trim());
+    const trimmed = code.trim();
+
+    // Validate ГДБҲ prefix
+    if (!trimmed.startsWith('ГДБҲ')) {
+      setResult({ status: 'error', message: `Формати ID нодуруст. ID бояд бо "ГДБҲ" оғоз шавад: ${trimmed}` });
+      toast.error('Формати ID нодуруст!');
+      return;
+    }
+
+    const student = getStudentById(trimmed);
     if (!student) {
-      setResult({ status: 'error', message: `ID-и хонанда номаълум: ${code}` });
-      toast.error(`ID-и хонанда номаълум: ${code}`);
+      setResult({ status: 'error', message: `ID-и хонанда номаълум: ${trimmed}` });
+      toast.error(`ID-и хонанда номаълум: ${trimmed}`);
       return;
     }
 
@@ -39,20 +49,22 @@ export default function Scanner() {
     const todayLogs = logs.filter(l => l.studentId === student.id && l.timestamp.startsWith(today));
     const lastLog = todayLogs[0];
     const type: 'check-in' | 'check-out' = !lastLog || lastLog.type === 'check-out' ? 'check-in' : 'check-out';
+    const now = new Date().toISOString();
 
     addLog({
       id: `LOG-${Date.now()}`,
       studentId: student.id,
       type,
-      timestamp: new Date().toISOString(),
+      timestamp: now,
     });
 
-    const msg = type === 'check-in' ? 'Бақайдгирӣ' : 'Баромад';
+    const msg = type === 'check-in' ? 'Ҳозир' : 'Баромад';
     setResult({
       status: 'success',
-      message: `${msg} бомуваффақият анҷом ёфт`,
+      message: `${msg} бомуваффақият қайд шуд`,
       studentName: student.name,
       type,
+      time: formatTajikTime(now),
     });
     toast.success(`${student.name} — ${msg}`);
   }, []);
@@ -60,22 +72,17 @@ export default function Scanner() {
   const startScanner = useCallback(async () => {
     try {
       const { Html5Qrcode } = await import("html5-qrcode");
-
-      // Clean up any previous instance
       if (scannerRef.current) {
         try { await scannerRef.current.stop(); } catch {}
         scannerRef.current = null;
       }
-
       const scanner = new Html5Qrcode("qr-reader-container", { verbose: false });
       scannerRef.current = scanner;
 
-      // Try to get back camera first
       let cameraId: string | undefined;
       try {
         const devices = await Html5Qrcode.getCameras();
         if (devices && devices.length > 0) {
-          // Prefer back/environment camera
           const backCam = devices.find(d =>
             d.label.toLowerCase().includes('back') ||
             d.label.toLowerCase().includes('rear') ||
@@ -86,32 +93,23 @@ export default function Scanner() {
       } catch {}
 
       const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
+      const onScan = (decodedText: string) => {
+        processCode(decodedText);
+        scanner.pause();
+        setTimeout(() => { try { scanner.resume(); } catch {} }, 2500);
+      };
 
       if (cameraId) {
-        await scanner.start(cameraId, config, (decodedText) => {
-          processCode(decodedText);
-          scanner.pause();
-          setTimeout(() => { try { scanner.resume(); } catch {} }, 2500);
-        }, () => {});
+        await scanner.start(cameraId, config, onScan, () => {});
       } else {
-        await scanner.start(
-          { facingMode: "environment" },
-          config,
-          (decodedText) => {
-            processCode(decodedText);
-            scanner.pause();
-            setTimeout(() => { try { scanner.resume(); } catch {} }, 2500);
-          },
-          () => {}
-        );
+        await scanner.start({ facingMode: "environment" }, config, onScan, () => {});
       }
-
       setScanning(true);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Scanner start error:", err);
       setResult({
         status: 'error',
-        message: 'Дастрасӣ ба камера рад шуд. Лутфан иҷозатро дар танзимоти браузер диҳед ё дохилкунии дастӣ истифода баред.'
+        message: 'Дастрасӣ ба камера рад шуд. Лутфан иҷозатро дар танзимоти браузер диҳед.'
       });
       toast.error('Камера дастнорас аст');
     }
@@ -149,21 +147,21 @@ export default function Scanner() {
         <p className="text-muted-foreground">Лутфан QR кодро дар пеши камера гиред</p>
       </div>
 
-      {/* Result feedback */}
       {result && (
-        <Card className={result.status === 'success' ? 'border-success bg-success/5' : 'border-destructive bg-destructive/5'}>
+        <Card className={`glass-card ${result.status === 'success' ? 'border-secondary bg-secondary/5' : 'border-destructive bg-destructive/5'}`}>
           <CardContent className="p-4 flex items-center gap-3">
             {result.status === 'success' ? (
-              <CheckCircle2 className="h-8 w-8 text-success shrink-0" />
+              <CheckCircle2 className="h-8 w-8 text-secondary shrink-0" />
             ) : (
               <XCircle className="h-8 w-8 text-destructive shrink-0" />
             )}
             <div>
               {result.studentName && <p className="font-semibold text-foreground">{result.studentName}</p>}
               <p className="text-sm text-muted-foreground">{result.message}</p>
+              {result.time && <p className="text-xs text-muted-foreground">{result.time}</p>}
               {result.type && (
                 <Badge variant="secondary" className="mt-1">
-                  {result.type === 'check-in' ? 'Бақайдгирӣ' : 'Баромад'}
+                  {result.type === 'check-in' ? 'Ҳозир' : 'Баромад'}
                 </Badge>
               )}
             </div>
@@ -171,15 +169,13 @@ export default function Scanner() {
         </Card>
       )}
 
-      {/* Session warning */}
       {!isSessionActive() && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-center">
           <p className="text-destructive font-semibold">⚠️ Дарс оғоз нашудааст. Аввал аз панели идоракунӣ "Оғози дарс"-ро пахш кунед.</p>
         </div>
       )}
 
-      {/* Camera scanner */}
-      <Card>
+      <Card className="glass-card">
         <CardHeader>
           <CardTitle className="font-display flex items-center gap-2">
             <Camera className="h-5 w-5" /> Сканери камера
@@ -192,26 +188,25 @@ export default function Scanner() {
             style={{ minHeight: scanning ? 300 : 0, display: scanning ? 'block' : 'none' }}
           />
           {!scanning ? (
-            <Button onClick={startScanner} className="w-full" size="lg">
-              <QrCode className="mr-2 h-5 w-5" /> Оғоз кардани сканер
+            <Button onClick={startScanner} className="w-full bg-secondary hover:bg-secondary/90" size="lg">
+              <QrCode className="mr-2 h-6 w-6" /> Оғози Скан
             </Button>
           ) : (
-            <Button onClick={stopScanner} variant="secondary" className="w-full" size="lg">
+            <Button onClick={stopScanner} variant="outline" className="w-full border-primary text-primary hover:bg-primary/5" size="lg">
               Қатъ кардани сканер
             </Button>
           )}
         </CardContent>
       </Card>
 
-      {/* Manual entry */}
-      <Card>
+      <Card className="glass-card">
         <CardHeader>
           <CardTitle className="font-display">Дохилкунии дастӣ</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleManualSubmit} className="flex gap-2">
             <Input
-              placeholder="ID-и хонандаро ворид кунед (мас. STU0001)"
+              placeholder="ID-ро ворид кунед (мас. ГДБҲ001)"
               value={manualId}
               onChange={(e) => setManualId(e.target.value)}
               className="flex-1"
