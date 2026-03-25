@@ -14,37 +14,39 @@ interface AddStudentDialogProps {
 export default function AddStudentDialog({ onStudentAdded }: AddStudentDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [id, setId] = useState("");
+  const [idNum, setIdNum] = useState("");
 
   const handleSave = () => {
     const trimmedName = name.trim();
-    const trimmedId = id.trim();
+    const trimmedNum = idNum.trim();
 
-    if (!trimmedName || !trimmedId) {
-      toast.error("Лутфан ном ва ID-ро пур кунед");
+    if (!trimmedName || !trimmedNum) {
+      toast.error("Лутфан ном ва рақами ID-ро пур кунед");
       return;
     }
 
-    if (trimmedId.length > 20) {
-      toast.error("ID бояд аз 20 аломат кӯтоҳтар бошад");
+    if (!/^\d{1,3}$/.test(trimmedNum)) {
+      toast.error("Рақами ID бояд аз 1 то 999 бошад");
       return;
     }
+
+    const fullId = `ГДБҲ${trimmedNum.padStart(3, '0')}`;
 
     const success = addStudent({
-      id: trimmedId,
+      id: fullId,
       name: trimmedName,
       className: "",
-      qrCode: trimmedId,
+      qrCode: fullId,
     });
 
     if (!success) {
-      toast.error(`ID "${trimmedId}" аллакай вуҷуд дорад. ID бояд беткрор бошад.`);
+      toast.error(`ID "${fullId}" аллакай вуҷуд дорад.`);
       return;
     }
 
     toast.success(`${trimmedName} бо муваффақият илова шуд`);
     setName("");
-    setId("");
+    setIdNum("");
     setOpen(false);
     onStudentAdded();
   };
@@ -52,7 +54,7 @@ export default function AddStudentDialog({ onStudentAdded }: AddStudentDialogPro
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5">
+        <Button size="sm" className="gap-1.5 bg-secondary hover:bg-secondary/90">
           <UserPlus className="h-4 w-4" /> Иловаи хонанда
         </Button>
       </DialogTrigger>
@@ -62,27 +64,18 @@ export default function AddStudentDialog({ onStudentAdded }: AddStudentDialogPro
         </DialogHeader>
         <div className="space-y-4 pt-2">
           <div className="space-y-2">
-            <Label htmlFor="student-name">Номи пурра</Label>
-            <Input
-              id="student-name"
-              placeholder="Масалан: Ёқубҷон Шарипов"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={100}
-            />
+            <Label>Номи пурра</Label>
+            <Input placeholder="Масалан: Ёқубҷон Шарипов" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="student-id">ID хонанда</Label>
-            <Input
-              id="student-id"
-              placeholder="Масалан: 001"
-              value={id}
-              onChange={(e) => setId(e.target.value)}
-              maxLength={20}
-            />
+            <Label>Рақами ID</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-mono font-bold text-primary">ГДБҲ</span>
+              <Input placeholder="001" value={idNum} onChange={(e) => setIdNum(e.target.value.replace(/\D/g, '').slice(0, 3))} className="flex-1" maxLength={3} />
+            </div>
             <p className="text-xs text-muted-foreground">ID бояд беткрор бошад</p>
           </div>
-          <Button onClick={handleSave} className="w-full">
+          <Button onClick={handleSave} className="w-full bg-secondary hover:bg-secondary/90">
             Сабт кардан
           </Button>
         </div>
