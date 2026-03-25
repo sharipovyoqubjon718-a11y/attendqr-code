@@ -3,7 +3,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { getLogs, getStudents } from "@/lib/store";
+import { getLogs, getStudents, formatTajikTime } from "@/lib/store";
 
 export default function Logs() {
   const [search, setSearch] = useState("");
@@ -35,12 +35,12 @@ export default function Logs() {
         <Input placeholder="Ҷустуҷӯ бо ном ё ID..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-hidden glass-card">
         <div className="max-h-[600px] overflow-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="font-semibold">ID хонанда</TableHead>
+                <TableHead className="font-semibold">ID</TableHead>
                 <TableHead className="font-semibold">Ном</TableHead>
                 <TableHead className="font-semibold">Навъ</TableHead>
                 <TableHead className="font-semibold">Сана ва вақт</TableHead>
@@ -49,15 +49,15 @@ export default function Logs() {
             <TableBody>
               {filtered.slice(0, 100).map((log) => (
                 <TableRow key={log.id}>
-                  <TableCell className="font-mono text-sm">{log.studentId}</TableCell>
-                  <TableCell className="font-medium">{students.get(log.studentId) || 'Номаълум'}</TableCell>
+                  <TableCell className="font-mono text-xs">{log.studentId}</TableCell>
+                  <TableCell className="font-medium text-sm">{students.get(log.studentId) || 'Номаълум'}</TableCell>
                   <TableCell>
-                    <Badge variant={log.type === 'check-in' ? 'default' : 'secondary'}>
-                      {log.type === 'check-in' ? 'Бақайдгирӣ' : 'Баромад'}
+                    <Badge variant={log.type === 'check-in' ? 'secondary' : 'outline'}>
+                      {log.type === 'check-in' ? 'Ҳозир' : 'Баромад'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {new Date(log.timestamp).toLocaleString()}
+                    {formatTajikTime(log.timestamp)}
                   </TableCell>
                 </TableRow>
               ))}
