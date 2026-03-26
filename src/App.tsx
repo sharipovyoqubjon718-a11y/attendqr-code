@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import Students from "@/pages/Students";
+import Students2 from "@/pages/Students2";
 import Scanner from "@/pages/Scanner";
 import Logs from "@/pages/Logs";
 import Blacklist from "@/pages/Blacklist";
@@ -26,6 +27,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/students" element={<Students />} />
+            <Route path="/students2" element={<Students2 />} />
             <Route path="/scanner" element={<Scanner />} />
             <Route path="/logs" element={<Logs />} />
             <Route path="/blacklist" element={<Blacklist />} />

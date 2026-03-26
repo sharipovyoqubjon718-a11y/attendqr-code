@@ -14,7 +14,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <header className="h-14 flex items-center border-b bg-card px-4 glass-card rounded-none border-t-0">
             <SidebarTrigger className="mr-3" />
             <img src={gdbhLogo} alt="ГДБҲ" className="h-8 w-8 rounded-full mr-2" />
-            <h1 className="font-display text-lg font-bold text-foreground flex-1">AttendQR — ГДБҲ</h1>
+            <h1 className="font-display text-sm sm:text-base font-bold text-foreground flex-1 leading-tight">
+              ГИМНАЗИЯИ ДАВЛАТИИ БОҒИ ҲАБИБ
+            </h1>
             <SyncButton />
           </header>
           <main className="flex-1 p-4 sm:p-6 overflow-auto">{children}</main>

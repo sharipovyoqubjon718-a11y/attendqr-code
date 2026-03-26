@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Users, UserCheck, UserX, TrendingUp, Play, Square } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getTodayStats, getWeeklyData, startSession, endSession, isSessionActive } from "@/lib/store";
+import { getStudents, getTodayStats, getWeeklyData, startSession, endSession, isSessionActive } from "@/lib/store";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { toast } from "@/components/ui/sonner";
 import gdbhLogo from "@/assets/gdbh-logo.png";
@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [sessionActive, setSessionActive] = useState(isSessionActive());
   const [stats, setStats] = useState(getTodayStats());
   const weeklyData = getWeeklyData();
+  const totalStudents = getStudents().length;
 
   useEffect(() => {
     if (!sessionActive) return;
@@ -32,9 +33,10 @@ export default function Dashboard() {
     toast.success('Дарс анҷом ёфт! Ҳисобот нигоҳ дошта шуд.');
   };
 
+  // Before session: show total students but 0 present/absent/rate
   const displayStats = sessionActive
-    ? stats
-    : { total: stats.total, present: 0, absent: 0, rate: 0 };
+    ? { total: totalStudents, present: stats.present, absent: totalStudents - stats.present, rate: stats.rate }
+    : { total: totalStudents, present: 0, absent: 0, rate: 0 };
 
   const statCards = [
     { label: "Миқдори умумии хонандагон", value: displayStats.total, icon: Users, color: "text-primary" },
@@ -45,12 +47,11 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Hero banner with logo */}
       <div className="glass-card p-6 flex items-center gap-4 flex-wrap">
         <img src={gdbhLogo} alt="ГДБҲ" className="h-16 w-16 rounded-full border-2 border-primary shadow-md" />
         <div className="flex-1 min-w-[200px]">
-          <h2 className="font-display text-xl sm:text-2xl font-bold text-foreground">Панели идоракунӣ</h2>
-          <p className="text-muted-foreground text-sm">Гимназияи давлатии бо нишони ҳарбӣ — Кӯлоб</p>
+          <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">ГИМНАЗИЯИ ДАВЛАТИИ БОҒИ ҲАБИБ</h2>
+          <p className="text-muted-foreground text-sm">Панели идоракунӣ — Кӯлоб</p>
         </div>
         <div>
           {!sessionActive ? (
@@ -65,7 +66,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Session status */}
       {sessionActive ? (
         <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-3 text-center">
           <p className="text-secondary font-semibold">✅ Дарс идома дорад — сканер фаъол аст</p>
