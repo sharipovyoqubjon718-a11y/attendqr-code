@@ -15,26 +15,20 @@ export default function About() {
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground font-semibold">Лоиҳа:</p>
             <p className="font-display font-bold text-foreground">
-              Гимназияи давлатии бо нишони ҳарбии шаҳри Кӯлоб (ГДБҲ)
+              Гимназияи давлатии Боғи Ҳабиб шаҳри Кӯлоб (ГДБҲ)
             </p>
           </div>
-
           <div className="border-t border-border" />
-
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground font-semibold">Супориш:</p>
             <p className="font-medium text-foreground">Муаллими Технологияи иттилоотӣ</p>
           </div>
-
           <div className="border-t border-border" />
-
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground font-semibold">Созанда ва таҳиягар:</p>
             <p className="font-display font-bold text-lg text-primary">Шарипов Ёқубҷон</p>
           </div>
-
           <div className="border-t border-border" />
-
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground font-semibold">Система:</p>
             <p className="text-foreground">AttendQR — Системаи идоракунии давоматӣ бо сканери QR</p>

@@ -54,6 +54,15 @@ export function clearPendingSync() {
   invalidateSyncCache();
 }
 
+// Auto-clear stuck pending records on first load
+(function autoResetPending() {
+  const RESET_KEY = 'sams_pending_reset_v2';
+  if (!localStorage.getItem(RESET_KEY)) {
+    clearPendingSync();
+    localStorage.setItem(RESET_KEY, 'done');
+  }
+})();
+
 export async function syncToCloud(force = false): Promise<{ success: boolean; message: string }> {
   if (!isOnline()) {
     return { success: false, message: 'Пайвасти интернет нест' };

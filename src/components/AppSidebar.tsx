@@ -19,7 +19,8 @@ import {
 
 const navItems = [
   { title: "Панели идоракунӣ", url: "/", icon: LayoutDashboard },
-  { title: "Хонандагон", url: "/students", icon: Users },
+  { title: "Хонандагон 1", url: "/students", icon: Users },
+  { title: "Хонандагон 2", url: "/students2", icon: Users },
   { title: "Иловаи хонанда", url: "/add-student", icon: UserPlus },
   { title: "Сканер", url: "/scanner", icon: QrCode },
   { title: "Сабти давомот", url: "/logs", icon: ClipboardList },
