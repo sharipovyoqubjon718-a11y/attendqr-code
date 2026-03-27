@@ -50,7 +50,7 @@ function generateStudents(): Student[] {
 function generateAttendanceLogs(students: Student[]): AttendanceLog[] {
   const logs: AttendanceLog[] = [];
   const today = new Date();
-  for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+  for (let dayOffset = 1; dayOffset < 7; dayOffset++) {
     const date = new Date(today);
     date.setDate(date.getDate() - dayOffset);
     if (date.getDay() === 0 || date.getDay() === 6) continue;
