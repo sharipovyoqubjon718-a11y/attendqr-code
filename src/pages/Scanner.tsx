@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { QrCode, CheckCircle2, XCircle, Camera, SwitchCamera, Square } from "lucide-react";
+import jsQR from "jsqr";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,15 +16,20 @@ type ScanResult = {
   time?: string;
 };
 
+const SCAN_COOLDOWN_MS = 2500;
+
 export default function Scanner() {
   const [scanning, setScanning] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [manualId, setManualId] = useState("");
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const scannerRef = useRef<any>(null);
-  const scanningRef = useRef(false);
+  const animationFrameRef = useRef<number | null>(null);
+  const cooldownUntilRef = useRef(0);
+  const startingRef = useRef(false);
 
   const processCode = useCallback((code: string) => {
     if (!isSessionActive()) {
@@ -56,97 +62,124 @@ export default function Scanner() {
   }, []);
 
   const stopCamera = useCallback(() => {
-    if (scannerRef.current) {
-      try { scannerRef.current.stop(); } catch {}
-      scannerRef.current = null;
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
+
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(t => t.stop());
       streamRef.current = null;
     }
+
     if (videoRef.current) {
+      videoRef.current.pause();
       videoRef.current.srcObject = null;
     }
-    scanningRef.current = false;
+
+    cooldownUntilRef.current = 0;
     setScanning(false);
   }, []);
 
+  const startScanLoop = useCallback(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (!video || !canvas) return;
+
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) return;
+
+    const scan = () => {
+      if (!streamRef.current || !videoRef.current || !canvasRef.current) return;
+
+      const activeTrack = streamRef.current.getVideoTracks()[0];
+      if (!activeTrack || activeTrack.readyState !== 'live') return;
+
+      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
+        if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth;
+        if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
+
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'attemptBoth',
+        });
+
+        if (qrCode?.data && Date.now() >= cooldownUntilRef.current) {
+          cooldownUntilRef.current = Date.now() + SCAN_COOLDOWN_MS;
+          processCode(qrCode.data);
+        }
+      }
+
+      animationFrameRef.current = requestAnimationFrame(scan);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(scan);
+  }, [processCode]);
+
+  const requestStream = useCallback(async (mode: 'environment' | 'user') => {
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: mode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+    } catch (primaryError) {
+      return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    }
+  }, []);
+
   const startCamera = useCallback(async (mode: 'environment' | 'user' = facingMode) => {
-    // Clean up any existing stream first
+    if (startingRef.current) return;
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setResult({ status: 'error', message: 'Камера аз ҷониби ин браузер дастгирӣ намешавад.' });
+      toast.error('Камера дастгирӣ намешавад');
+      return;
+    }
+
+    startingRef.current = true;
+    setStarting(true);
+    setResult(null);
     stopCamera();
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
+      await new Promise(resolve => window.setTimeout(resolve, 150));
+
+      const stream = await requestStream(mode);
+      const video = videoRef.current;
+
+      if (!video) throw new Error('Video element not ready');
+
       streamRef.current = stream;
+      video.srcObject = stream;
+      video.muted = true;
+      video.setAttribute('playsinline', 'true');
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+      await video.play();
 
-      // Now initialize html5-qrcode scanner on top of the running stream
-      const { Html5Qrcode } = await import("html5-qrcode");
-      const scanner = new Html5Qrcode("qr-overlay-container", { verbose: false });
-      scannerRef.current = scanner;
-
-      const config = { fps: 10, qrbox: { width: 220, height: 220 } };
-      await scanner.start(
-        { facingMode: mode },
-        config,
-        (decodedText: string) => {
-          processCode(decodedText);
-          scanner.pause();
-          setTimeout(() => { try { scanner.resume(); } catch {} }, 2500);
-        },
-        () => {}
-      );
-
-      scanningRef.current = true;
+      cooldownUntilRef.current = 0;
       setScanning(true);
       setFacingMode(mode);
+      startScanLoop();
     } catch (err: any) {
       console.error("Camera error:", err);
-      // Fallback: try without facingMode constraint
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
-
-        const { Html5Qrcode } = await import("html5-qrcode");
-        const scanner = new Html5Qrcode("qr-overlay-container", { verbose: false });
-        scannerRef.current = scanner;
-        const devices = await Html5Qrcode.getCameras();
-        if (devices.length > 0) {
-          await scanner.start(
-            devices[devices.length - 1].id,
-            { fps: 10, qrbox: { width: 220, height: 220 } },
-            (decodedText: string) => {
-              processCode(decodedText);
-              scanner.pause();
-              setTimeout(() => { try { scanner.resume(); } catch {} }, 2500);
-            },
-            () => {}
-          );
-        }
-        scanningRef.current = true;
-        setScanning(true);
-      } catch (fallbackErr) {
-        console.error("Fallback camera error:", fallbackErr);
-        setResult({ status: 'error', message: 'Камера дастнорас аст. Лутфан иҷозатро диҳед.' });
-        toast.error('Камера дастнорас аст');
-      }
+      stopCamera();
+      setResult({ status: 'error', message: 'Камера фаъол нашуд. Барнома ё камераи дигарро пӯшед ва дубора кӯшиш кунед.' });
+      toast.error('Камера фаъол нашуд');
+    } finally {
+      startingRef.current = false;
+      setStarting(false);
     }
-  }, [facingMode, stopCamera, processCode]);
+  }, [facingMode, requestStream, startScanLoop, stopCamera]);
 
   const switchCamera = useCallback(() => {
     const newMode = facingMode === 'environment' ? 'user' : 'environment';
-    startCamera(newMode);
+    void startCamera(newMode);
   }, [facingMode, startCamera]);
 
   useEffect(() => {
@@ -169,10 +202,10 @@ export default function Scanner() {
       </div>
 
       {result && (
-        <Card className={`${result.status === 'success' ? 'border-green-600 bg-green-50' : 'border-destructive bg-destructive/5'}`}>
+        <Card className={result.status === 'success' ? 'border-accent/30 bg-accent/10' : 'border-destructive/30 bg-destructive/5'}>
           <CardContent className="p-4 flex items-center gap-3">
             {result.status === 'success' ? (
-              <CheckCircle2 className="h-8 w-8 text-green-600 shrink-0" />
+              <CheckCircle2 className="h-8 w-8 text-accent shrink-0" />
             ) : (
               <XCircle className="h-8 w-8 text-destructive shrink-0" />
             )}
@@ -203,40 +236,41 @@ export default function Scanner() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Video element is ALWAYS in the DOM */}
-          <div className="relative w-full rounded-lg overflow-hidden bg-muted" style={{ minHeight: 300 }}>
+          <div className="relative w-full overflow-hidden rounded-lg border bg-muted" style={{ minHeight: 320 }}>
             <video
               ref={videoRef}
               autoPlay
               playsInline
               muted
               className="w-full h-full object-cover absolute inset-0"
-              style={{ display: scanning ? 'block' : 'none' }}
             />
-            {/* Overlay container for html5-qrcode */}
-            <div
-              id="qr-overlay-container"
-              className="absolute inset-0"
-              style={{ display: scanning ? 'block' : 'none' }}
-            />
+
             {!scanning && (
-              <div className="flex items-center justify-center h-full" style={{ minHeight: 300 }}>
+              <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm" style={{ minHeight: 320 }}>
                 <div className="text-center text-muted-foreground">
                   <Camera className="h-16 w-16 mx-auto mb-3 opacity-40" />
                   <p>Тугмаи "Оғози сканер"-ро пахш кунед</p>
                 </div>
               </div>
             )}
+
+            {scanning && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="h-56 w-56 rounded-2xl border-2 border-primary/70 shadow-lg" />
+              </div>
+            )}
           </div>
+
+          <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
 
           <div className="flex gap-2">
             {!scanning ? (
-              <Button onClick={() => startCamera()} className="flex-1 bg-green-700 hover:bg-green-800 text-white" size="lg">
+              <Button onClick={() => void startCamera()} className="flex-1" size="lg" disabled={starting}>
                 <QrCode className="mr-2 h-6 w-6" /> Оғози сканер
               </Button>
             ) : (
               <>
-                <Button onClick={stopCamera} variant="outline" className="flex-1 border-destructive text-destructive" size="lg">
+                <Button onClick={stopCamera} variant="outline" className="flex-1" size="lg">
                   <Square className="mr-2 h-5 w-5" /> Қатъ кардан
                 </Button>
                 <Button onClick={switchCamera} variant="outline" size="lg" title="Иваз кардани камера">
