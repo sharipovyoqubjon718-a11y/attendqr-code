@@ -50,7 +50,7 @@ function generateStudents(): Student[] {
 function generateAttendanceLogs(students: Student[]): AttendanceLog[] {
   const logs: AttendanceLog[] = [];
   const today = new Date();
-  for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+  for (let dayOffset = 1; dayOffset < 7; dayOffset++) {
     const date = new Date(today);
     date.setDate(date.getDate() - dayOffset);
     if (date.getDay() === 0 || date.getDay() === 6) continue;
@@ -111,6 +111,12 @@ export function getStudents(): Student[] {
 }
 
 export function getLogs(): AttendanceLog[] {
+  // One-time purge of stale generated logs
+  const PURGE_KEY = 'sams_logs_purged_v2';
+  if (!localStorage.getItem(PURGE_KEY)) {
+    localStorage.removeItem(LOGS_KEY);
+    localStorage.setItem(PURGE_KEY, '1');
+  }
   const stored = localStorage.getItem(LOGS_KEY);
   if (stored) return JSON.parse(stored);
   const students = getStudents();
