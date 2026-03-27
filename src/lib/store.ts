@@ -111,6 +111,12 @@ export function getStudents(): Student[] {
 }
 
 export function getLogs(): AttendanceLog[] {
+  // One-time purge of stale generated logs
+  const PURGE_KEY = 'sams_logs_purged_v2';
+  if (!localStorage.getItem(PURGE_KEY)) {
+    localStorage.removeItem(LOGS_KEY);
+    localStorage.setItem(PURGE_KEY, '1');
+  }
   const stored = localStorage.getItem(LOGS_KEY);
   if (stored) return JSON.parse(stored);
   const students = getStudents();
