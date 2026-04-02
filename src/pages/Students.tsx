@@ -1,28 +1,38 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Search, Printer, LayoutGrid, Table as TableIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getStudents } from "@/lib/store";
+import { ALL_GRADES, MORNING_GRADES, AFTERNOON_GRADES } from "@/lib/students-data";
 import { QRCodeSVG } from "qrcode.react";
 import gdbhLogo from "@/assets/gdbh-logo.png";
 import AddStudentDialog from "@/components/AddStudentDialog";
 import { StudentListView } from "@/components/StudentListView";
 
 interface StudentsPageProps {
-  rangeStart?: number;
-  rangeEnd?: number;
+  shift?: 'morning' | 'afternoon';
   title?: string;
 }
 
-export default function Students({ rangeStart = 0, rangeEnd = 150, title = "Хонандагон 1 (001–150)" }: StudentsPageProps) {
+export default function Students({ shift, title }: StudentsPageProps) {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"table" | "gallery">("gallery");
+  const [gradeFilter, setGradeFilter] = useState<string>("all");
   const [refreshKey, setRefreshKey] = useState(0);
   const allStudents = useMemo(() => getStudents(), [refreshKey]);
-  const students = useMemo(() => allStudents.slice(rangeStart, rangeEnd), [allStudents, rangeStart, rangeEnd]);
   const handleStudentAdded = useCallback(() => setRefreshKey(k => k + 1), []);
+
+  const grades = shift === 'morning' ? MORNING_GRADES : shift === 'afternoon' ? AFTERNOON_GRADES : ALL_GRADES;
+
+  const students = useMemo(() => {
+    let list = shift ? allStudents.filter(s => s.shift === shift) : allStudents;
+    if (gradeFilter !== 'all') list = list.filter(s => s.grade === gradeFilter);
+    return list;
+  }, [allStudents, shift, gradeFilter]);
+
+  const pageTitle = title || (shift === 'morning' ? 'Навбати субҳ (07:30 - 13:00)' : shift === 'afternoon' ? 'Навбати рӯз (13:10 - 18:00)' : 'Ҳамаи хонандагон');
 
   const filtered = useMemo(
     () => students.filter(s =>
@@ -85,7 +95,7 @@ export default function Students({ rangeStart = 0, rangeEnd = 150, title = "Хо
           pages.push(`<div class="page"><div class="grid">${pageStudents.map(s => `
             <div class="card">
               <div class="qr-wrap" id="qr-${s.id}"></div>
-              <div class="name">${s.name.toLowerCase()}<br/>(${s.id})</div>
+              <div class="name">${s.name.toLowerCase()}<br/>(${s.id} — ${s.grade})</div>
             </div>
           `).join('')}</div></div>`);
         }
@@ -127,7 +137,7 @@ export default function Students({ rangeStart = 0, rangeEnd = 150, title = "Хо
         }
       `}</style>
       <div className="no-print">
-        <h2 className="font-display text-2xl font-bold text-foreground">{title}</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">{pageTitle}</h2>
         <p className="text-muted-foreground">{students.length} хонанда</p>
       </div>
 
@@ -141,6 +151,17 @@ export default function Students({ rangeStart = 0, rangeEnd = 150, title = "Хо
             className="pl-10"
           />
         </div>
+        <Select value={gradeFilter} onValueChange={setGradeFilter}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Синф" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Ҳама синфҳо</SelectItem>
+            {grades.map(g => (
+              <SelectItem key={g} value={g}>Синфи {g}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <div className="flex gap-2 flex-wrap">
           <Button onClick={() => setView("gallery")} variant={view === "gallery" ? "default" : "outline"} size="sm">
             <LayoutGrid className="mr-1.5 h-4 w-4" /> Галлерея
@@ -149,7 +170,7 @@ export default function Students({ rangeStart = 0, rangeEnd = 150, title = "Хо
             <TableIcon className="mr-1.5 h-4 w-4" /> Ҷадвал
           </Button>
           <Button onClick={handlePrint} variant="secondary" size="sm">
-            <Printer className="mr-1.5 h-4 w-4" /> Чоп кардани QR-кодҳо
+            <Printer className="mr-1.5 h-4 w-4" /> Чоп
           </Button>
           <AddStudentDialog onStudentAdded={handleStudentAdded} />
         </div>

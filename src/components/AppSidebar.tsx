@@ -1,7 +1,6 @@
 
-import { LayoutDashboard, Users, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info } from "lucide-react";
+import { LayoutDashboard, Users, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
 import gdbhLogo from "@/assets/gdbh-logo.png";
 import {
   Sidebar,
@@ -19,8 +18,8 @@ import {
 
 const navItems = [
   { title: "Панели идоракунӣ", url: "/", icon: LayoutDashboard },
-  { title: "Хонандагон 1", url: "/students", icon: Users },
-  { title: "Хонандагон 2", url: "/students2", icon: Users },
+  { title: "Навбати субҳ", url: "/students", icon: Sun },
+  { title: "Навбати рӯз", url: "/students2", icon: Moon },
   { title: "Иловаи хонанда", url: "/add-student", icon: UserPlus },
   { title: "Сканер", url: "/scanner", icon: QrCode },
   { title: "Сабти давомот", url: "/logs", icon: ClipboardList },
