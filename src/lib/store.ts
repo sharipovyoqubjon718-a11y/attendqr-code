@@ -1,9 +1,6 @@
-export interface Student {
-  id: string;
-  name: string;
-  className: string;
-  qrCode: string;
-}
+import { generateAllStudents, type StudentRecord } from './students-data';
+
+export type Student = StudentRecord;
 
 export interface AttendanceLog {
   id: string;
@@ -12,71 +9,17 @@ export interface AttendanceLog {
   timestamp: string;
 }
 
-const STUDENTS_KEY = 'sams_students';
+const STUDENTS_KEY = 'sams_students_v3';
 const LOGS_KEY = 'sams_logs';
 const SESSION_KEY = 'sams_session_active';
 const LAST_RESET_KEY = 'sams_last_reset';
-
-const tajikNames = [
-  'Абдуллоҷон Раҳимов', 'Фирдавс Ҷӯраев', 'Шарифмо Каримова', 'Дилшод Ализода',
-  'Мадина Ғаниева', 'Рустам Сафаров', 'Зарина Аҳмадова', 'Сомон Назаров',
-  'Нигина Ҳасанова', 'Баҳром Ҷалилов', 'Манижа Мирзоева', 'Фарҳод Исмоилов',
-  'Ситора Раҷабова', 'Ёқубҷон Шарипов', 'Шаҳло Бобоева', 'Далер Тоҷиев',
-  'Парвина Холова', 'Ҷамшед Ғафуров', 'Гулнора Содиқова', 'Анвар Салимов',
-  'Нозанин Муродова', 'Бобур Каюмов', 'Рухшона Давлатова', 'Искандар Файзуллоев',
-  'Муниса Акрамова', 'Шерзод Одинаев', 'Озода Маҳмудова', 'Комрон Зоиров',
-  'Дилором Усмонова', 'Тимур Шодиев',
-];
-
-const classNames = ['10-А', '10-Б', '10-В', '11-А', '11-Б', '11-В', '12-А', '12-Б', '12-В'];
-
-function generateStudents(): Student[] {
-  const students: Student[] = [];
-  for (let i = 1; i <= 300; i++) {
-    const id = `ГДБҲ${String(i).padStart(3, '0')}`;
-    const nameIdx = (i - 1) % tajikNames.length;
-    const baseName = tajikNames[nameIdx];
-    const name = i > tajikNames.length ? `${baseName} ${Math.ceil(i / tajikNames.length)}` : baseName;
-    students.push({
-      id,
-      name,
-      className: classNames[Math.floor(Math.random() * classNames.length)],
-      qrCode: id,
-    });
-  }
-  return students;
-}
-
-function generateAttendanceLogs(students: Student[]): AttendanceLog[] {
-  const logs: AttendanceLog[] = [];
-  const today = new Date();
-  for (let dayOffset = 1; dayOffset < 7; dayOffset++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - dayOffset);
-    if (date.getDay() === 0 || date.getDay() === 6) continue;
-    const shuffled = [...students].sort(() => Math.random() - 0.5);
-    const attendCount = Math.floor(students.length * (0.75 + Math.random() * 0.15));
-    for (let i = 0; i < attendCount; i++) {
-      const student = shuffled[i];
-      const checkIn = new Date(date);
-      checkIn.setHours(7 + Math.floor(Math.random() * 2), Math.floor(Math.random() * 60));
-      logs.push({ id: `LOG-${dayOffset}-${i}-in`, studentId: student.id, type: 'check-in', timestamp: checkIn.toISOString() });
-      if (Math.random() > 0.1) {
-        const checkOut = new Date(date);
-        checkOut.setHours(14 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 60));
-        logs.push({ id: `LOG-${dayOffset}-${i}-out`, studentId: student.id, type: 'check-out', timestamp: checkOut.toISOString() });
-      }
-    }
-  }
-  return logs;
-}
+const PURGE_KEY = 'sams_logs_purged_v3';
 
 // Daily reset check
 function checkDailyReset() {
   const today = new Date().toISOString().split('T')[0];
   const lastReset = localStorage.getItem(LAST_RESET_KEY);
   if (lastReset !== today) {
-    // End any active session from previous day
     const session = localStorage.getItem(SESSION_KEY);
     if (session) {
       try {
@@ -93,36 +36,20 @@ function checkDailyReset() {
 export function getStudents(): Student[] {
   checkDailyReset();
   const stored = localStorage.getItem(STUDENTS_KEY);
-  if (stored) {
-    const students = JSON.parse(stored);
-    // Check if old format (STU prefix)
-    if (students.length > 0 && students[0].id.startsWith('STU')) {
-      localStorage.removeItem(STUDENTS_KEY);
-      localStorage.removeItem(LOGS_KEY);
-      const newStudents = generateStudents();
-      localStorage.setItem(STUDENTS_KEY, JSON.stringify(newStudents));
-      return newStudents;
-    }
-    return students;
-  }
-  const students = generateStudents();
+  if (stored) return JSON.parse(stored);
+  const students = generateAllStudents();
   localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
   return students;
 }
 
 export function getLogs(): AttendanceLog[] {
-  // One-time purge of stale generated logs
-  const PURGE_KEY = 'sams_logs_purged_v2';
   if (!localStorage.getItem(PURGE_KEY)) {
     localStorage.removeItem(LOGS_KEY);
     localStorage.setItem(PURGE_KEY, '1');
   }
   const stored = localStorage.getItem(LOGS_KEY);
   if (stored) return JSON.parse(stored);
-  const students = getStudents();
-  const logs = generateAttendanceLogs(students);
-  localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
-  return logs;
+  return [];
 }
 
 export function addLog(log: AttendanceLog) {
@@ -171,13 +98,15 @@ export function getBlacklistedStudents(absentThreshold = 3): (Student & { absent
     .sort((a, b) => b.absentDays - a.absentDays);
 }
 
-export function getTodayStats() {
-  const students = getStudents();
+export function getTodayStats(shift?: 'morning' | 'afternoon') {
+  const allStudents = getStudents();
+  const students = shift ? allStudents.filter(s => s.shift === shift) : allStudents;
   const logs = getLogs();
   const today = new Date().toISOString().split('T')[0];
   const todayLogs = logs.filter(l => l.timestamp.startsWith(today));
-  const checkedIn = new Set(todayLogs.filter(l => l.type === 'check-in').map(l => l.studentId));
-  const checkedOut = new Set(todayLogs.filter(l => l.type === 'check-out').map(l => l.studentId));
+  const studentIds = new Set(students.map(s => s.id));
+  const checkedIn = new Set(todayLogs.filter(l => l.type === 'check-in' && studentIds.has(l.studentId)).map(l => l.studentId));
+  const checkedOut = new Set(todayLogs.filter(l => l.type === 'check-out' && studentIds.has(l.studentId)).map(l => l.studentId));
   return {
     total: students.length,
     present: checkedIn.size,
