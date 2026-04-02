@@ -33,7 +33,8 @@ export default function AddStudent() {
     const success = addStudent({
       id: fullId,
       name: trimmedName,
-      className: "",
+      grade: '',
+      shift: 'morning',
       qrCode: fullId,
     });
 

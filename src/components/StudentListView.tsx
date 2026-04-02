@@ -58,6 +58,7 @@ export function StudentListView({ filtered, view }: Props) {
               <TableHead className="font-semibold">ID</TableHead>
               <TableHead className="font-semibold">Ном</TableHead>
               <TableHead className="font-semibold">Синф</TableHead>
+              <TableHead className="font-semibold">Навбат</TableHead>
               <TableHead className="font-semibold">QR</TableHead>
             </TableRow>
           </TableHeader>
@@ -66,7 +67,8 @@ export function StudentListView({ filtered, view }: Props) {
               <TableRow key={s.id}>
                 <TableCell className="font-mono text-sm">{s.id}</TableCell>
                 <TableCell className="font-medium">{s.name}</TableCell>
-                <TableCell><Badge variant="secondary">{s.className}</Badge></TableCell>
+                <TableCell><Badge variant="secondary">{s.grade}</Badge></TableCell>
+                <TableCell><Badge variant="outline">{s.shift === 'morning' ? 'Субҳ' : 'Рӯз'}</Badge></TableCell>
                 <TableCell><QRWithLogo value={s.id} size={56} logoSize={16} /></TableCell>
               </TableRow>
             ))}

@@ -1,45 +1,49 @@
 import { useState, useEffect } from "react";
-import { Users, UserCheck, UserX, TrendingUp, Play, Square } from "lucide-react";
+import { Users, UserCheck, UserX, TrendingUp, Play, Square, Sun, Moon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { getStudents, getTodayStats, getWeeklyData, startSession, endSession, isSessionActive } from "@/lib/store";
+import { getCurrentShift, SHIFT_TIMES } from "@/lib/students-data";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { toast } from "@/components/ui/sonner";
 import gdbhLogo from "@/assets/gdbh-logo.png";
 
 export default function Dashboard() {
   const [sessionActive, setSessionActive] = useState(isSessionActive());
-  const [stats, setStats] = useState(getTodayStats());
+  const currentShift = getCurrentShift();
+  const [stats, setStats] = useState(getTodayStats(currentShift));
   const weeklyData = getWeeklyData();
-  const totalStudents = getStudents().length;
+  const allStudents = getStudents();
+  const shiftStudents = allStudents.filter(s => s.shift === currentShift);
+  const shiftInfo = SHIFT_TIMES[currentShift];
 
   useEffect(() => {
     if (!sessionActive) return;
-    const interval = setInterval(() => setStats(getTodayStats()), 5000);
+    const interval = setInterval(() => setStats(getTodayStats(currentShift)), 5000);
     return () => clearInterval(interval);
-  }, [sessionActive]);
+  }, [sessionActive, currentShift]);
 
   const handleStartSession = () => {
     startSession();
     setSessionActive(true);
-    setStats(getTodayStats());
+    setStats(getTodayStats(currentShift));
     toast.success('Дарс оғоз шуд!');
   };
 
   const handleEndSession = () => {
     endSession();
     setSessionActive(false);
-    setStats(getTodayStats());
-    toast.success('Дарс анҷом ёфт! Ҳисобот нигоҳ дошта шуд.');
+    setStats(getTodayStats(currentShift));
+    toast.success('Дарс анҷом ёфт!');
   };
 
-  // Before session: show total students but 0 present/absent/rate
   const displayStats = sessionActive
-    ? { total: totalStudents, present: stats.present, absent: totalStudents - stats.present, rate: stats.rate }
-    : { total: totalStudents, present: 0, absent: 0, rate: 0 };
+    ? { total: shiftStudents.length, present: stats.present, absent: shiftStudents.length - stats.present, rate: stats.rate }
+    : { total: shiftStudents.length, present: 0, absent: 0, rate: 0 };
 
   const statCards = [
-    { label: "Миқдори умумии хонандагон", value: displayStats.total, icon: Users, color: "text-primary" },
+    { label: "Хонандагони навбат", value: displayStats.total, icon: Users, color: "text-primary" },
     { label: "Имрӯз ҳозир", value: displayStats.present, icon: UserCheck, color: "text-secondary" },
     { label: "Ғоиб", value: displayStats.absent, icon: UserX, color: "text-destructive" },
     { label: "Сатҳи давомот", value: `${displayStats.rate}%`, icon: TrendingUp, color: "text-primary" },
@@ -52,6 +56,13 @@ export default function Dashboard() {
         <div className="flex-1 min-w-[200px]">
           <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">ГИМНАЗИЯИ ДАВЛАТИИ БОҒИ ҲАБИБ</h2>
           <p className="text-muted-foreground text-sm">Панели идоракунӣ — Кӯлоб</p>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant="outline" className="gap-1">
+              {currentShift === 'morning' ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+              {shiftInfo.label}
+            </Badge>
+            <Badge variant="secondary">{allStudents.length} хонанда</Badge>
+          </div>
         </div>
         <div>
           {!sessionActive ? (
