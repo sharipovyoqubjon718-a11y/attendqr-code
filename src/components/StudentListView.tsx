@@ -58,6 +58,7 @@ export function StudentListView({ filtered, view }: Props) {
               <TableHead className="font-semibold">ID</TableHead>
               <TableHead className="font-semibold">Ном</TableHead>
               <TableHead className="font-semibold">Синф</TableHead>
+              <TableHead className="font-semibold">Навбат</TableHead>
               <TableHead className="font-semibold">QR</TableHead>
             </TableRow>
           </TableHeader>
