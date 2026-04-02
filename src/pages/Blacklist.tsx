@@ -42,7 +42,7 @@ export default function Blacklist() {
                   <TableRow key={s.id} className="bg-destructive/[0.02]">
                     <TableCell className="font-mono text-sm">{s.id}</TableCell>
                     <TableCell className="font-medium">{s.name}</TableCell>
-                    <TableCell><Badge variant="secondary">{s.className}</Badge></TableCell>
+                    <TableCell><Badge variant="secondary">{s.grade}</Badge></TableCell>
                     <TableCell>
                       <span className="font-bold text-destructive">{s.absentDays}</span>
                       <span className="text-muted-foreground text-sm"> / 7 рӯз</span>

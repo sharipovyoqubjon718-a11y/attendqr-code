@@ -74,7 +74,7 @@ export async function syncToCloud(force = false): Promise<{ success: boolean; me
     const studentRows = students.map(s => ({
       id: s.id,
       name: s.name,
-      class_name: s.className,
+      class_name: s.grade,
       qr_code: s.qrCode,
     }));
 

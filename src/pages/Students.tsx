@@ -28,7 +28,7 @@ export default function Students({ rangeStart = 0, rangeEnd = 150, title = "Хо
     () => students.filter(s =>
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.id.toLowerCase().includes(search.toLowerCase()) ||
-      s.className.toLowerCase().includes(search.toLowerCase())
+      s.grade.toLowerCase().includes(search.toLowerCase())
     ),
     [students, search]
   );

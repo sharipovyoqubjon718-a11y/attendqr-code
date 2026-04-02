@@ -109,7 +109,7 @@ export default function Reports() {
                     <TableRow key={s.id}>
                       <TableCell className="font-mono text-xs">{s.id}</TableCell>
                       <TableCell className="font-medium text-sm">{s.name}</TableCell>
-                      <TableCell><Badge variant="secondary" className="text-xs">{s.className}</Badge></TableCell>
+                      <TableCell><Badge variant="secondary" className="text-xs">{s.grade}</Badge></TableCell>
                       <TableCell className="text-secondary font-bold">{s.presentDays}</TableCell>
                       <TableCell className="text-primary font-bold">{s.absentDays}</TableCell>
                       <TableCell>

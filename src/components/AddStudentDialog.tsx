@@ -35,7 +35,8 @@ export default function AddStudentDialog({ onStudentAdded }: AddStudentDialogPro
     const success = addStudent({
       id: fullId,
       name: trimmedName,
-      className: "",
+      grade: '',
+      shift: 'morning',
       qrCode: fullId,
     });
 
