@@ -15,6 +15,24 @@ const SESSION_KEY = 'sams_session_active';
 const LAST_RESET_KEY = 'sams_last_reset';
 const PURGE_KEY = 'sams_logs_purged_v3';
 
+function normalizeStudentName(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(part =>
+      part.length > 0 ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase() : part
+    )
+    .join(' ');
+}
+
+function normalizeStudents(students: Student[]): Student[] {
+  return students.map(student => ({
+    ...student,
+    name: normalizeStudentName(student.name),
+  }));
+}
+
 // Daily reset check
 function checkDailyReset() {
   const today = new Date().toISOString().split('T')[0];
@@ -36,8 +54,14 @@ function checkDailyReset() {
 export function getStudents(): Student[] {
   checkDailyReset();
   const stored = localStorage.getItem(STUDENTS_KEY);
-  if (stored) return JSON.parse(stored);
-  const students = generateAllStudents();
+
+  if (stored) {
+    const students = normalizeStudents(JSON.parse(stored));
+    localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+    return students;
+  }
+
+  const students = normalizeStudents(generateAllStudents());
   localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
   return students;
 }
@@ -60,8 +84,9 @@ export function addLog(log: AttendanceLog) {
 
 export function addStudent(student: Student): boolean {
   const students = getStudents();
-  if (students.some(s => s.id === student.id)) return false;
-  students.push(student);
+  const normalizedStudent = { ...student, name: normalizeStudentName(student.name) };
+  if (students.some(s => s.id === normalizedStudent.id)) return false;
+  students.push(normalizedStudent);
   localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
   return true;
 }
