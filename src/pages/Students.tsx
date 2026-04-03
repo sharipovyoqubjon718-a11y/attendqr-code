@@ -95,7 +95,7 @@ export default function Students({ shift, title }: StudentsPageProps) {
           pages.push(`<div class="page"><div class="grid">${pageStudents.map(s => `
             <div class="card">
               <div class="qr-wrap" id="qr-${s.id}"></div>
-              <div class="name">${s.name.toLowerCase()}<br/>(${s.id} — ${s.grade})</div>
+              <div class="name">${s.name}<br/>(${s.id} — ${s.grade})</div>
             </div>
           `).join('')}</div></div>`);
         }

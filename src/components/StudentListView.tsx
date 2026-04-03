@@ -34,7 +34,7 @@ export function StudentListView({ filtered, view }: Props) {
           {filtered.slice(0, 150).map((s) => (
             <div key={s.id} className="flex flex-col items-center rounded-lg border border-dashed border-border bg-card p-4 shadow-sm">
               <QRWithLogo value={s.id} size={120} logoSize={28} />
-              <p className="mt-2 text-center text-[10px] text-muted-foreground leading-tight lowercase font-semibold">
+              <p className="mt-2 text-center text-[10px] text-muted-foreground leading-tight font-semibold">
                 {s.name}<br /><span className="font-mono">({s.id})</span>
               </p>
             </div>
