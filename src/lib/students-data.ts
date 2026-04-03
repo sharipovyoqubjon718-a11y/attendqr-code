@@ -155,22 +155,52 @@ const afternoonStudents: { grade: string; names: string[] }[] = [
   },
 ];
 
+// Tajik alphabet order for sorting
+const TAJIK_ALPHABET = 'АаБбВвГгҒғДдЕеЁёЖжЗзИиӢӣЙйКкҚқЛлМмНнОоПпРрСсТтУуӮӯФфХхҲҳЧчҶҷШшЪъЭэЮюЯя';
+
+function tajikSortKey(name: string): number[] {
+  return [...name].map(ch => {
+    const idx = TAJIK_ALPHABET.indexOf(ch);
+    return idx >= 0 ? idx : 1000 + ch.charCodeAt(0);
+  });
+}
+
+function compareTajik(a: string, b: string): number {
+  const ka = tajikSortKey(a);
+  const kb = tajikSortKey(b);
+  for (let i = 0; i < Math.max(ka.length, kb.length); i++) {
+    const va = ka[i] ?? -1;
+    const vb = kb[i] ?? -1;
+    if (va !== vb) return va - vb;
+  }
+  return 0;
+}
+
+function capitalizeName(name: string): string {
+  return name.split(' ').map(word =>
+    word.length > 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word
+  ).join(' ');
+}
+
 export function generateAllStudents(): StudentRecord[] {
   const students: StudentRecord[] = [];
-  let counter = 1;
 
-  for (const gradeGroup of morningStudents) {
-    for (const name of gradeGroup.names) {
-      const id = `ГДБҲ${String(counter).padStart(3, '0')}`;
-      students.push({ id, name, grade: gradeGroup.grade, shift: 'morning', qrCode: id });
-      counter++;
-    }
+  const allGroups: { grade: string; names: string[]; shift: 'morning' | 'afternoon' }[] = [
+    ...morningStudents.map(g => ({ ...g, shift: 'morning' as const })),
+    ...afternoonStudents.map(g => ({ ...g, shift: 'afternoon' as const })),
+  ];
+
+  // Sort names within each grade by Tajik alphabet
+  for (const group of allGroups) {
+    group.names.sort(compareTajik);
   }
 
-  for (const gradeGroup of afternoonStudents) {
-    for (const name of gradeGroup.names) {
+  // Assign IDs sequentially
+  let counter = 1;
+  for (const group of allGroups) {
+    for (const name of group.names) {
       const id = `ГДБҲ${String(counter).padStart(3, '0')}`;
-      students.push({ id, name, grade: gradeGroup.grade, shift: 'afternoon', qrCode: id });
+      students.push({ id, name: capitalizeName(name), grade: group.grade, shift: group.shift, qrCode: id });
       counter++;
     }
   }
