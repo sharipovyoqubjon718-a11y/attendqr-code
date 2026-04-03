@@ -9,7 +9,7 @@ export interface AttendanceLog {
   timestamp: string;
 }
 
-const STUDENTS_KEY = 'sams_students_v3';
+const STUDENTS_KEY = 'sams_students_v4';
 const LOGS_KEY = 'sams_logs';
 const SESSION_KEY = 'sams_session_active';
 const LAST_RESET_KEY = 'sams_last_reset';
