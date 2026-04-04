@@ -2,27 +2,27 @@ import { useState, useMemo, useCallback } from "react";
 import { Search, Printer, LayoutGrid, Table as TableIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getStudents } from "@/lib/store";
-import { ALL_GRADES, MORNING_GRADES, AFTERNOON_GRADES } from "@/lib/students-data";
+import { MORNING_GRADES, AFTERNOON_GRADES, ALL_GRADES } from "@/lib/students-data";
 import { QRCodeSVG } from "qrcode.react";
 import gdbhLogo from "@/assets/gdbh-logo.png";
 import AddStudentDialog from "@/components/AddStudentDialog";
 import { StudentListView } from "@/components/StudentListView";
+import { useI18n } from "@/lib/i18n";
 
 interface StudentsPageProps {
   shift?: 'morning' | 'afternoon';
-  title?: string;
 }
 
-export default function Students({ shift, title }: StudentsPageProps) {
+export default function Students({ shift }: StudentsPageProps) {
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"table" | "gallery">("gallery");
   const [gradeFilter, setGradeFilter] = useState<string>("all");
   const [refreshKey, setRefreshKey] = useState(0);
   const allStudents = useMemo(() => getStudents(), [refreshKey]);
-  const handleStudentAdded = useCallback(() => setRefreshKey(k => k + 1), []);
+  const handleChanged = useCallback(() => setRefreshKey(k => k + 1), []);
 
   const grades = shift === 'morning' ? MORNING_GRADES : shift === 'afternoon' ? AFTERNOON_GRADES : ALL_GRADES;
 
@@ -32,7 +32,7 @@ export default function Students({ shift, title }: StudentsPageProps) {
     return list;
   }, [allStudents, shift, gradeFilter]);
 
-  const pageTitle = title || (shift === 'morning' ? 'Навбати субҳ (07:30 - 13:00)' : shift === 'afternoon' ? 'Навбати рӯз (13:10 - 18:00)' : 'Ҳамаи хонандагон');
+  const pageTitle = shift === 'morning' ? t("students.morning") : shift === 'afternoon' ? t("students.afternoon") : t("students.all");
 
   const filtered = useMemo(
     () => students.filter(s =>
@@ -66,23 +66,16 @@ export default function Students({ shift, title }: StudentsPageProps) {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
     printWindow.document.write(`
-      <html><head><title>Чоп кардани QR-кодҳо</title>
+      <html><head><title>Print QR Codes</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, Helvetica, sans-serif; }
         .page { width: 210mm; margin: 0 auto; padding: 8mm 12mm; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
-        .card {
-          text-align: center; border: 1px dashed #999; border-radius: 4px;
-          padding: 10mm 6mm 8mm; page-break-inside: avoid; position: relative;
-        }
+        .card { text-align: center; border: 1px dashed #999; border-radius: 4px; padding: 10mm 6mm 8mm; page-break-inside: avoid; position: relative; }
         .qr-wrap { position: relative; display: inline-block; }
         .qr-wrap canvas { display: block; }
-        .logo-overlay {
-          position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-          background: #fff; border-radius: 50%; width: 36px; height: 36px;
-          display: flex; align-items: center; justify-content: center;
-        }
+        .logo-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
         .logo-overlay img { width: 30px; height: 30px; border-radius: 50%; }
         .name { margin-top: 6px; font-size: 10px; line-height: 1.3; color: #333; font-weight: 600; }
         @media print { body { margin: 0; } .page { padding: 6mm 10mm; } }
@@ -129,7 +122,7 @@ export default function Students({ shift, title }: StudentsPageProps) {
   };
 
   return (
-    <div className="space-y-6 print-content">
+    <div className="space-y-6 print-content animate-fade-in">
       <style>{`
         @media print {
           nav, [data-sidebar], .no-print, header { display: none !important; }
@@ -138,14 +131,14 @@ export default function Students({ shift, title }: StudentsPageProps) {
       `}</style>
       <div className="no-print">
         <h2 className="font-display text-2xl font-bold text-foreground">{pageTitle}</h2>
-        <p className="text-muted-foreground">{students.length} хонанда</p>
+        <p className="text-muted-foreground">{students.length} {t("students.count")}</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center no-print">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Ҷустуҷӯ бо ном, ID ё синф..."
+            placeholder={t("students.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -153,30 +146,30 @@ export default function Students({ shift, title }: StudentsPageProps) {
         </div>
         <Select value={gradeFilter} onValueChange={setGradeFilter}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Синф" />
+            <SelectValue placeholder={t("th.grade")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Ҳама синфҳо</SelectItem>
+            <SelectItem value="all">{t("students.allGrades")}</SelectItem>
             {grades.map(g => (
-              <SelectItem key={g} value={g}>Синфи {g}</SelectItem>
+              <SelectItem key={g} value={g}>{t("students.grade")} {g}</SelectItem>
             ))}
           </SelectContent>
         </Select>
         <div className="flex gap-2 flex-wrap">
-          <Button onClick={() => setView("gallery")} variant={view === "gallery" ? "default" : "outline"} size="sm">
-            <LayoutGrid className="mr-1.5 h-4 w-4" /> Галлерея
+          <Button onClick={() => setView("gallery")} variant={view === "gallery" ? "default" : "outline"} size="sm" className="transition-transform active:scale-95">
+            <LayoutGrid className="mr-1.5 h-4 w-4" /> {t("students.gallery")}
           </Button>
-          <Button onClick={() => setView("table")} variant={view === "table" ? "default" : "outline"} size="sm">
-            <TableIcon className="mr-1.5 h-4 w-4" /> Ҷадвал
+          <Button onClick={() => setView("table")} variant={view === "table" ? "default" : "outline"} size="sm" className="transition-transform active:scale-95">
+            <TableIcon className="mr-1.5 h-4 w-4" /> {t("students.table")}
           </Button>
-          <Button onClick={handlePrint} variant="secondary" size="sm">
-            <Printer className="mr-1.5 h-4 w-4" /> Чоп
+          <Button onClick={handlePrint} variant="secondary" size="sm" className="transition-transform active:scale-95">
+            <Printer className="mr-1.5 h-4 w-4" /> {t("students.print")}
           </Button>
-          <AddStudentDialog onStudentAdded={handleStudentAdded} />
+          <AddStudentDialog onStudentAdded={handleChanged} />
         </div>
       </div>
 
-      <StudentListView filtered={filtered} view={view} />
+      <StudentListView filtered={filtered} view={view} onChanged={handleChanged} />
     </div>
   );
 }
