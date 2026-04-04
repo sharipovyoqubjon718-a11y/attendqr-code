@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Shield, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useI18n } from "@/lib/i18n";
 import { ADMIN_PIN } from "@/lib/students-data";
 
 interface PinLockScreenProps {
@@ -8,6 +10,7 @@ interface PinLockScreenProps {
 }
 
 export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
+  const { t } = useI18n();
   const [pin, setPin] = useState<string[]>(["", "", "", ""]);
   const [error, setError] = useState(false);
   const [shake, setShake] = useState(false);
@@ -64,13 +67,16 @@ export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-xs space-y-8 text-center">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
+      <div className="w-full max-w-xs space-y-8 text-center animate-fade-in">
         <div className="flex flex-col items-center gap-3">
           <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
             <Shield className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-xl font-bold text-foreground">ГДБҲ — Давомот</h1>
-          <p className="text-sm text-muted-foreground">PIN-кодро ворид кунед</p>
+          <h1 className="text-xl font-bold text-foreground">{t("pin.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("pin.subtitle")}</p>
         </div>
 
         <div className={`flex justify-center gap-3 ${shake ? "animate-shake" : ""}`}>
@@ -93,7 +99,7 @@ export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
 
         {error && (
           <p className="text-destructive text-sm font-medium flex items-center justify-center gap-1">
-            <Lock className="h-4 w-4" /> PIN нодуруст аст
+            <Lock className="h-4 w-4" /> {t("pin.wrong")}
           </p>
         )}
 
@@ -102,16 +108,18 @@ export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
             num === "" ? (
               <div key="empty" />
             ) : num === "⌫" ? (
-              <Button key="clear" variant="outline" className="h-12 text-lg" onClick={handleClear}>
+              <Button key="clear" variant="outline" className="h-12 text-lg transition-transform active:scale-95" onClick={handleClear}>
                 ⌫
               </Button>
             ) : (
-              <Button key={num} variant="outline" className="h-12 text-lg font-semibold" onClick={() => handleNumPad(num)}>
+              <Button key={num} variant="outline" className="h-12 text-lg font-semibold transition-transform active:scale-95" onClick={() => handleNumPad(num)}>
                 {num}
               </Button>
             )
           )}
         </div>
+
+        <p className="text-[10px] text-muted-foreground/60">{t("footer")}</p>
       </div>
     </div>
   );
