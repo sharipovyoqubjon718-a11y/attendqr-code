@@ -91,6 +91,25 @@ export function addStudent(student: Student): boolean {
   return true;
 }
 
+export function updateStudent(id: string, updates: Partial<Pick<Student, 'name' | 'grade' | 'shift'>>): boolean {
+  const students = getStudents();
+  const idx = students.findIndex(s => s.id === id);
+  if (idx === -1) return false;
+  if (updates.name) students[idx].name = normalizeStudentName(updates.name);
+  if (updates.grade) students[idx].grade = updates.grade;
+  if (updates.shift) students[idx].shift = updates.shift;
+  localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+  return true;
+}
+
+export function deleteStudent(id: string): boolean {
+  const students = getStudents();
+  const filtered = students.filter(s => s.id !== id);
+  if (filtered.length === students.length) return false;
+  localStorage.setItem(STUDENTS_KEY, JSON.stringify(filtered));
+  return true;
+}
+
 export function getStudentById(id: string): Student | undefined {
   return getStudents().find(s => s.id === id);
 }
