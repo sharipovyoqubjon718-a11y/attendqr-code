@@ -218,7 +218,7 @@ export const ALL_GRADES = [
 export const MORNING_GRADES = ['1-А', '1-Б', '7-А', '7-Б', '8', '9', '10'];
 export const AFTERNOON_GRADES = ['2', '3-А', '3-Б', '4', '5', '6'];
 
-export const ADMIN_PIN = '2211';
+export const ADMIN_PIN = '1212';
 
 export const SHIFT_TIMES = {
   morning: { start: '07:30', end: '13:00', label: 'Субҳ (07:30 - 13:00)' },

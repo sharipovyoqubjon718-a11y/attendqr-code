@@ -9,6 +9,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { updateStudent, deleteStudent, type Student } from "@/lib/store";
 import { ALL_GRADES } from "@/lib/students-data";
 import { useI18n } from "@/lib/i18n";
+import { useAdminPin } from "@/components/AdminPinDialog";
 import { toast } from "sonner";
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 
 export function EditDeleteActions({ student, onChanged }: Props) {
   const { t } = useI18n();
+  const { requirePin } = useAdminPin();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [name, setName] = useState(student.name);
@@ -38,6 +40,21 @@ export function EditDeleteActions({ student, onChanged }: Props) {
     onChanged();
   };
 
+  const handleEditClick = () => {
+    requirePin(() => {
+      setName(student.name);
+      setGrade(student.grade);
+      setShift(student.shift);
+      setEditOpen(true);
+    });
+  };
+
+  const handleDeleteClick = () => {
+    requirePin(() => {
+      setDeleteOpen(true);
+    });
+  };
+
   return (
     <>
       <div className="flex gap-1">
@@ -45,12 +62,7 @@ export function EditDeleteActions({ student, onChanged }: Props) {
           size="icon"
           variant="ghost"
           className="h-7 w-7 hover:bg-primary/10 transition-transform active:scale-90"
-          onClick={() => {
-            setName(student.name);
-            setGrade(student.grade);
-            setShift(student.shift);
-            setEditOpen(true);
-          }}
+          onClick={handleEditClick}
           title={t("edit.title")}
         >
           <Pencil className="h-3.5 w-3.5 text-primary" />
@@ -59,7 +71,7 @@ export function EditDeleteActions({ student, onChanged }: Props) {
           size="icon"
           variant="ghost"
           className="h-7 w-7 hover:bg-destructive/10 transition-transform active:scale-90"
-          onClick={() => setDeleteOpen(true)}
+          onClick={handleDeleteClick}
           title={t("delete.title")}
         >
           <Trash2 className="h-3.5 w-3.5 text-destructive" />

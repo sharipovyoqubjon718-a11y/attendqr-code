@@ -150,6 +150,17 @@ const translations = {
   // Footer
   "footer": { tj: "Developed by Sharipov's Python Academy", ru: "Developed by Sharipov's Python Academy", en: "Developed by Sharipov's Python Academy" },
 
+  // Settings
+  "settings.title": { tj: "Танзимот", ru: "Настройки", en: "Settings" },
+  "settings.theme": { tj: "Мавзӯъ", ru: "Тема", en: "Theme" },
+  "settings.light": { tj: "Равшан", ru: "Светлая", en: "Light" },
+  "settings.dark": { tj: "Торик", ru: "Тёмная", en: "Dark" },
+  "settings.colors": { tj: "Гулчин", ru: "Цвет", en: "Color" },
+  "settings.language": { tj: "Забон", ru: "Язык", en: "Language" },
+
+  // Admin PIN
+  "admin.pinRequired": { tj: "PIN лозим аст", ru: "Требуется PIN", en: "PIN required" },
+
   // Common
   "results.showing": { tj: "натиҷа нишон дода шудааст", ru: "результатов показано", en: "results shown" },
   "common.of": { tj: "аз", ru: "из", en: "of" },
