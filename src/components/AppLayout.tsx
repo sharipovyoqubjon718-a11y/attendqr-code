@@ -1,7 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SyncButton } from "@/components/SyncButton";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { SettingsPanel } from "@/components/SettingsPanel";
 import { useI18n } from "@/lib/i18n";
 import gdbhLogo from "@/assets/gdbh-logo.png";
 
@@ -20,8 +20,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <h1 className="font-display text-sm sm:text-base font-bold text-foreground flex-1 leading-tight">
               {t("dash.title")}
             </h1>
-            <div className="flex items-center gap-2">
-              <LanguageSwitcher />
+            <div className="flex items-center gap-1">
+              <SettingsPanel />
               <SyncButton />
             </div>
           </header>
