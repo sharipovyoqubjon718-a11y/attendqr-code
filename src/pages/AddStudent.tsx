@@ -3,18 +3,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { addStudent } from "@/lib/store";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
-import { UserPlus, CheckCircle2 } from "lucide-react";
+import { UserPlus, CheckCircle2, Sun, Moon, Calendar } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { ALL_GRADES, getShiftForGrade, isSaturdayRestDay } from "@/lib/students-data";
 import gdbhLogo from "@/assets/gdbh-logo.png";
 
 export default function AddStudent() {
   const { t } = useI18n();
   const [name, setName] = useState("");
   const [idNum, setIdNum] = useState("");
+  const [grade, setGrade] = useState("");
   const [lastAdded, setLastAdded] = useState<{ name: string; id: string } | null>(null);
+
+  const selectedShift = grade ? getShiftForGrade(grade) : null;
+  const saturdayRest = grade ? isSaturdayRestDay(grade) : null;
 
   const handleSave = () => {
     const trimmedName = name.trim();
@@ -23,12 +30,17 @@ export default function AddStudent() {
       toast.error("Лутфан ном ва рақами ID-ро пур кунед");
       return;
     }
+    if (!grade) {
+      toast.error("Лутфан синфро интихоб кунед");
+      return;
+    }
     if (!/^\d{1,3}$/.test(trimmedNum)) {
       toast.error("Рақами ID бояд аз 1 то 999 бошад");
       return;
     }
     const fullId = `ГДБҲ${trimmedNum.padStart(3, '0')}`;
-    const success = addStudent({ id: fullId, name: trimmedName, grade: '', shift: 'morning', qrCode: fullId });
+    const shift = getShiftForGrade(grade);
+    const success = addStudent({ id: fullId, name: trimmedName, grade, shift, qrCode: fullId });
     if (!success) {
       toast.error(`ID "${fullId}" аллакай вуҷуд дорад.`);
       return;
@@ -37,6 +49,7 @@ export default function AddStudent() {
     setLastAdded({ name: trimmedName, id: fullId });
     setName("");
     setIdNum("");
+    setGrade("");
   };
 
   return (
@@ -65,6 +78,35 @@ export default function AddStudent() {
             </div>
             <p className="text-xs text-muted-foreground">{t("addStudent.idAuto")}</p>
           </div>
+
+          {/* Grade selector */}
+          <div className="space-y-2">
+            <Label>{t("addStudent.grade")}</Label>
+            <Select value={grade} onValueChange={setGrade}>
+              <SelectTrigger>
+                <SelectValue placeholder={t("addStudent.selectGrade")} />
+              </SelectTrigger>
+              <SelectContent>
+                {ALL_GRADES.map((g) => (
+                  <SelectItem key={g} value={g}>{t("students.grade")} {g}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedShift && (
+              <div className="flex flex-wrap gap-2 mt-1">
+                <Badge variant="outline" className="gap-1 text-xs">
+                  {selectedShift === 'morning' ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+                  {selectedShift === 'morning' ? t("shift.morning") : t("shift.afternoon")}
+                </Badge>
+                <Badge variant={saturdayRest ? "destructive" : "secondary"} className="gap-1 text-xs">
+                  <Calendar className="h-3 w-3" />
+                  {saturdayRest ? t("addStudent.saturdayOff") : t("addStudent.saturdayOn")}
+                </Badge>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">{t("addStudent.shiftAuto")}</p>
+          </div>
+
           <Button onClick={handleSave} className="w-full bg-secondary hover:bg-secondary/90 transition-transform active:scale-95" size="lg">
             <UserPlus className="mr-2 h-5 w-5" /> {t("addStudent.save")}
           </Button>
