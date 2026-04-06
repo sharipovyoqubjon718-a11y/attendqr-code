@@ -3,10 +3,10 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 export type Lang = "tj" | "ru" | "en";
 
 // Flag-based color themes per language
-const FLAG_THEMES: Record<Lang, { primary: string; secondary: string; accent: string }> = {
-  tj: { primary: "0 100% 40%", secondary: "120 100% 20%", accent: "120 100% 20%" },     // Red/Green (Tajikistan)
-  ru: { primary: "220 90% 45%", secondary: "0 100% 40%", accent: "220 90% 45%" },        // Blue/Red (Russia)
-  en: { primary: "0 100% 40%", secondary: "220 90% 45%", accent: "220 90% 45%" },        // Red/Blue (USA)
+const FLAG_THEMES: Record<Lang, { primary: string; secondary: string; accent: string; ring: string }> = {
+  tj: { primary: "0 100% 40%", secondary: "140 61% 34%", accent: "140 61% 34%", ring: "0 100% 40%" },           // #CC0000 Red / #228B22 Green
+  ru: { primary: "215 100% 33%", secondary: "4 75% 49%", accent: "215 100% 33%", ring: "215 100% 33%" },        // #0039A6 Blue / #D52B1E Red
+  en: { primary: "236 30% 33%", secondary: "356 67% 42%", accent: "236 30% 33%", ring: "236 30% 33%" },         // #3C3B6E Navy / #B22234 Red
 };
 
 export function applyFlagTheme(lang: Lang) {

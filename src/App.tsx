@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -6,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider } from "@/lib/i18n";
 import { AdminPinProvider } from "@/components/AdminPinDialog";
 import { AppLayout } from "@/components/AppLayout";
+import PinLockScreen from "@/components/PinLockScreen";
 import Dashboard from "@/pages/Dashboard";
 import Students from "@/pages/Students";
 import Students2 from "@/pages/Students2";
@@ -18,8 +20,19 @@ import About from "@/pages/About";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
+const LOGIN_PIN = "2211";
 
 const App = () => {
+  const [unlocked, setUnlocked] = useState(false);
+
+  if (!unlocked) {
+    return (
+      <I18nProvider>
+        <PinLockScreen onUnlock={() => setUnlocked(true)} pin={LOGIN_PIN} />
+      </I18nProvider>
+    );
+  }
+
   return (
     <I18nProvider>
       <QueryClientProvider client={queryClient}>
