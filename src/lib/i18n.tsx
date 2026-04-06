@@ -1,6 +1,23 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 
 export type Lang = "tj" | "ru" | "en";
+
+// Flag-based color themes per language
+const FLAG_THEMES: Record<Lang, { primary: string; secondary: string; accent: string }> = {
+  tj: { primary: "0 100% 40%", secondary: "120 100% 20%", accent: "120 100% 20%" },     // Red/Green (Tajikistan)
+  ru: { primary: "220 90% 45%", secondary: "0 100% 40%", accent: "220 90% 45%" },        // Blue/Red (Russia)
+  en: { primary: "0 100% 40%", secondary: "220 90% 45%", accent: "220 90% 45%" },        // Red/Blue (USA)
+};
+
+export function applyFlagTheme(lang: Lang) {
+  const theme = FLAG_THEMES[lang];
+  document.documentElement.style.setProperty("--primary", theme.primary);
+  document.documentElement.style.setProperty("--secondary", theme.secondary);
+  document.documentElement.style.setProperty("--accent", theme.accent);
+  document.documentElement.style.setProperty("--ring", theme.primary);
+  document.documentElement.style.setProperty("--sidebar-primary", theme.primary);
+  document.documentElement.style.setProperty("--sidebar-ring", theme.primary);
+}
 
 const translations = {
   // Navigation
@@ -161,6 +178,20 @@ const translations = {
   // Admin PIN
   "admin.pinRequired": { tj: "PIN лозим аст", ru: "Требуется PIN", en: "PIN required" },
 
+  // Dashboard dynamic
+  "dash.day": { tj: "Рӯз", ru: "День", en: "Day" },
+
+  // Add Student grade
+  "addStudent.grade": { tj: "Синф", ru: "Класс", en: "Grade" },
+  "addStudent.selectGrade": { tj: "Синфро интихоб кунед", ru: "Выберите класс", en: "Select grade" },
+  "addStudent.shiftAuto": { tj: "Навбат ба таври худкор муайян мешавад", ru: "Смена определяется автоматически", en: "Shift is auto-detected" },
+  "addStudent.saturdayOff": { tj: "Шанбе — рӯзи истироҳат", ru: "Суббота — выходной", en: "Saturday — rest day" },
+  "addStudent.saturdayOn": { tj: "Шанбе — рӯзи корӣ", ru: "Суббота — рабочий", en: "Saturday — working day" },
+
+  // Shift labels (translatable)
+  "shiftLabel.morning": { tj: "Субҳ (07:30 - 13:00)", ru: "Утро (07:30 - 13:00)", en: "Morning (07:30 - 13:00)" },
+  "shiftLabel.afternoon": { tj: "Рӯз (13:10 - 18:00)", ru: "День (13:10 - 18:00)", en: "Afternoon (13:10 - 18:00)" },
+
   // Common
   "results.showing": { tj: "натиҷа нишон дода шудааст", ru: "результатов показано", en: "results shown" },
   "common.of": { tj: "аз", ru: "из", en: "of" },
@@ -184,6 +215,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const setLang = useCallback((l: Lang) => {
     setLangState(l);
     localStorage.setItem("sams_lang", l);
+    applyFlagTheme(l);
+  }, []);
+
+  // Apply flag theme on initial load
+  useEffect(() => {
+    applyFlagTheme(lang);
   }, []);
 
   const t = useCallback((key: TranslationKey): string => {

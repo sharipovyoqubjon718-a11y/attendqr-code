@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Settings, Shield, Lock, Sun, Moon, Palette } from "lucide-react";
+import { Settings, Shield, Lock, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -63,8 +63,9 @@ function PinEntry({ onSuccess }: { onSuccess: () => void }) {
           <input
             key={i}
             ref={(el) => { inputRefs.current[i] = el; }}
-            type="password"
+            type="tel"
             inputMode="numeric"
+            pattern="[0-9]*"
             maxLength={1}
             value={digit}
             onChange={(e) => handleChange(i, e.target.value)}
@@ -84,20 +85,11 @@ function PinEntry({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-const COLOR_PRESETS = [
-  { name: "Сурх", primary: "0 100% 40%", secondary: "120 100% 20%" },
-  { name: "Кабуд", primary: "220 90% 45%", secondary: "200 80% 50%" },
-  { name: "Сабз", primary: "150 80% 30%", secondary: "120 60% 40%" },
-  { name: "Бунафш", primary: "270 70% 45%", secondary: "300 60% 50%" },
-  { name: "Тиллоӣ", primary: "38 92% 45%", secondary: "25 80% 50%" },
-];
-
 export function SettingsPanel() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
-  const [activeColor, setActiveColor] = useState(0);
 
   const toggleDark = () => {
     const next = !darkMode;
@@ -106,28 +98,11 @@ export function SettingsPanel() {
     localStorage.setItem("sams_theme", next ? "dark" : "light");
   };
 
-  const applyColor = (index: number) => {
-    setActiveColor(index);
-    const preset = COLOR_PRESETS[index];
-    document.documentElement.style.setProperty("--primary", preset.primary);
-    document.documentElement.style.setProperty("--secondary", preset.secondary);
-    document.documentElement.style.setProperty("--accent", preset.secondary);
-    document.documentElement.style.setProperty("--ring", preset.primary);
-    localStorage.setItem("sams_color", String(index));
-  };
-
   useEffect(() => {
     const savedTheme = localStorage.getItem("sams_theme");
     if (savedTheme === "dark") {
       document.documentElement.classList.add("dark");
       setDarkMode(true);
-    }
-    const savedColor = localStorage.getItem("sams_color");
-    if (savedColor) {
-      const idx = parseInt(savedColor);
-      if (!isNaN(idx) && idx < COLOR_PRESETS.length) {
-        applyColor(idx);
-      }
     }
   }, []);
 
@@ -176,29 +151,10 @@ export function SettingsPanel() {
               </div>
             </div>
 
-            {/* Color picker */}
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold flex items-center gap-1">
-                <Palette className="h-4 w-4" /> {t("settings.colors")}
-              </Label>
-              <div className="flex gap-2 flex-wrap">
-                {COLOR_PRESETS.map((preset, i) => (
-                  <button
-                    key={i}
-                    onClick={() => applyColor(i)}
-                    className={`w-10 h-10 rounded-full border-2 transition-transform active:scale-90 ${
-                      activeColor === i ? "border-foreground scale-110" : "border-border"
-                    }`}
-                    style={{ background: `hsl(${preset.primary})` }}
-                    title={preset.name}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Language */}
+            {/* Language — flag-based theme auto-applies */}
             <div className="space-y-2">
               <Label className="text-sm font-semibold">{t("settings.language")}</Label>
+              <p className="text-xs text-muted-foreground">{t("settings.colors")}</p>
               <LanguageSwitcher />
             </div>
           </div>

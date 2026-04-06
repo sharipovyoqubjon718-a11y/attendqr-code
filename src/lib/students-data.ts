@@ -185,7 +185,7 @@ function capitalizeName(name: string): string {
 }
 
 // Smart shift assignment based on grade number
-function getShiftForGrade(grade: string): 'morning' | 'afternoon' {
+export function getShiftForGrade(grade: string): 'morning' | 'afternoon' {
   const gradeNum = parseInt(grade.replace(/[^0-9]/g, ''));
   if (gradeNum >= 1 && gradeNum <= 4) return 'morning';
   if (gradeNum === 11) return 'morning';
