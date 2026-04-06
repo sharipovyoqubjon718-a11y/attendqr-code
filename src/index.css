@@ -52,7 +52,6 @@
     --glass-border: 0 0% 100% / 0.3;
     --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
   }
-}
 
   .dark {
     --background: 0 0% 8%;
@@ -86,9 +85,7 @@
     --glass-border: 0 0% 20% / 0.4;
     --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }

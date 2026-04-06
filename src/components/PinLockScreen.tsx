@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { Shield, Lock } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useI18n } from "@/lib/i18n";
 import { ADMIN_PIN } from "@/lib/students-data";
@@ -53,18 +52,6 @@ export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
     }
   };
 
-  const handleNumPad = (num: string) => {
-    const nextEmpty = pin.findIndex((d) => d === "");
-    if (nextEmpty === -1) return;
-    handleChange(nextEmpty, num);
-  };
-
-  const handleClear = () => {
-    setPin(["", "", "", ""]);
-    setError(false);
-    inputRefs.current[0]?.focus();
-  };
-
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="absolute top-4 right-4">
@@ -84,8 +71,9 @@ export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
             <input
               key={i}
               ref={(el) => { inputRefs.current[i] = el; }}
-              type="password"
+              type="tel"
               inputMode="numeric"
+              pattern="[0-9]*"
               maxLength={1}
               value={digit}
               onChange={(e) => handleChange(i, e.target.value)}
@@ -102,22 +90,6 @@ export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
             <Lock className="h-4 w-4" /> {t("pin.wrong")}
           </p>
         )}
-
-        <div className="grid grid-cols-3 gap-2">
-          {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"].map((num) =>
-            num === "" ? (
-              <div key="empty" />
-            ) : num === "⌫" ? (
-              <Button key="clear" variant="outline" className="h-12 text-lg transition-transform active:scale-95" onClick={handleClear}>
-                ⌫
-              </Button>
-            ) : (
-              <Button key={num} variant="outline" className="h-12 text-lg font-semibold transition-transform active:scale-95" onClick={() => handleNumPad(num)}>
-                {num}
-              </Button>
-            )
-          )}
-        </div>
 
         <p className="text-[10px] text-muted-foreground/60">{t("footer")}</p>
       </div>
