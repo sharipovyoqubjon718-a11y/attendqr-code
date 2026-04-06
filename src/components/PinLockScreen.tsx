@@ -2,15 +2,15 @@ import { useState, useRef, useEffect } from "react";
 import { Shield, Lock } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useI18n } from "@/lib/i18n";
-import { ADMIN_PIN } from "@/lib/students-data";
 
 interface PinLockScreenProps {
   onUnlock: () => void;
+  pin?: string;
 }
 
-export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
+export default function PinLockScreen({ onUnlock, pin = "2211" }: PinLockScreenProps) {
   const { t } = useI18n();
-  const [pin, setPin] = useState<string[]>(["", "", "", ""]);
+  const [pinValue, setPinValue] = useState<string[]>(["", "", "", ""]);
   const [error, setError] = useState(false);
   const [shake, setShake] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -21,9 +21,9 @@ export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
 
   const handleChange = (index: number, value: string) => {
     if (!/^\d?$/.test(value)) return;
-    const newPin = [...pin];
+    const newPin = [...pinValue];
     newPin[index] = value;
-    setPin(newPin);
+    setPinValue(newPin);
     setError(false);
 
     if (value && index < 3) {
@@ -32,14 +32,14 @@ export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
 
     if (index === 3 && value) {
       const fullPin = newPin.join("");
-      if (fullPin === ADMIN_PIN) {
+      if (fullPin === pin) {
         onUnlock();
       } else {
         setError(true);
         setShake(true);
         setTimeout(() => {
           setShake(false);
-          setPin(["", "", "", ""]);
+          setPinValue(["", "", "", ""]);
           inputRefs.current[0]?.focus();
         }, 600);
       }
@@ -47,7 +47,7 @@ export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !pin[index] && index > 0) {
+    if (e.key === "Backspace" && !pinValue[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
   };
@@ -67,7 +67,7 @@ export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
         </div>
 
         <div className={`flex justify-center gap-3 ${shake ? "animate-shake" : ""}`}>
-          {pin.map((digit, i) => (
+          {pinValue.map((digit, i) => (
             <input
               key={i}
               ref={(el) => { inputRefs.current[i] = el; }}

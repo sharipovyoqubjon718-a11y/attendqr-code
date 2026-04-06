@@ -61,7 +61,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-2 mt-1">
             <Badge variant="outline" className="gap-1">
               {currentShift === 'morning' ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
-              {shiftInfo.label}
+              {t(currentShift === 'morning' ? "shiftLabel.morning" : "shiftLabel.afternoon")}
             </Badge>
             <Badge variant="secondary">{allStudents.length} {t("dash.students")}</Badge>
           </div>
