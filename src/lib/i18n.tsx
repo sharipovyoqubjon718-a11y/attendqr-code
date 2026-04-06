@@ -11,12 +11,14 @@ const FLAG_THEMES: Record<Lang, { primary: string; secondary: string; accent: st
 
 export function applyFlagTheme(lang: Lang) {
   const theme = FLAG_THEMES[lang];
-  document.documentElement.style.setProperty("--primary", theme.primary);
-  document.documentElement.style.setProperty("--secondary", theme.secondary);
-  document.documentElement.style.setProperty("--accent", theme.accent);
-  document.documentElement.style.setProperty("--ring", theme.primary);
-  document.documentElement.style.setProperty("--sidebar-primary", theme.primary);
-  document.documentElement.style.setProperty("--sidebar-ring", theme.primary);
+  const root = document.documentElement;
+  root.style.setProperty("--primary", theme.primary);
+  root.style.setProperty("--secondary", theme.secondary);
+  root.style.setProperty("--accent", theme.secondary);
+  root.style.setProperty("--ring", theme.ring);
+  root.style.setProperty("--sidebar-primary", theme.primary);
+  root.style.setProperty("--sidebar-ring", theme.ring);
+  root.style.setProperty("--success", theme.secondary);
 }
 
 const translations = {
