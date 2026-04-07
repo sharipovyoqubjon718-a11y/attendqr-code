@@ -183,6 +183,19 @@ const translations = {
   // Admin PIN
   "admin.pinRequired": { tj: "PIN лозим аст", ru: "Требуется PIN", en: "PIN required" },
 
+  // Security settings
+  "security.title": { tj: "Усули амният", ru: "Метод безопасности", en: "Security Method" },
+  "security.pin": { tj: "PIN код", ru: "PIN код", en: "PIN Code" },
+  "security.pattern": { tj: "Гулчин (Намунавӣ)", ru: "Графический ключ", en: "Pattern Lock" },
+  "security.updatePin": { tj: "Иваз кардани PIN", ru: "Изменить PIN", en: "Update PIN" },
+  "security.updatePattern": { tj: "Иваз кардани гулчин", ru: "Изменить рисунок", en: "Update Pattern" },
+  "security.newPin": { tj: "PIN-и навро ворид кунед", ru: "Введите новый PIN", en: "Enter new PIN" },
+  "security.drawPattern": { tj: "Намунавиро кашед", ru: "Нарисуйте рисунок", en: "Draw a pattern" },
+  "security.saved": { tj: "Сабт шуд!", ru: "Сохранено!", en: "Saved!" },
+  "security.confirmPattern": { tj: "Намунавиро бори дигар кашед", ru: "Повторите рисунок", en: "Draw pattern again" },
+  "security.patternTooShort": { tj: "Ҳадди ақал 3 нуқтаро пайваст кунед", ru: "Соедините минимум 3 точки", en: "Connect at least 3 dots" },
+  "pin.drawPattern": { tj: "Намунавиро кашед", ru: "Нарисуйте рисунок", en: "Draw your pattern" },
+
   // Dashboard dynamic
   "dash.day": { tj: "Рӯз", ru: "День", en: "Day" },
 
