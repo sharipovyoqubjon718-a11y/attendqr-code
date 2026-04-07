@@ -1,7 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SyncButton } from "@/components/SyncButton";
-import { SettingsPanel } from "@/components/SettingsPanel";
 import { useI18n } from "@/lib/i18n";
 import gdbhLogo from "@/assets/gdbh-logo.png";
 
@@ -21,7 +20,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               {t("dash.title")}
             </h1>
             <div className="flex items-center gap-1">
-              <SettingsPanel />
               <SyncButton />
             </div>
           </header>
