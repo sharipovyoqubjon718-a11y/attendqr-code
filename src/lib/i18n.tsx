@@ -17,6 +17,9 @@ export function applyFlagTheme(lang: Lang) {
   root.style.setProperty("--accent", theme.secondary);
   root.style.setProperty("--ring", theme.ring);
   root.style.setProperty("--sidebar-primary", theme.primary);
+  root.style.setProperty("--sidebar-primary-foreground", "0 0% 100%");
+  root.style.setProperty("--sidebar-accent", theme.primary);
+  root.style.setProperty("--sidebar-accent-foreground", "0 0% 100%");
   root.style.setProperty("--sidebar-ring", theme.ring);
   root.style.setProperty("--success", theme.secondary);
 }

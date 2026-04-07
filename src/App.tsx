@@ -17,6 +17,7 @@ import Blacklist from "@/pages/Blacklist";
 import AddStudent from "@/pages/AddStudent";
 import Reports from "@/pages/Reports";
 import About from "@/pages/About";
+import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => {
                   <Route path="/add-student" element={<AddStudent />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/about" element={<About />} />
+                  <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </AppLayout>

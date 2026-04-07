@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, Users, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useI18n } from "@/lib/i18n";
 import gdbhLogo from "@/assets/gdbh-logo.png";
@@ -22,6 +22,7 @@ export function AppSidebar() {
     { title: t("nav.reports"), url: "/reports", icon: BarChart3 },
     { title: t("nav.blacklist"), url: "/blacklist", icon: ShieldAlert },
     { title: t("nav.about"), url: "/about", icon: Info },
+    { title: t("settings.title"), url: "/settings", icon: Settings },
   ];
 
   return (
@@ -47,7 +48,7 @@ export function AppSidebar() {
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end={item.url === "/"} className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold">
+                    <NavLink to={item.url} end={item.url === "/"} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-semibold">
                       <item.icon className="mr-2 h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
