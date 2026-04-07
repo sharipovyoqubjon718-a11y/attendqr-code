@@ -29,7 +29,7 @@ const App = () => {
   if (!unlocked) {
     return (
       <I18nProvider>
-        <PinLockScreen onUnlock={() => setUnlocked(true)} pin={LOGIN_PIN} />
+        <PinLockScreen onUnlock={() => setUnlocked(true)} />
       </I18nProvider>
     );
   }
