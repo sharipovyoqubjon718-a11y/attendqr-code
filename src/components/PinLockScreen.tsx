@@ -1,8 +1,18 @@
 import { useState, useRef, useEffect } from "react";
-import { Shield, Lock } from "lucide-react";
+import { Lock, Plus, Trash2, LifeBuoy } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import PatternLock from "@/components/PatternLock";
 import { useI18n } from "@/lib/i18n";
+import { getSchools, addSchool, deleteSchool, getSelectedSchoolId, setSelectedSchoolId, type School } from "@/lib/schools";
+import goldenEmblem from "@/assets/golden-emblem.png";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 type SecurityMethod = "pin" | "pattern";
 
