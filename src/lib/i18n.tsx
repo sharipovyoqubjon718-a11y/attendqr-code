@@ -199,6 +199,13 @@ const translations = {
   "security.patternTooShort": { tj: "Ҳадди ақал 3 нуқтаро пайваст кунед", ru: "Соедините минимум 3 точки", en: "Connect at least 3 dots" },
   "pin.drawPattern": { tj: "Намунавиро кашед", ru: "Нарисуйте рисунок", en: "Draw your pattern" },
 
+  // Schools
+  "school.select": { tj: "Мактабро интихоб кунед", ru: "Выберите школу", en: "Select school" },
+  "school.add": { tj: "Иловаи мактаб", ru: "Добавить школу", en: "Add school" },
+  "school.namePlaceholder": { tj: "Номи мактаб", ru: "Название школы", en: "School name" },
+  "school.manage": { tj: "Идоракунии мактабҳо", ru: "Управление школами", en: "Manage schools" },
+  "school.delete": { tj: "Пок кардан", ru: "Удалить", en: "Delete" },
+
   // Dashboard dynamic
   "dash.day": { tj: "Рӯз", ru: "День", en: "Day" },
 
