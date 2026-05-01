@@ -24,8 +24,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
           <main className="flex-1 p-4 sm:p-6 overflow-auto">{children}</main>
-          <footer className="border-t bg-card/50 px-4 py-3 text-center">
+          <footer className="border-t bg-card/50 px-4 py-3 text-center space-y-1">
             <p className="text-xs text-muted-foreground">{t("footer")}</p>
+            <a
+              href="https://t.me/Sharipov_Yoqubjon"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-[11px] text-primary hover:underline"
+            >
+              📨 {t("support.title")} — @Sharipov_Yoqubjon
+            </a>
           </footer>
         </div>
       </div>

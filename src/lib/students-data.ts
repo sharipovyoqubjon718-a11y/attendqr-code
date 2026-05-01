@@ -232,14 +232,25 @@ export const ALL_GRADES = [...MORNING_GRADES, ...AFTERNOON_GRADES];
 export const ADMIN_PIN = '1212';
 
 export const SHIFT_TIMES = {
-  morning: { start: '07:30', end: '13:00', label: 'Субҳ (07:30 - 13:00)' },
-  afternoon: { start: '13:10', end: '18:00', label: 'Рӯз (13:10 - 18:00)' },
+  morning: { start: '08:00', end: '13:00', label: 'Субҳ (08:00 - 13:00)' },
+  afternoon: { start: '13:10', end: '17:20', label: 'Рӯз (13:10 - 17:20)' },
 };
 
+const MANUAL_SHIFT_KEY = 'sams_manual_shift';
+export function setManualShift(shift: 'morning' | 'afternoon' | null) {
+  if (shift) localStorage.setItem(MANUAL_SHIFT_KEY, shift);
+  else localStorage.removeItem(MANUAL_SHIFT_KEY);
+}
+export function getManualShift(): 'morning' | 'afternoon' | null {
+  const v = localStorage.getItem(MANUAL_SHIFT_KEY);
+  return v === 'morning' || v === 'afternoon' ? v : null;
+}
+
 export function getCurrentShift(): 'morning' | 'afternoon' {
+  const manual = getManualShift();
+  if (manual) return manual;
   const now = new Date();
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const timeMinutes = hours * 60 + minutes;
+  const timeMinutes = now.getHours() * 60 + now.getMinutes();
+  // Morning: 08:00 - 13:05; Afternoon thereafter
   return timeMinutes < 13 * 60 + 5 ? 'morning' : 'afternoon';
 }

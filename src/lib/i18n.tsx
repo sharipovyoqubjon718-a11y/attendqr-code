@@ -54,8 +54,8 @@ const translations = {
   "dash.sessionEnded": { tj: "Дарс анҷом ёфт!", ru: "Урок завершён!", en: "Session ended!" },
 
   // Students
-  "students.morning": { tj: "Навбати субҳ (07:30 - 13:00)", ru: "Утренняя смена (07:30 - 13:00)", en: "Morning Shift (07:30 - 13:00)" },
-  "students.afternoon": { tj: "Навбати рӯз (13:10 - 18:00)", ru: "Дневная смена (13:10 - 18:00)", en: "Afternoon Shift (13:10 - 18:00)" },
+  "students.morning": { tj: "Навбати субҳ (08:00 - 13:00)", ru: "Утренняя смена (08:00 - 13:00)", en: "Morning Shift (08:00 - 13:00)" },
+  "students.afternoon": { tj: "Навбати рӯз (13:10 - 17:20)", ru: "Дневная смена (13:10 - 17:20)", en: "Afternoon Shift (13:10 - 17:20)" },
   "students.all": { tj: "Ҳамаи хонандагон", ru: "Все ученики", en: "All Students" },
   "students.search": { tj: "Ҷустуҷӯ бо ном, ID ё синф...", ru: "Поиск по имени, ID или классу...", en: "Search by name, ID, or grade..." },
   "students.allGrades": { tj: "Ҳама синфҳо", ru: "Все классы", en: "All Grades" },
@@ -170,7 +170,10 @@ const translations = {
   "delete.done": { tj: "Хонанда пок карда шуд", ru: "Ученик удалён", en: "Student deleted" },
 
   // Footer
-  "footer": { tj: "Developed by Sharipov's Python Academy", ru: "Developed by Sharipov's Python Academy", en: "Developed by Sharipov's Python Academy" },
+  "footer": { tj: "Developed by Sharipov's Python Academy | Lead Developer: Sharipov Yoqubjon", ru: "Developed by Sharipov's Python Academy | Lead Developer: Sharipov Yoqubjon", en: "Developed by Sharipov's Python Academy | Lead Developer: Sharipov Yoqubjon" },
+  "support.title": { tj: "Дастгирии техникӣ", ru: "Техническая поддержка", en: "Technical Support" },
+  "students.savePdf": { tj: "Захира ҳамчун PDF", ru: "Сохранить как PDF", en: "Save as PDF" },
+  "shift.manual": { tj: "Иваз кардани навбат", ru: "Сменить смену", en: "Switch Shift" },
 
   // Settings
   "settings.title": { tj: "Танзимот", ru: "Настройки", en: "Settings" },
