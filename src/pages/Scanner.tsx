@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 type ScanResult = { status: "success" | "error"; message: string; studentName?: string; type?: "check-in" | "check-out"; time?: string };
 type FacingMode = "environment" | "user";
-const SCAN_COOLDOWN_MS = 2500;
+const SCAN_COOLDOWN_MS = 5000;
 const CAMERA_DELAY_MS = 120;
 const createLogId = () => `LOG-${Date.now()}`;
 
