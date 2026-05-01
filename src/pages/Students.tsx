@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { Search, Printer, LayoutGrid, Table as TableIcon } from "lucide-react";
+import { Search, Printer, LayoutGrid, Table as TableIcon, FileDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,52 +43,55 @@ export default function Students({ shift }: StudentsPageProps) {
     [students, search]
   );
 
-  const handlePrint = () => {
+  const handlePrint = (savePdf = false) => {
     const canvas = document.createElement("canvas");
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.src = gdbhLogo;
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      canvas.getContext("2d")?.drawImage(img, 0, 0);
-      openPrintWindow(canvas.toDataURL("image/png"));
-    };
-    if (img.complete) {
+    const run = () => {
       canvas.width = img.width || 200;
       canvas.height = img.height || 200;
       canvas.getContext("2d")?.drawImage(img, 0, 0);
-      openPrintWindow(canvas.toDataURL("image/png"));
-    }
+      openPrintWindow(canvas.toDataURL("image/png"), savePdf);
+    };
+    img.onload = run;
+    if (img.complete) run();
   };
 
-  const openPrintWindow = (logoBase64: string) => {
+  const openPrintWindow = (logoBase64: string, savePdf: boolean) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
+    const titleSuffix = savePdf ? ' — Save as PDF' : '';
     printWindow.document.write(`
-      <html><head><title>Print QR Codes</title>
+      <html><head><title>QR Codes${titleSuffix}</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, Helvetica, sans-serif; }
-        .page { width: 210mm; margin: 0 auto; padding: 8mm 12mm; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
-        .card { text-align: center; border: 1px dashed #999; border-radius: 4px; padding: 10mm 6mm 8mm; page-break-inside: avoid; position: relative; }
+        .page { width: 210mm; margin: 0 auto; padding: 8mm 8mm; page-break-after: always; }
+        .page:last-child { page-break-after: auto; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4mm; }
+        .card { text-align: center; border: 1px dashed #999; border-radius: 4px; padding: 4mm 2mm 3mm; page-break-inside: avoid; }
         .qr-wrap { position: relative; display: inline-block; }
         .qr-wrap canvas { display: block; }
-        .logo-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
-        .logo-overlay img { width: 30px; height: 30px; border-radius: 50%; }
-        .name { margin-top: 6px; font-size: 10px; line-height: 1.3; color: #333; font-weight: 600; }
-        @media print { body { margin: 0; } .page { padding: 6mm 10mm; } }
+        .logo-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+        .logo-overlay img { width: 22px; height: 22px; border-radius: 50%; }
+        .name { margin-top: 4px; font-size: 9px; line-height: 1.25; color: #222; font-weight: 700; }
+        .meta { font-size: 8px; color: #666; }
+        ${savePdf ? '.pdf-banner { background:#fffbe6; border-bottom:1px solid #ffd666; padding:6px; text-align:center; font-size:11px; color:#874d00; } @media print { .pdf-banner { display:none; } }' : ''}
+        @media print { body { margin: 0; } .page { padding: 6mm; } }
         @page { size: A4 portrait; margin: 0; }
       </style></head><body>
+      ${savePdf ? '<div class="pdf-banner">In the print dialog choose <b>Destination → Save as PDF</b></div>' : ''}
       ${(() => {
         const pages: string[] = [];
-        for (let i = 0; i < filtered.length; i += 8) {
-          const pageStudents = filtered.slice(i, i + 8);
+        const perPage = 16; // 4 cols x 4 rows
+        for (let i = 0; i < filtered.length; i += perPage) {
+          const pageStudents = filtered.slice(i, i + perPage);
           pages.push(`<div class="page"><div class="grid">${pageStudents.map(s => `
             <div class="card">
               <div class="qr-wrap" id="qr-${s.id}"></div>
-              <div class="name">${s.name}<br/>(${s.id} — ${s.grade})</div>
+              <div class="name">${s.name}</div>
+              <div class="meta">${s.id} — ${s.grade}</div>
             </div>
           `).join('')}</div></div>`);
         }
@@ -102,7 +105,7 @@ export default function Students({ shift }: StudentsPageProps) {
         containers.forEach(el => {
           const id = el.id.replace('qr-', '');
           const canvas = document.createElement('canvas');
-          QRCode.toCanvas(canvas, id, { width: 160, margin: 1, errorCorrectionLevel: 'H' }, () => {
+          QRCode.toCanvas(canvas, id, { width: 110, margin: 1, errorCorrectionLevel: 'H' }, () => {
             el.appendChild(canvas);
             const overlay = document.createElement('div');
             overlay.className = 'logo-overlay';
@@ -162,8 +165,11 @@ export default function Students({ shift }: StudentsPageProps) {
           <Button onClick={() => setView("table")} variant={view === "table" ? "default" : "outline"} size="sm" className="transition-transform active:scale-95">
             <TableIcon className="mr-1.5 h-4 w-4" /> {t("students.table")}
           </Button>
-          <Button onClick={handlePrint} variant="secondary" size="sm" className="transition-transform active:scale-95">
+          <Button onClick={() => handlePrint(false)} variant="secondary" size="sm" className="transition-transform active:scale-95">
             <Printer className="mr-1.5 h-4 w-4" /> {t("students.print")}
+          </Button>
+          <Button onClick={() => handlePrint(true)} variant="secondary" size="sm" className="transition-transform active:scale-95">
+            <FileDown className="mr-1.5 h-4 w-4" /> {t("students.savePdf")}
           </Button>
           <AddStudentDialog onStudentAdded={handleChanged} />
         </div>
