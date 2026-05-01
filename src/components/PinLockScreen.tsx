@@ -152,20 +152,123 @@ function PatternLockView({ onUnlock }: { onUnlock: () => void }) {
   );
 }
 
+function SchoolManager() {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [schools, setSchools] = useState<School[]>(getSchools());
+  const [newName, setNewName] = useState("");
+
+  const refresh = () => setSchools(getSchools());
+
+  const handleAdd = () => {
+    if (!newName.trim()) return;
+    addSchool(newName);
+    setNewName("");
+    refresh();
+  };
+
+  const handleDelete = (id: string) => {
+    deleteSchool(id);
+    refresh();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
+          <Plus className="h-3 w-3 mr-1" /> {t("school.manage")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{t("school.manage")}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2 max-h-60 overflow-auto">
+          {schools.map((s) => (
+            <div key={s.id} className="flex items-center justify-between gap-2 p-2 rounded border">
+              <span className="text-sm truncate">{s.name}</span>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(s.id)}>
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+              </Button>
+            </div>
+          ))}
+        </div>
+        <DialogFooter className="flex gap-2 sm:flex-row">
+          <Input
+            placeholder={t("school.namePlaceholder")}
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+          />
+          <Button onClick={handleAdd} size="sm">{t("school.add")}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function LockShell({ children }: { children: React.ReactNode }) {
+  const { t } = useI18n();
+  const [selected, setSelected] = useState(getSelectedSchoolId());
+  const [schoolList, setSchoolList] = useState<School[]>(getSchools());
+
+  const handleSelect = (id: string) => {
+    setSelectedSchoolId(id);
+    setSelected(id);
+  };
+
+  // Refresh list when dialog closes (cheap polling on focus)
+  useEffect(() => {
+    const refresh = () => setSchoolList(getSchools());
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="absolute top-4 right-4">
         <LanguageSwitcher />
       </div>
-      <div className="w-full max-w-xs space-y-6 text-center animate-fade-in">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
-            <Shield className="h-10 w-10 text-primary" />
+      <div className="w-full max-w-xs space-y-5 text-center animate-fade-in">
+        <div className="flex flex-col items-center gap-2">
+          <img
+            src={goldenEmblem}
+            alt="ГДБҲ Emblem"
+            className="h-28 w-28 object-contain drop-shadow-lg"
+          />
+        </div>
+
+        {/* School selector */}
+        <div className="space-y-1.5 text-left">
+          <Select value={selected} onValueChange={handleSelect}>
+            <SelectTrigger className="w-full h-10 text-sm">
+              <SelectValue placeholder={t("school.select")} />
+            </SelectTrigger>
+            <SelectContent>
+              {schoolList.map((s) => (
+                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex justify-end">
+            <SchoolManager />
           </div>
         </div>
+
         {children}
-        <p className="text-[10px] text-muted-foreground/60">{/* footer */}Developed by Sharipov's Python Academy</p>
+
+        {/* Tech support */}
+        <a
+          href="https://t.me/Sharipov_Yoqubjon"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 text-xs px-3 py-2 rounded-md border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary transition-colors"
+        >
+          <LifeBuoy className="h-4 w-4" />
+          <span>{t("support.title")}</span>
+        </a>
+
+        <p className="text-[10px] text-muted-foreground/60">Developed by Sharipov's Python Academy</p>
       </div>
     </div>
   );
