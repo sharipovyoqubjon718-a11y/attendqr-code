@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings } from "lucide-react";
+import { LayoutDashboard, Users, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useI18n } from "@/lib/i18n";
 import gdbhLogo from "@/assets/gdbh-logo.png";
@@ -60,7 +60,16 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       {!collapsed && (
-        <SidebarFooter className="p-4">
+        <SidebarFooter className="p-4 space-y-2">
+          <a
+            href="https://t.me/Sharipov_Yoqubjon"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs px-2 py-2 rounded-md bg-sidebar-accent/30 hover:bg-sidebar-accent/60 text-sidebar-foreground transition-colors"
+          >
+            <LifeBuoy className="h-4 w-4" />
+            <span>{t("support.title")}</span>
+          </a>
           <div className="text-[9px] text-sidebar-foreground/40 text-center leading-tight">
             © 2025 ГДБҲ — Кӯлоб
           </div>
