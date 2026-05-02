@@ -109,10 +109,10 @@ export default function Students({ shift }: StudentsPageProps) {
           <Button onClick={() => setView("table")} variant={view === "table" ? "default" : "outline"} size="sm" className="transition-transform active:scale-95">
             <TableIcon className="mr-1.5 h-4 w-4" /> {t("students.table")}
           </Button>
-          <Button onClick={() => handlePrint(false)} variant="secondary" size="sm" className="transition-transform active:scale-95">
+          <Button onClick={handlePrint} variant="secondary" size="sm" className="transition-transform active:scale-95">
             <Printer className="mr-1.5 h-4 w-4" /> {t("students.print")}
           </Button>
-          <Button onClick={() => handlePrint(true)} variant="secondary" size="sm" className="transition-transform active:scale-95">
+          <Button onClick={handleSavePdf} variant="secondary" size="sm" className="transition-transform active:scale-95">
             <FileDown className="mr-1.5 h-4 w-4" /> {t("students.savePdf")}
           </Button>
           <AddStudentDialog onStudentAdded={handleChanged} />
