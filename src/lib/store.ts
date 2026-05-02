@@ -47,11 +47,11 @@ function checkDailyReset() {
       try {
         const parsed = JSON.parse(session);
         if (parsed.active) {
-          localStorage.setItem(SESSION_KEY, JSON.stringify({ active: false, endedAt: new Date().toISOString() }));
+          localStorage.setItem(SESSION_KEY(), JSON.stringify({ active: false, endedAt: new Date().toISOString() }));
         }
       } catch {}
     }
-    localStorage.setItem(LAST_RESET_KEY, today);
+    localStorage.setItem(LAST_RESET_KEY(), today);
   }
 }
 
@@ -61,19 +61,19 @@ export function getStudents(): Student[] {
 
   if (stored) {
     const students = normalizeStudents(JSON.parse(stored));
-    localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+    localStorage.setItem(STUDENTS_KEY(), JSON.stringify(students));
     return students;
   }
 
   const students = normalizeStudents(generateAllStudents());
-  localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+  localStorage.setItem(STUDENTS_KEY(), JSON.stringify(students));
   return students;
 }
 
 export function getLogs(): AttendanceLog[] {
   if (!localStorage.getItem(PURGE_KEY())) {
     localStorage.removeItem(LOGS_KEY());
-    localStorage.setItem(PURGE_KEY, '1');
+    localStorage.setItem(PURGE_KEY(), '1');
   }
   const stored = localStorage.getItem(LOGS_KEY());
   if (stored) return JSON.parse(stored);
@@ -83,7 +83,7 @@ export function getLogs(): AttendanceLog[] {
 export function addLog(log: AttendanceLog) {
   const logs = getLogs();
   logs.unshift(log);
-  localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
+  localStorage.setItem(LOGS_KEY(), JSON.stringify(logs));
 }
 
 export function addStudent(student: Student): boolean {
@@ -91,7 +91,7 @@ export function addStudent(student: Student): boolean {
   const normalizedStudent = { ...student, name: normalizeStudentName(student.name) };
   if (students.some(s => s.id === normalizedStudent.id)) return false;
   students.push(normalizedStudent);
-  localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+  localStorage.setItem(STUDENTS_KEY(), JSON.stringify(students));
   return true;
 }
 
@@ -102,7 +102,7 @@ export function updateStudent(id: string, updates: Partial<Pick<Student, 'name' 
   if (updates.name) students[idx].name = normalizeStudentName(updates.name);
   if (updates.grade) students[idx].grade = updates.grade;
   if (updates.shift) students[idx].shift = updates.shift;
-  localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+  localStorage.setItem(STUDENTS_KEY(), JSON.stringify(students));
   return true;
 }
 
@@ -110,7 +110,7 @@ export function deleteStudent(id: string): boolean {
   const students = getStudents();
   const filtered = students.filter(s => s.id !== id);
   if (filtered.length === students.length) return false;
-  localStorage.setItem(STUDENTS_KEY, JSON.stringify(filtered));
+  localStorage.setItem(STUDENTS_KEY(), JSON.stringify(filtered));
   return true;
 }
 
@@ -218,11 +218,11 @@ export function formatTajikTime(isoString: string): string {
 
 // Session management
 export function startSession() {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ active: true, startedAt: new Date().toISOString() }));
+  localStorage.setItem(SESSION_KEY(), JSON.stringify({ active: true, startedAt: new Date().toISOString() }));
 }
 
 export function endSession() {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ active: false, endedAt: new Date().toISOString() }));
+  localStorage.setItem(SESSION_KEY(), JSON.stringify({ active: false, endedAt: new Date().toISOString() }));
 }
 
 export function isSessionActive(): boolean {
