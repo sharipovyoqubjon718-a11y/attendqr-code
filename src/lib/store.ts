@@ -1,4 +1,5 @@
 import { generateAllStudents, type StudentRecord } from './students-data';
+import { getActiveSchoolId, getSelectedSchoolId } from './schools';
 
 export type Student = StudentRecord;
 
@@ -9,11 +10,14 @@ export interface AttendanceLog {
   timestamp: string;
 }
 
-const STUDENTS_KEY = 'sams_students_v5';
-const LOGS_KEY = 'sams_logs';
-const SESSION_KEY = 'sams_session_active';
-const LAST_RESET_KEY = 'sams_last_reset';
-const PURGE_KEY = 'sams_logs_purged_v3';
+function activeId(): string {
+  return getActiveSchoolId() || getSelectedSchoolId() || 'gdbh';
+}
+const STUDENTS_KEY = () => `school_${activeId()}_students_v5`;
+const LOGS_KEY = () => `school_${activeId()}_logs`;
+const SESSION_KEY = () => `school_${activeId()}_session_active`;
+const LAST_RESET_KEY = () => `school_${activeId()}_last_reset`;
+const PURGE_KEY = () => `school_${activeId()}_logs_purged_v3`;
 
 function normalizeStudentName(name: string): string {
   return name
