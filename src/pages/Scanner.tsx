@@ -37,11 +37,6 @@ export default function Scanner() {
       toast.error(t("scanner.noSession"));
       return;
     }
-    if (!code.startsWith("ГДБҲ")) {
-      setResult({ status: "error", message: `${code}` });
-      toast.error("ID нодуруст");
-      return;
-    }
     const student = getStudentById(code);
     if (!student) {
       setResult({ status: "error", message: `ID: ${code}` });
