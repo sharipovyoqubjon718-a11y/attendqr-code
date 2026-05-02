@@ -7,10 +7,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider } from "@/lib/i18n";
 import { AdminPinProvider } from "@/components/AdminPinDialog";
 import { AppLayout } from "@/components/AppLayout";
-import PinLockScreen from "@/components/PinLockScreen";
+import LoginScreen from "@/components/LoginScreen";
 import Dashboard from "@/pages/Dashboard";
 import Students from "@/pages/Students";
-import Students2 from "@/pages/Students2";
 import Scanner from "@/pages/Scanner";
 import Logs from "@/pages/Logs";
 import Blacklist from "@/pages/Blacklist";
@@ -19,17 +18,22 @@ import Reports from "@/pages/Reports";
 import About from "@/pages/About";
 import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/NotFound";
+import { getActiveSchoolId, setActiveSchoolId } from "@/lib/schools";
 
 const queryClient = new QueryClient();
-const LOGIN_PIN = "2211";
 
 const App = () => {
-  const [unlocked, setUnlocked] = useState(false);
+  const [unlocked, setUnlocked] = useState<boolean>(() => !!getActiveSchoolId());
+
+  const handleLogout = () => {
+    setActiveSchoolId(null);
+    setUnlocked(false);
+  };
 
   if (!unlocked) {
     return (
       <I18nProvider>
-        <PinLockScreen onUnlock={() => setUnlocked(true)} />
+        <LoginScreen onUnlock={() => setUnlocked(true)} />
       </I18nProvider>
     );
   }
@@ -42,7 +46,7 @@ const App = () => {
           <Sonner />
           <AdminPinProvider>
             <BrowserRouter>
-              <AppLayout>
+              <AppLayout onLogout={handleLogout}>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/students" element={<Students shift="morning" />} />
