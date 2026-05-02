@@ -1,11 +1,21 @@
+import { LogOut } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SyncButton } from "@/components/SyncButton";
+import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
-import gdbhLogo from "@/assets/gdbh-logo.png";
+import { getSelectedSchool } from "@/lib/schools";
+import goldenEmblem from "@/assets/golden-emblem.png";
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
+interface Props {
+  children: React.ReactNode;
+  onLogout: () => void;
+}
+
+export function AppLayout({ children, onLogout }: Props) {
   const { t } = useI18n();
+  const school = getSelectedSchool();
+  const logoSrc = school.logoDataUrl || goldenEmblem;
 
   return (
     <SidebarProvider>
@@ -15,12 +25,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="tajik-gradient-bar w-full" />
           <header className="h-14 flex items-center border-b bg-card px-4 glass-card rounded-none border-t-0">
             <SidebarTrigger className="mr-3" />
-            <img src={gdbhLogo} alt="ГДБҲ" className="h-8 w-8 rounded-full mr-2" />
-            <h1 className="font-display text-sm sm:text-base font-bold text-foreground flex-1 leading-tight">
-              {t("dash.title")}
+            <img src={logoSrc} alt={school.name} className="h-8 w-8 rounded-full mr-2 object-contain" />
+            <h1 className="font-display text-sm sm:text-base font-bold text-foreground flex-1 leading-tight truncate">
+              {school.name}
             </h1>
             <div className="flex items-center gap-1">
               <SyncButton />
+              <Button variant="ghost" size="icon" onClick={onLogout} title={t("login.logout")}>
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
           </header>
           <main className="flex-1 p-4 sm:p-6 overflow-auto">{children}</main>

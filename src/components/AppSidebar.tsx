@@ -1,7 +1,8 @@
-import { LayoutDashboard, Users, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useI18n } from "@/lib/i18n";
-import gdbhLogo from "@/assets/gdbh-logo.png";
+import { getSelectedSchool } from "@/lib/schools";
+import goldenEmblem from "@/assets/golden-emblem.png";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
@@ -11,11 +12,13 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const { t } = useI18n();
   const collapsed = state === "collapsed";
+  const school = getSelectedSchool();
+  const logoSrc = school.logoDataUrl || goldenEmblem;
 
   const navItems = [
     { title: t("nav.dashboard"), url: "/", icon: LayoutDashboard },
-    { title: t("nav.morning"), url: "/students", icon: Sun },
-    { title: t("nav.afternoon"), url: "/students2", icon: Moon },
+    { title: t("nav.shift1"), url: "/students", icon: Sun },
+    { title: t("nav.shift2"), url: "/students2", icon: Moon },
     { title: t("nav.addStudent"), url: "/add-student", icon: UserPlus },
     { title: t("nav.scanner"), url: "/scanner", icon: QrCode },
     { title: t("nav.logs"), url: "/logs", icon: ClipboardList },
@@ -30,14 +33,14 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         {!collapsed ? (
           <div className="flex items-center gap-3">
-            <img src={gdbhLogo} alt="ГДБҲ" className="h-10 w-10 rounded-full border-2 border-sidebar-primary" />
-            <div>
+            <img src={logoSrc} alt={school.name} className="h-10 w-10 rounded-full border-2 border-sidebar-primary object-contain" />
+            <div className="min-w-0">
               <span className="font-display text-base font-bold text-sidebar-foreground block leading-tight">AttendQR</span>
-              <span className="text-[10px] text-sidebar-foreground/60">ГДБҲ — Кӯлоб</span>
+              <span className="text-[10px] text-sidebar-foreground/60 truncate block">{school.name}</span>
             </div>
           </div>
         ) : (
-          <img src={gdbhLogo} alt="ГДБҲ" className="h-8 w-8 rounded-full mx-auto border-2 border-sidebar-primary" />
+          <img src={logoSrc} alt={school.name} className="h-8 w-8 rounded-full mx-auto border-2 border-sidebar-primary object-contain" />
         )}
       </SidebarHeader>
       <SidebarContent>
@@ -71,7 +74,7 @@ export function AppSidebar() {
             <span>{t("support.title")}</span>
           </a>
           <div className="text-[9px] text-sidebar-foreground/40 text-center leading-tight">
-            © 2025 ГДБҲ — Кӯлоб
+            © 2025 {school.name}
           </div>
         </SidebarFooter>
       )}

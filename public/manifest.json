@@ -1,25 +1,27 @@
 {
-  "name": "AttendQR - Системаи идоракунии давомот",
+  "name": "AttendQR — ГДБҲ",
   "short_name": "AttendQR",
-  "description": "Системаи идоракунии давоматӣ хонандагон бо сканери QR",
+  "description": "Системаи идоракунии давомот бо сканери QR — Гимназияи давлатии Боғи Ҳабиб",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f7fa",
-  "theme_color": "#1d7a5f",
+  "background_color": "#ffffff",
+  "theme_color": "#b8860b",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/golden-emblem.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/golden-emblem.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/golden-emblem.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

@@ -1,39 +1,36 @@
-import { useState, useEffect, useRef } from "react";
-import { Settings, Sun, Moon, Lock, Shield, Check } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Settings, Sun, Moon, Lock, Calendar as CalIcon, Image as ImageIcon, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import PatternLock from "@/components/PatternLock";
 import { useI18n } from "@/lib/i18n";
+import { getSelectedSchool, updateSchool, getSelectedSchoolId } from "@/lib/schools";
+import goldenEmblem from "@/assets/golden-emblem.png";
 import { toast } from "sonner";
-
-type SecurityMethod = "pin" | "pattern";
-
-function getSecurityMethod(): SecurityMethod {
-  return (localStorage.getItem("sams_security_method") as SecurityMethod) || "pin";
-}
-function getSavedPin(): string {
-  return localStorage.getItem("sams_login_pin") || "2211";
-}
-function getSavedPattern(): number[] {
-  const p = localStorage.getItem("sams_login_pattern");
-  return p ? JSON.parse(p) : [];
-}
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { t } = useI18n();
+  const [school, setSchool] = useState(getSelectedSchool());
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
-  const [securityMethod, setSecurityMethod] = useState<SecurityMethod>(getSecurityMethod);
+  const [username, setUsername] = useState(school.username);
+  const [password, setPassword] = useState(school.password);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const restDays = (school.restDays || []).map((d) => new Date(d));
 
-  // PIN update
-  const [newPin, setNewPin] = useState<string[]>(["", "", "", ""]);
-  const pinRefs = useRef<(HTMLInputElement | null)[]>([]);
+  useEffect(() => {
+    const saved = localStorage.getItem("sams_theme");
+    if (saved === "dark") {
+      document.documentElement.classList.add("dark");
+      setDarkMode(true);
+    }
+  }, []);
 
-  // Pattern update
-  const [settingPattern, setSettingPattern] = useState(false);
-  const [tempPattern, setTempPattern] = useState<number[] | null>(null);
-  const [confirmStep, setConfirmStep] = useState(false);
+  const refresh = () => setSchool(getSelectedSchool());
 
   const toggleDark = () => {
     const next = !darkMode;
@@ -42,175 +39,132 @@ export default function SettingsPage() {
     localStorage.setItem("sams_theme", next ? "dark" : "light");
   };
 
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("sams_theme");
-    if (savedTheme === "dark") {
-      document.documentElement.classList.add("dark");
-      setDarkMode(true);
-    }
-  }, []);
-
-  const handleMethodChange = (val: string) => {
-    const method = val as SecurityMethod;
-    setSecurityMethod(method);
-    localStorage.setItem("sams_security_method", method);
-  };
-
-  // PIN handlers
-  const handlePinChange = (index: number, value: string) => {
-    if (!/^\d?$/.test(value)) return;
-    const updated = [...newPin];
-    updated[index] = value;
-    setNewPin(updated);
-    if (value && index < 3) {
-      pinRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handlePinKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !newPin[index] && index > 0) {
-      pinRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const savePin = () => {
-    const pin = newPin.join("");
-    if (pin.length === 4) {
-      localStorage.setItem("sams_login_pin", pin);
+  const onLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      updateSchool(getSelectedSchoolId(), { logoDataUrl: String(reader.result) });
+      refresh();
       toast.success(t("security.saved"));
-      setNewPin(["", "", "", ""]);
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
-  // Pattern handlers
-  const handlePatternSet = (pattern: number[]) => {
-    if (pattern.length < 3) {
-      toast.error(t("security.patternTooShort"));
-      return;
-    }
-    if (!confirmStep) {
-      setTempPattern(pattern);
-      setConfirmStep(true);
-    } else {
-      if (tempPattern && JSON.stringify(tempPattern) === JSON.stringify(pattern)) {
-        localStorage.setItem("sams_login_pattern", JSON.stringify(pattern));
-        toast.success(t("security.saved"));
-        setSettingPattern(false);
-        setConfirmStep(false);
-        setTempPattern(null);
-      } else {
-        toast.error(t("pin.wrong"));
-        setConfirmStep(false);
-        setTempPattern(null);
-      }
-    }
+  const saveCreds = () => {
+    if (!username.trim() || !password.trim()) return;
+    updateSchool(getSelectedSchoolId(), { username: username.trim(), password });
+    refresh();
+    toast.success(t("security.saved"));
+  };
+
+  const toggleRestDay = (date: Date | undefined) => {
+    if (!date) return;
+    const iso = format(date, "yyyy-MM-dd");
+    const current = school.restDays || [];
+    const next = current.includes(iso) ? current.filter((d) => d !== iso) : [...current, iso];
+    updateSchool(getSelectedSchoolId(), { restDays: next });
+    refresh();
   };
 
   return (
     <div className="max-w-md mx-auto space-y-6 animate-fade-in">
+      {/* School logo at top */}
+      <div className="glass-card p-6 flex flex-col items-center gap-3">
+        <img
+          src={school.logoDataUrl || goldenEmblem}
+          alt={school.name}
+          className="h-24 w-24 object-contain rounded-full border-2 border-primary/30 bg-card"
+        />
+        <h2 className="font-display text-lg font-bold text-center">{school.name}</h2>
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onLogo} />
+        <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="gap-2">
+          <ImageIcon className="h-4 w-4" /> {t("school.uploadLogo")}
+        </Button>
+      </div>
+
       <div className="flex items-center gap-3">
         <Settings className="h-6 w-6 text-primary" />
         <h1 className="font-display text-xl font-bold">{t("settings.title")}</h1>
       </div>
 
+      {/* Theme + Language */}
       <div className="glass-card p-6 space-y-6">
-        {/* Theme */}
         <div className="space-y-2">
           <Label className="text-sm font-semibold">{t("settings.theme")}</Label>
           <div className="flex gap-2">
-            <Button
-              variant={!darkMode ? "default" : "outline"}
-              size="sm"
-              onClick={() => { if (darkMode) toggleDark(); }}
-              className="flex-1 gap-2"
-            >
+            <Button variant={!darkMode ? "default" : "outline"} size="sm" onClick={() => { if (darkMode) toggleDark(); }} className="flex-1 gap-2">
               <Sun className="h-4 w-4" /> {t("settings.light")}
             </Button>
-            <Button
-              variant={darkMode ? "default" : "outline"}
-              size="sm"
-              onClick={() => { if (!darkMode) toggleDark(); }}
-              className="flex-1 gap-2"
-            >
+            <Button variant={darkMode ? "default" : "outline"} size="sm" onClick={() => { if (!darkMode) toggleDark(); }} className="flex-1 gap-2">
               <Moon className="h-4 w-4" /> {t("settings.dark")}
             </Button>
           </div>
         </div>
 
-        {/* Language */}
         <div className="space-y-2">
           <Label className="text-sm font-semibold">{t("settings.language")}</Label>
-          <p className="text-xs text-muted-foreground">{t("settings.colors")}</p>
           <LanguageSwitcher />
         </div>
       </div>
 
-      {/* Security Method */}
-      <div className="glass-card p-6 space-y-6">
+      {/* Credentials */}
+      <div className="glass-card p-6 space-y-4">
         <div className="flex items-center gap-2">
-          <Shield className="h-5 w-5 text-primary" />
-          <Label className="text-sm font-semibold">{t("security.title")}</Label>
+          <Lock className="h-5 w-5 text-primary" />
+          <Label className="text-sm font-semibold">{t("school.credentials")}</Label>
         </div>
+        <div className="space-y-2">
+          <Label className="text-xs flex items-center gap-1"><User className="h-3 w-3" /> {t("login.username")}</Label>
+          <Input value={username} onChange={(e) => setUsername(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs flex items-center gap-1"><Lock className="h-3 w-3" /> {t("login.password")}</Label>
+          <Input type="text" value={password} onChange={(e) => setPassword(e.target.value)} />
+        </div>
+        <Button size="sm" onClick={saveCreds} className="w-full">{t("edit.save")}</Button>
+      </div>
 
-        <RadioGroup value={securityMethod} onValueChange={handleMethodChange} className="flex gap-4">
-          <div className="flex items-center gap-2">
-            <RadioGroupItem value="pin" id="sec-pin" />
-            <Label htmlFor="sec-pin" className="cursor-pointer">{t("security.pin")}</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <RadioGroupItem value="pattern" id="sec-pattern" />
-            <Label htmlFor="sec-pattern" className="cursor-pointer">{t("security.pattern")}</Label>
-          </div>
-        </RadioGroup>
-
-        {/* Update PIN */}
-        <div className="space-y-3">
-          <Label className="text-xs font-semibold flex items-center gap-1">
-            <Lock className="h-3.5 w-3.5" /> {t("security.updatePin")}
-          </Label>
-          <p className="text-xs text-muted-foreground">{t("security.newPin")}</p>
-          <div className="flex gap-2 items-center">
-            {newPin.map((digit, i) => (
-              <input
-                key={i}
-                ref={(el) => { pinRefs.current[i] = el; }}
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handlePinChange(i, e.target.value)}
-                onKeyDown={(e) => handlePinKeyDown(i, e)}
-                className="w-11 h-11 text-center text-lg font-bold rounded-xl border-2 bg-card text-foreground outline-none transition-all border-border focus:border-primary focus:ring-2 focus:ring-ring/20"
-              />
+      {/* Rest days picker */}
+      <div className="glass-card p-6 space-y-3">
+        <div className="flex items-center gap-2">
+          <CalIcon className="h-5 w-5 text-primary" />
+          <Label className="text-sm font-semibold">{t("school.restDays")}</Label>
+        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full justify-start text-left font-normal">
+              <CalIcon className="mr-2 h-4 w-4" />
+              {restDays.length} {t("school.restDays")}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="multiple"
+              selected={restDays}
+              onSelect={(dates) => {
+                const isoList = (dates || []).map((d) => format(d, "yyyy-MM-dd"));
+                updateSchool(getSelectedSchoolId(), { restDays: isoList });
+                refresh();
+              }}
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+        {restDays.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {restDays.slice(0, 8).map((d) => (
+              <button
+                key={d.toISOString()}
+                onClick={() => toggleRestDay(d)}
+                className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-destructive/10 hover:text-destructive transition"
+              >
+                {format(d, "dd.MM")} ✕
+              </button>
             ))}
-            <Button size="sm" onClick={savePin} disabled={newPin.join("").length < 4} className="ml-2 gap-1">
-              <Check className="h-4 w-4" /> {t("edit.save")}
-            </Button>
+            {restDays.length > 8 && <span className="text-[10px] text-muted-foreground self-center">+{restDays.length - 8}</span>}
           </div>
-        </div>
-
-        {/* Update Pattern */}
-        <div className="space-y-3">
-          <Label className="text-xs font-semibold flex items-center gap-1">
-            <Lock className="h-3.5 w-3.5" /> {t("security.updatePattern")}
-          </Label>
-          {!settingPattern ? (
-            <Button size="sm" variant="outline" onClick={() => { setSettingPattern(true); setConfirmStep(false); setTempPattern(null); }}>
-              {t("security.drawPattern")}
-            </Button>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground text-center">
-                {confirmStep ? t("security.confirmPattern") : t("security.drawPattern")}
-              </p>
-              <PatternLock onPatternComplete={handlePatternSet} />
-              <Button size="sm" variant="ghost" className="w-full" onClick={() => { setSettingPattern(false); setConfirmStep(false); setTempPattern(null); }}>
-                {t("edit.cancel")}
-              </Button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

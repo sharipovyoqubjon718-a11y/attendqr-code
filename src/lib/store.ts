@@ -1,4 +1,5 @@
 import { generateAllStudents, type StudentRecord } from './students-data';
+import { getActiveSchoolId, getSelectedSchoolId } from './schools';
 
 export type Student = StudentRecord;
 
@@ -9,11 +10,14 @@ export interface AttendanceLog {
   timestamp: string;
 }
 
-const STUDENTS_KEY = 'sams_students_v5';
-const LOGS_KEY = 'sams_logs';
-const SESSION_KEY = 'sams_session_active';
-const LAST_RESET_KEY = 'sams_last_reset';
-const PURGE_KEY = 'sams_logs_purged_v3';
+function activeId(): string {
+  return getActiveSchoolId() || getSelectedSchoolId() || 'gdbh';
+}
+const STUDENTS_KEY = () => `school_${activeId()}_students_v5`;
+const LOGS_KEY = () => `school_${activeId()}_logs`;
+const SESSION_KEY = () => `school_${activeId()}_session_active`;
+const LAST_RESET_KEY = () => `school_${activeId()}_last_reset`;
+const PURGE_KEY = () => `school_${activeId()}_logs_purged_v3`;
 
 function normalizeStudentName(name: string): string {
   return name
@@ -36,42 +40,43 @@ function normalizeStudents(students: Student[]): Student[] {
 // Daily reset check
 function checkDailyReset() {
   const today = new Date().toISOString().split('T')[0];
-  const lastReset = localStorage.getItem(LAST_RESET_KEY);
+  const lastReset = localStorage.getItem(LAST_RESET_KEY());
   if (lastReset !== today) {
-    const session = localStorage.getItem(SESSION_KEY);
+    const session = localStorage.getItem(SESSION_KEY());
     if (session) {
       try {
         const parsed = JSON.parse(session);
         if (parsed.active) {
-          localStorage.setItem(SESSION_KEY, JSON.stringify({ active: false, endedAt: new Date().toISOString() }));
+          localStorage.setItem(SESSION_KEY(), JSON.stringify({ active: false, endedAt: new Date().toISOString() }));
         }
       } catch {}
     }
-    localStorage.setItem(LAST_RESET_KEY, today);
+    localStorage.setItem(LAST_RESET_KEY(), today);
   }
 }
 
 export function getStudents(): Student[] {
   checkDailyReset();
-  const stored = localStorage.getItem(STUDENTS_KEY);
+  const stored = localStorage.getItem(STUDENTS_KEY());
 
   if (stored) {
     const students = normalizeStudents(JSON.parse(stored));
-    localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+    localStorage.setItem(STUDENTS_KEY(), JSON.stringify(students));
     return students;
   }
 
-  const students = normalizeStudents(generateAllStudents());
-  localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
-  return students;
+  // Seed the default 282 students only for the master ГДБҲ school; other schools start empty.
+  const seed = activeId() === 'gdbh' ? normalizeStudents(generateAllStudents()) : [];
+  localStorage.setItem(STUDENTS_KEY(), JSON.stringify(seed));
+  return seed;
 }
 
 export function getLogs(): AttendanceLog[] {
-  if (!localStorage.getItem(PURGE_KEY)) {
-    localStorage.removeItem(LOGS_KEY);
-    localStorage.setItem(PURGE_KEY, '1');
+  if (!localStorage.getItem(PURGE_KEY())) {
+    localStorage.removeItem(LOGS_KEY());
+    localStorage.setItem(PURGE_KEY(), '1');
   }
-  const stored = localStorage.getItem(LOGS_KEY);
+  const stored = localStorage.getItem(LOGS_KEY());
   if (stored) return JSON.parse(stored);
   return [];
 }
@@ -79,7 +84,7 @@ export function getLogs(): AttendanceLog[] {
 export function addLog(log: AttendanceLog) {
   const logs = getLogs();
   logs.unshift(log);
-  localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
+  localStorage.setItem(LOGS_KEY(), JSON.stringify(logs));
 }
 
 export function addStudent(student: Student): boolean {
@@ -87,7 +92,7 @@ export function addStudent(student: Student): boolean {
   const normalizedStudent = { ...student, name: normalizeStudentName(student.name) };
   if (students.some(s => s.id === normalizedStudent.id)) return false;
   students.push(normalizedStudent);
-  localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+  localStorage.setItem(STUDENTS_KEY(), JSON.stringify(students));
   return true;
 }
 
@@ -98,7 +103,7 @@ export function updateStudent(id: string, updates: Partial<Pick<Student, 'name' 
   if (updates.name) students[idx].name = normalizeStudentName(updates.name);
   if (updates.grade) students[idx].grade = updates.grade;
   if (updates.shift) students[idx].shift = updates.shift;
-  localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+  localStorage.setItem(STUDENTS_KEY(), JSON.stringify(students));
   return true;
 }
 
@@ -106,7 +111,7 @@ export function deleteStudent(id: string): boolean {
   const students = getStudents();
   const filtered = students.filter(s => s.id !== id);
   if (filtered.length === students.length) return false;
-  localStorage.setItem(STUDENTS_KEY, JSON.stringify(filtered));
+  localStorage.setItem(STUDENTS_KEY(), JSON.stringify(filtered));
   return true;
 }
 
@@ -214,16 +219,16 @@ export function formatTajikTime(isoString: string): string {
 
 // Session management
 export function startSession() {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ active: true, startedAt: new Date().toISOString() }));
+  localStorage.setItem(SESSION_KEY(), JSON.stringify({ active: true, startedAt: new Date().toISOString() }));
 }
 
 export function endSession() {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ active: false, endedAt: new Date().toISOString() }));
+  localStorage.setItem(SESSION_KEY(), JSON.stringify({ active: false, endedAt: new Date().toISOString() }));
 }
 
 export function isSessionActive(): boolean {
   checkDailyReset();
-  const stored = localStorage.getItem(SESSION_KEY);
+  const stored = localStorage.getItem(SESSION_KEY());
   if (!stored) return false;
   try { return JSON.parse(stored).active === true; } catch { return false; }
 }

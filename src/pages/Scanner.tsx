@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { addLog, formatTajikTime, getLogs, getStudentById, isSessionActive } from "@/lib/store";
+import { getSelectedSchool } from "@/lib/schools";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -35,11 +36,6 @@ export default function Scanner() {
     if (!isSessionActive()) {
       setResult({ status: "error", message: t("scanner.noSession") });
       toast.error(t("scanner.noSession"));
-      return;
-    }
-    if (!code.startsWith("ГДБҲ")) {
-      setResult({ status: "error", message: `${code}` });
-      toast.error("ID нодуруст");
       return;
     }
     const student = getStudentById(code);
@@ -146,12 +142,21 @@ export default function Scanner() {
     setManualId("");
   };
 
+  const todayIso = new Date().toISOString().split("T")[0];
+  const isRestToday = (getSelectedSchool().restDays || []).includes(todayIso);
+
   return (
     <div className="mx-auto max-w-2xl space-y-6 animate-fade-in">
       <div>
         <h2 className="font-display text-2xl font-bold text-foreground">{t("scanner.title")}</h2>
         <p className="text-muted-foreground">{t("scanner.subtitle")}</p>
       </div>
+
+      {isRestToday && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 p-4 text-center">
+          <p className="font-semibold text-amber-900 dark:text-amber-200">🌴 {t("school.todayRest")}</p>
+        </div>
+      )}
 
       {result && (
         <Card className={result.status === "success" ? "border-accent/30 bg-accent/10" : "border-destructive/30 bg-destructive/5"}>
