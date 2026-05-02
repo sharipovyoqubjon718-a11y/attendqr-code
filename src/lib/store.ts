@@ -40,9 +40,9 @@ function normalizeStudents(students: Student[]): Student[] {
 // Daily reset check
 function checkDailyReset() {
   const today = new Date().toISOString().split('T')[0];
-  const lastReset = localStorage.getItem(LAST_RESET_KEY);
+  const lastReset = localStorage.getItem(LAST_RESET_KEY());
   if (lastReset !== today) {
-    const session = localStorage.getItem(SESSION_KEY);
+    const session = localStorage.getItem(SESSION_KEY());
     if (session) {
       try {
         const parsed = JSON.parse(session);
@@ -57,7 +57,7 @@ function checkDailyReset() {
 
 export function getStudents(): Student[] {
   checkDailyReset();
-  const stored = localStorage.getItem(STUDENTS_KEY);
+  const stored = localStorage.getItem(STUDENTS_KEY());
 
   if (stored) {
     const students = normalizeStudents(JSON.parse(stored));
@@ -71,11 +71,11 @@ export function getStudents(): Student[] {
 }
 
 export function getLogs(): AttendanceLog[] {
-  if (!localStorage.getItem(PURGE_KEY)) {
-    localStorage.removeItem(LOGS_KEY);
+  if (!localStorage.getItem(PURGE_KEY())) {
+    localStorage.removeItem(LOGS_KEY());
     localStorage.setItem(PURGE_KEY, '1');
   }
-  const stored = localStorage.getItem(LOGS_KEY);
+  const stored = localStorage.getItem(LOGS_KEY());
   if (stored) return JSON.parse(stored);
   return [];
 }
@@ -227,7 +227,7 @@ export function endSession() {
 
 export function isSessionActive(): boolean {
   checkDailyReset();
-  const stored = localStorage.getItem(SESSION_KEY);
+  const stored = localStorage.getItem(SESSION_KEY());
   if (!stored) return false;
   try { return JSON.parse(stored).active === true; } catch { return false; }
 }
