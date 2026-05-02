@@ -1,7 +1,8 @@
-import { LayoutDashboard, Users, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useI18n } from "@/lib/i18n";
-import gdbhLogo from "@/assets/gdbh-logo.png";
+import { getSelectedSchool } from "@/lib/schools";
+import goldenEmblem from "@/assets/golden-emblem.png";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
@@ -11,11 +12,13 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const { t } = useI18n();
   const collapsed = state === "collapsed";
+  const school = getSelectedSchool();
+  const logoSrc = school.logoDataUrl || goldenEmblem;
 
   const navItems = [
     { title: t("nav.dashboard"), url: "/", icon: LayoutDashboard },
-    { title: t("nav.morning"), url: "/students", icon: Sun },
-    { title: t("nav.afternoon"), url: "/students2", icon: Moon },
+    { title: t("nav.shift1"), url: "/students", icon: Sun },
+    { title: t("nav.shift2"), url: "/students2", icon: Moon },
     { title: t("nav.addStudent"), url: "/add-student", icon: UserPlus },
     { title: t("nav.scanner"), url: "/scanner", icon: QrCode },
     { title: t("nav.logs"), url: "/logs", icon: ClipboardList },
