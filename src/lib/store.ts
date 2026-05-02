@@ -65,9 +65,10 @@ export function getStudents(): Student[] {
     return students;
   }
 
-  const students = normalizeStudents(generateAllStudents());
-  localStorage.setItem(STUDENTS_KEY(), JSON.stringify(students));
-  return students;
+  // Seed the default 282 students only for the master ГДБҲ school; other schools start empty.
+  const seed = activeId() === 'gdbh' ? normalizeStudents(generateAllStudents()) : [];
+  localStorage.setItem(STUDENTS_KEY(), JSON.stringify(seed));
+  return seed;
 }
 
 export function getLogs(): AttendanceLog[] {
