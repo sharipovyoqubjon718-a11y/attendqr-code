@@ -39,7 +39,7 @@ const translations = {
 
   // Dashboard
   "dash.title": { tj: "ГИМНАЗИЯИ ДАВЛАТИИ БОҒИ ҲАБИБ", ru: "ГОСУДАРСТВЕННАЯ ГИМНАЗИЯ БОГИ ХАБИБ", en: "BOGHI HABIB STATE GYMNASIUM" },
-  "dash.subtitle": { tj: "Панели идоракунӣ — Кӯлоб", ru: "Панель управления — Кулоб", en: "Dashboard — Kulob" },
+  "dash.subtitle": { tj: "Панели идоракунӣ — н. Муъминобод", ru: "Панель управления — н. Муъминобод", en: "Dashboard — Mu'minobod" },
   "dash.students": { tj: "хонанда", ru: "учеников", en: "students" },
   "dash.shiftStudents": { tj: "Хонандагони навбат", ru: "Учеников смены", en: "Shift Students" },
   "dash.present": { tj: "Имрӯз ҳозир", ru: "Сегодня присутствуют", en: "Present Today" },
@@ -142,7 +142,7 @@ const translations = {
   // About
   "about.title": { tj: "Маълумот", ru: "О системе", en: "About" },
   "about.project": { tj: "Лоиҳа:", ru: "Проект:", en: "Project:" },
-  "about.projectName": { tj: "Гимназияи давлатии Боғи Ҳабиб шаҳри Кӯлоб (ГДБҲ)", ru: "Государственная гимназия Боги Хабиб г. Кулоб (ГДБҲ)", en: "Boghi Habib State Gymnasium, Kulob (ГДБҲ)" },
+  "about.projectName": { tj: "Гимназияи давлатии Боғи Ҳабиб н. Муъминобод (ГДБҲ)", ru: "Государственная гимназия Боги Хабиб н. Муъминобод (ГДБҲ)", en: "Boghi Habib State Gymnasium, Mu'minobod (ГДБҲ)" },
   "about.orderedBy": { tj: "Супориш:", ru: "Заказ:", en: "Ordered by:" },
   "about.itTeacher": { tj: "Муаллими Технологияи иттилоотӣ", ru: "Учитель информационных технологий", en: "IT Teacher" },
   "about.developer": { tj: "Созанда ва таҳиягар:", ru: "Разработчик:", en: "Developer:" },
@@ -205,6 +205,34 @@ const translations = {
   "school.namePlaceholder": { tj: "Номи мактаб", ru: "Название школы", en: "School name" },
   "school.manage": { tj: "Идоракунии мактабҳо", ru: "Управление школами", en: "Manage schools" },
   "school.delete": { tj: "Пок кардан", ru: "Удалить", en: "Delete" },
+  "school.confirmDelete": { tj: "Мактабро пок мекунед?", ru: "Удалить школу?", en: "Delete this school?" },
+  "school.deleteWarning": { tj: "Ҳамаи маълумот пок мешавад. Барои тасдиқ паролро ворид кунед.", ru: "Все данные будут удалены. Введите пароль для подтверждения.", en: "All data will be erased. Enter password to confirm." },
+  "school.defaultCreds": { tj: "Логин: номи мактаб, парол: 1234", ru: "Логин: название школы, пароль: 1234", en: "Username: school name, password: 1234" },
+  "school.addedToast": { tj: "Мактаб илова шуд", ru: "Школа добавлена", en: "School added" },
+  "school.deletedToast": { tj: "Мактаб пок шуд", ru: "Школа удалена", en: "School deleted" },
+  "school.logo": { tj: "Логои мактаб", ru: "Логотип школы", en: "School logo" },
+  "school.uploadLogo": { tj: "Логои навро интихоб кунед", ru: "Загрузить логотип", en: "Upload logo" },
+  "school.credentials": { tj: "Маълумоти воридшавӣ", ru: "Данные входа", en: "Login credentials" },
+  "school.restDays": { tj: "Рӯзҳои истироҳат", ru: "Выходные дни", en: "Rest days" },
+  "school.todayRest": { tj: "Имрӯз рӯзи истироҳат аст!", ru: "Сегодня — выходной день!", en: "Today is a rest day!" },
+
+  // Login
+  "login.username": { tj: "Логин", ru: "Логин", en: "Username" },
+  "login.password": { tj: "Парол", ru: "Пароль", en: "Password" },
+  "login.signIn": { tj: "Ворид шудан", ru: "Войти", en: "Sign in" },
+  "login.invalid": { tj: "Маълумот нодуруст аст", ru: "Неверные данные", en: "Invalid credentials" },
+  "login.logout": { tj: "Баромад", ru: "Выйти", en: "Log out" },
+
+  // Hidden admin
+  "admin.hiddenTitle": { tj: "Панели пинҳонии маъмур", ru: "Скрытая админ-панель", en: "Hidden admin panel" },
+  "admin.hiddenDesc": { tj: "Идоракунии мактабҳо", ru: "Управление школами", en: "Manage schools" },
+
+  // Edit
+  "edit.close": { tj: "Пӯшидан", ru: "Закрыть", en: "Close" },
+
+  // Sidebar new
+  "nav.shift1": { tj: "Басти Субҳ", ru: "Смена Утренняя", en: "Morning Shift" },
+  "nav.shift2": { tj: "Басти Рӯз", ru: "Смена Дневная", en: "Afternoon Shift" },
 
   // Dashboard dynamic
   "dash.day": { tj: "Рӯз", ru: "День", en: "Day" },
@@ -217,8 +245,8 @@ const translations = {
   "addStudent.saturdayOn": { tj: "Шанбе — рӯзи корӣ", ru: "Суббота — рабочий", en: "Saturday — working day" },
 
   // Shift labels (translatable)
-  "shiftLabel.morning": { tj: "Субҳ (07:30 - 13:00)", ru: "Утро (07:30 - 13:00)", en: "Morning (07:30 - 13:00)" },
-  "shiftLabel.afternoon": { tj: "Рӯз (13:10 - 18:00)", ru: "День (13:10 - 18:00)", en: "Afternoon (13:10 - 18:00)" },
+  "shiftLabel.morning": { tj: "Субҳ (08:00 - 13:00)", ru: "Утро (08:00 - 13:00)", en: "Morning (08:00 - 13:00)" },
+  "shiftLabel.afternoon": { tj: "Рӯз (13:10 - 17:20)", ru: "День (13:10 - 17:20)", en: "Afternoon (13:10 - 17:20)" },
 
   // Common
   "results.showing": { tj: "натиҷа нишон дода шудааст", ru: "результатов показано", en: "results shown" },
