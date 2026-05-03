@@ -129,22 +129,46 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* School name */}
+      <div className="glass-card p-6 space-y-3">
+        <div className="flex items-center gap-2">
+          <Settings className="h-5 w-5 text-primary" />
+          <Label className="text-sm font-semibold">{t("admin.schoolName")}</Label>
+        </div>
+        <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} autoComplete="off" />
+        <Button size="sm" onClick={saveName} className="w-full">{t("edit.save")}</Button>
+      </div>
+
       {/* Credentials */}
-      <div className="glass-card p-6 space-y-4">
+      <form
+        className="glass-card p-6 space-y-4"
+        autoComplete="off"
+        onSubmit={(e) => { e.preventDefault(); saveCreds(); }}
+      >
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          className="hidden"
+          aria-hidden
+        />
         <div className="flex items-center gap-2">
           <Lock className="h-5 w-5 text-primary" />
           <Label className="text-sm font-semibold">{t("school.credentials")}</Label>
         </div>
         <div className="space-y-2">
           <Label className="text-xs flex items-center gap-1"><User className="h-3 w-3" /> {t("login.username")}</Label>
-          <Input value={username} onChange={(e) => setUsername(e.target.value)} />
+          <Input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" name="settings-id" maxLength={64} />
         </div>
         <div className="space-y-2">
           <Label className="text-xs flex items-center gap-1"><Lock className="h-3 w-3" /> {t("login.password")}</Label>
-          <Input type="text" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input type="text" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" name="settings-secret" maxLength={64} />
         </div>
-        <Button size="sm" onClick={saveCreds} className="w-full">{t("edit.save")}</Button>
-      </div>
+        <Button type="submit" size="sm" className="w-full">{t("edit.save")}</Button>
+      </form>
 
       {/* Rest days picker */}
       <div className="glass-card p-6 space-y-3">
