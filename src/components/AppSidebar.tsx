@@ -30,7 +30,7 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="no-print">
       <SidebarHeader className="p-4">
         {!collapsed ? (
           <div className="flex items-center gap-3">
