@@ -17,8 +17,10 @@ export default function SettingsPage() {
   const { t } = useI18n();
   const [school, setSchool] = useState(getSelectedSchool());
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
+  const [name, setName] = useState(school.name);
   const [username, setUsername] = useState(school.username);
   const [password, setPassword] = useState(school.password);
+  const [website, setWebsite] = useState(""); // honeypot
   const fileRef = useRef<HTMLInputElement | null>(null);
   const restDays = (school.restDays || []).map((d) => new Date(d));
 
@@ -30,7 +32,13 @@ export default function SettingsPage() {
     }
   }, []);
 
-  const refresh = () => setSchool(getSelectedSchool());
+  const refresh = () => {
+    const s = getSelectedSchool();
+    setSchool(s);
+    setName(s.name);
+    setUsername(s.username);
+    setPassword(s.password);
+  };
 
   const toggleDark = () => {
     const next = !darkMode;
@@ -42,6 +50,10 @@ export default function SettingsPage() {
   const onLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024) {
+      toast.error("Image ≤ 2MB");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       updateSchool(getSelectedSchoolId(), { logoDataUrl: String(reader.result) });
@@ -51,9 +63,18 @@ export default function SettingsPage() {
     reader.readAsDataURL(file);
   };
 
+  const saveName = () => {
+    if (website) return;
+    if (!name.trim()) return;
+    updateSchool(getSelectedSchoolId(), { name });
+    refresh();
+    toast.success(t("security.saved"));
+  };
+
   const saveCreds = () => {
+    if (website) return;
     if (!username.trim() || !password.trim()) return;
-    updateSchool(getSelectedSchoolId(), { username: username.trim(), password });
+    updateSchool(getSelectedSchoolId(), { username, password });
     refresh();
     toast.success(t("security.saved"));
   };
