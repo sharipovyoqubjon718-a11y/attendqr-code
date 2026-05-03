@@ -1,7 +1,7 @@
-import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy, Trophy } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useI18n } from "@/lib/i18n";
-import { getSelectedSchool } from "@/lib/schools";
+import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
 import goldenEmblem from "@/assets/golden-emblem.png";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -12,7 +12,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const { t } = useI18n();
   const collapsed = state === "collapsed";
-  const school = getSelectedSchool();
+  const school = getActiveSchool() || getSelectedSchool();
   const logoSrc = school.logoDataUrl || goldenEmblem;
 
   const navItems = [
@@ -23,13 +23,14 @@ export function AppSidebar() {
     { title: t("nav.scanner"), url: "/scanner", icon: QrCode },
     { title: t("nav.logs"), url: "/logs", icon: ClipboardList },
     { title: t("nav.reports"), url: "/reports", icon: BarChart3 },
+    { title: t("nav.rankings"), url: "/rankings", icon: Trophy },
     { title: t("nav.blacklist"), url: "/blacklist", icon: ShieldAlert },
     { title: t("nav.about"), url: "/about", icon: Info },
     { title: t("settings.title"), url: "/settings", icon: Settings },
   ];
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="no-print">
       <SidebarHeader className="p-4">
         {!collapsed ? (
           <div className="flex items-center gap-3">

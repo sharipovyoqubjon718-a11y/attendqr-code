@@ -117,20 +117,43 @@ export function EditDeleteActions({ student, onChanged }: Props) {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("delete.confirm")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("delete.no")}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
-              {t("delete.yes")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <SilentConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={handleDelete}
+      />
     </>
+  );
+}
+
+function SilentConfirmDialog({
+  open, onOpenChange, onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onConfirm: () => void;
+}) {
+  const [val, setVal] = useState("");
+  const ok = val === "CONFIRM";
+  return (
+    <AlertDialog open={open} onOpenChange={(v) => { if (!v) setVal(""); onOpenChange(v); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="sr-only">confirm</AlertDialogTitle>
+          <AlertDialogDescription className="sr-only">confirm</AlertDialogDescription>
+        </AlertDialogHeader>
+        <Input value={val} onChange={(e) => setVal(e.target.value)} autoComplete="off" autoFocus />
+        <AlertDialogFooter>
+          <AlertDialogCancel>·</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => { setVal(""); onConfirm(); }}
+            disabled={!ok}
+            className="bg-destructive hover:bg-destructive/90"
+          >
+            ✓
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

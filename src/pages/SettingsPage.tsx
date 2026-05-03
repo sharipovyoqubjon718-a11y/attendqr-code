@@ -17,8 +17,10 @@ export default function SettingsPage() {
   const { t } = useI18n();
   const [school, setSchool] = useState(getSelectedSchool());
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
+  const [name, setName] = useState(school.name);
   const [username, setUsername] = useState(school.username);
   const [password, setPassword] = useState(school.password);
+  const [website, setWebsite] = useState(""); // honeypot
   const fileRef = useRef<HTMLInputElement | null>(null);
   const restDays = (school.restDays || []).map((d) => new Date(d));
 
@@ -30,7 +32,13 @@ export default function SettingsPage() {
     }
   }, []);
 
-  const refresh = () => setSchool(getSelectedSchool());
+  const refresh = () => {
+    const s = getSelectedSchool();
+    setSchool(s);
+    setName(s.name);
+    setUsername(s.username);
+    setPassword(s.password);
+  };
 
   const toggleDark = () => {
     const next = !darkMode;
@@ -42,6 +50,10 @@ export default function SettingsPage() {
   const onLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024) {
+      toast.error("Image ≤ 2MB");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       updateSchool(getSelectedSchoolId(), { logoDataUrl: String(reader.result) });
@@ -51,9 +63,18 @@ export default function SettingsPage() {
     reader.readAsDataURL(file);
   };
 
+  const saveName = () => {
+    if (website) return;
+    if (!name.trim()) return;
+    updateSchool(getSelectedSchoolId(), { name });
+    refresh();
+    toast.success(t("security.saved"));
+  };
+
   const saveCreds = () => {
+    if (website) return;
     if (!username.trim() || !password.trim()) return;
-    updateSchool(getSelectedSchoolId(), { username: username.trim(), password });
+    updateSchool(getSelectedSchoolId(), { username, password });
     refresh();
     toast.success(t("security.saved"));
   };
@@ -108,22 +129,46 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* School name */}
+      <div className="glass-card p-6 space-y-3">
+        <div className="flex items-center gap-2">
+          <Settings className="h-5 w-5 text-primary" />
+          <Label className="text-sm font-semibold">{t("admin.schoolName")}</Label>
+        </div>
+        <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} autoComplete="off" />
+        <Button size="sm" onClick={saveName} className="w-full">{t("edit.save")}</Button>
+      </div>
+
       {/* Credentials */}
-      <div className="glass-card p-6 space-y-4">
+      <form
+        className="glass-card p-6 space-y-4"
+        autoComplete="off"
+        onSubmit={(e) => { e.preventDefault(); saveCreds(); }}
+      >
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          className="hidden"
+          aria-hidden
+        />
         <div className="flex items-center gap-2">
           <Lock className="h-5 w-5 text-primary" />
           <Label className="text-sm font-semibold">{t("school.credentials")}</Label>
         </div>
         <div className="space-y-2">
           <Label className="text-xs flex items-center gap-1"><User className="h-3 w-3" /> {t("login.username")}</Label>
-          <Input value={username} onChange={(e) => setUsername(e.target.value)} />
+          <Input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" name="settings-id" maxLength={64} />
         </div>
         <div className="space-y-2">
           <Label className="text-xs flex items-center gap-1"><Lock className="h-3 w-3" /> {t("login.password")}</Label>
-          <Input type="text" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input type="text" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" name="settings-secret" maxLength={64} />
         </div>
-        <Button size="sm" onClick={saveCreds} className="w-full">{t("edit.save")}</Button>
-      </div>
+        <Button type="submit" size="sm" className="w-full">{t("edit.save")}</Button>
+      </form>
 
       {/* Rest days picker */}
       <div className="glass-card p-6 space-y-3">
