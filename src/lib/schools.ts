@@ -1,20 +1,22 @@
 // Multi-school management with per-school credentials & settings (localStorage)
+import { sanitizeText, sanitizeUsername, sanitizePrefix } from "./security";
 
 export interface School {
-  id: string;
-  name: string;
+  id: string;          // internal storage partition key
+  prefix: string;      // student ID prefix (e.g. "ГДБҲ")
+  name: string;        // "Номи муассиса"
   username: string;
   password: string;
   logoDataUrl?: string;
   restDays?: string[]; // ISO date strings YYYY-MM-DD
 }
 
-const SCHOOLS_KEY = "sams_schools_v2";
+const SCHOOLS_KEY = "sams_schools_v3";
 const SELECTED_KEY = "sams_selected_school";
-const SESSION_KEY = "sams_active_session"; // current logged-in school id
+const SESSION_KEY = "sams_active_session";
 
 const DEFAULT_SCHOOLS: School[] = [
-  { id: "gdbh", name: "ГДБҲ — н. Муъминобод", username: "GDBH", password: "2004" },
+  { id: "gdbh", prefix: "ГДБҲ", name: "ГДБҲ — н. Муъминобод", username: "GDBH", password: "2004" },
 ];
 
 export const MASTER_USERNAME = "GDBH";
@@ -25,15 +27,18 @@ export function getSchools(): School[] {
   try {
     const raw = localStorage.getItem(SCHOOLS_KEY);
     if (!raw) {
-      // Migrate from v1 if present
-      const v1 = localStorage.getItem("sams_schools");
-      if (v1) {
-        const parsed = JSON.parse(v1) as Array<{ id: string; name: string }>;
+      // Migrate from v2
+      const v2 = localStorage.getItem("sams_schools_v2");
+      if (v2) {
+        const parsed = JSON.parse(v2) as Array<Partial<School> & { id: string; name: string }>;
         const migrated: School[] = parsed.map((p) => ({
           id: p.id,
-          name: p.id === "gdbh" ? "ГДБҲ — н. Муъминобод" : p.name,
-          username: p.id === "gdbh" ? "GDBH" : p.name,
-          password: p.id === "gdbh" ? "2004" : "1234",
+          prefix: p.id === "gdbh" ? "ГДБҲ" : sanitizePrefix(p.name) || "SCH",
+          name: p.name,
+          username: p.username || (p.id === "gdbh" ? "GDBH" : sanitizeUsername(p.name)),
+          password: p.password || (p.id === "gdbh" ? "2004" : "1234"),
+          logoDataUrl: p.logoDataUrl,
+          restDays: p.restDays,
         }));
         localStorage.setItem(SCHOOLS_KEY, JSON.stringify(migrated));
         return migrated;
@@ -52,33 +57,55 @@ export function saveSchools(schools: School[]) {
   localStorage.setItem(SCHOOLS_KEY, JSON.stringify(schools));
 }
 
-export function addSchool(name: string): School {
+export interface NewSchoolInput {
+  name: string;
+  prefix: string;
+  username: string;
+  password: string;
+}
+
+export function addSchool(input: NewSchoolInput): { school?: School; error?: string } {
+  const name = sanitizeText(input.name, 120);
+  const prefix = sanitizePrefix(input.prefix);
+  const username = sanitizeUsername(input.username);
+  const password = sanitizeText(input.password, 64);
+  if (!name || !prefix || !username || !password) return { error: "missing" };
   const schools = getSchools();
-  const trimmed = name.trim();
+  if (schools.some((s) => s.prefix.toUpperCase() === prefix.toUpperCase())) {
+    return { error: "prefix-exists" };
+  }
+  if (schools.some((s) => s.username.toLowerCase() === username.toLowerCase())) {
+    return { error: "username-exists" };
+  }
   const school: School = {
     id: `s_${Date.now().toString(36)}`,
-    name: trimmed,
-    username: trimmed,
-    password: "1234",
+    name, prefix, username, password,
   };
   schools.push(school);
   saveSchools(schools);
-  return school;
+  return { school };
 }
 
 export function updateSchool(id: string, patch: Partial<School>) {
-  const schools = getSchools().map((s) => (s.id === id ? { ...s, ...patch } : s));
+  const schools = getSchools().map((s) => {
+    if (s.id !== id) return s;
+    const next = { ...s, ...patch };
+    if (patch.name !== undefined) next.name = sanitizeText(patch.name, 120) || s.name;
+    if (patch.username !== undefined) next.username = sanitizeUsername(patch.username) || s.username;
+    if (patch.password !== undefined) next.password = sanitizeText(patch.password, 64) || s.password;
+    if (patch.prefix !== undefined && s.id !== "gdbh") next.prefix = sanitizePrefix(patch.prefix) || s.prefix;
+    return next;
+  });
   saveSchools(schools);
 }
 
 export function deleteSchool(id: string) {
-  if (id === "gdbh") return; // protect master school
+  if (id === "gdbh") return;
   const schools = getSchools().filter((s) => s.id !== id);
   saveSchools(schools.length ? schools : DEFAULT_SCHOOLS);
   if (getSelectedSchoolId() === id) {
     setSelectedSchoolId((schools[0] ?? DEFAULT_SCHOOLS[0]).id);
   }
-  // Clear scoped data
   Object.keys(localStorage)
     .filter((k) => k.startsWith(`school_${id}_`))
     .forEach((k) => localStorage.removeItem(k));
@@ -97,7 +124,6 @@ export function getSelectedSchool(): School {
   return getSchools().find((s) => s.id === id) ?? getSchools()[0];
 }
 
-// Session (active login)
 export function getActiveSchoolId(): string | null {
   return localStorage.getItem(SESSION_KEY);
 }
@@ -106,22 +132,28 @@ export function setActiveSchoolId(id: string | null) {
   else localStorage.removeItem(SESSION_KEY);
 }
 
+export function getActiveSchool(): School | null {
+  const id = getActiveSchoolId();
+  if (!id) return null;
+  return getSchools().find((s) => s.id === id) ?? null;
+}
+
 export function tryLogin(schoolId: string, username: string, password: string): boolean {
-  // Master credentials: log in as ГДБҲ (or selected school)
-  if (username === MASTER_USERNAME && password === MASTER_PASSWORD) {
+  const u = sanitizeUsername(username);
+  const p = sanitizeText(password, 64);
+  if (u === MASTER_USERNAME && p === MASTER_PASSWORD) {
     setActiveSchoolId(schoolId || "gdbh");
     return true;
   }
   const school = getSchools().find((s) => s.id === schoolId);
   if (!school) return false;
-  if (school.username === username && school.password === password) {
+  if (school.username === u && school.password === p) {
     setActiveSchoolId(schoolId);
     return true;
   }
   return false;
 }
 
-// Scoped storage helper (used by store.ts)
 export function scopedKey(base: string): string {
   const id = getActiveSchoolId() || getSelectedSchoolId();
   return `school_${id}_${base}`;
