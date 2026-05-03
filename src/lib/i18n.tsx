@@ -251,6 +251,24 @@ const translations = {
   // Common
   "results.showing": { tj: "натиҷа нишон дода шудааст", ru: "результатов показано", en: "results shown" },
   "common.of": { tj: "аз", ru: "из", en: "of" },
+
+  // Admin form
+  "admin.schoolName": { tj: "Номи муассиса", ru: "Название учреждения", en: "School name" },
+  "admin.schoolPrefix": { tj: "ID-и мактаб (префикс)", ru: "ID школы (префикс)", en: "School ID (prefix)" },
+  "admin.fillAll": { tj: "Лутфан ҳамаи майдонҳоро пур кунед", ru: "Заполните все поля", en: "Please fill all fields" },
+  "admin.prefixExists": { tj: "Чунин префикс аллакай вуҷуд дорад", ru: "Такой префикс уже существует", en: "Prefix already exists" },
+  "admin.usernameExists": { tj: "Чунин логин аллакай вуҷуд дорад", ru: "Такой логин уже существует", en: "Username already exists" },
+
+  // Login extras
+  "login.tooMany": { tj: "Кӯшишҳои зиёд. Лутфан баъд аз", ru: "Слишком много попыток. Повторите через", en: "Too many attempts. Retry in" },
+
+  // Rankings
+  "nav.rankings": { tj: "Рейтинги синфҳо", ru: "Рейтинг классов", en: "Class Rankings" },
+  "rankings.title": { tj: "Рейтинги синфҳо", ru: "Рейтинг классов", en: "Class Rankings" },
+  "rankings.subtitle": { tj: "Дар асоси сатҳи давомот дар вақти воқеӣ", ru: "В реальном времени по уровню посещаемости", en: "Real-time by attendance rate" },
+  "rankings.empty": { tj: "Маълумот нест", ru: "Нет данных", en: "No data" },
+  "rankings.rate": { tj: "Сатҳ", ru: "Уровень", en: "Rate" },
+  "rankings.class": { tj: "Синф", ru: "Класс", en: "Class" },
 } as const;
 
 type TranslationKey = keyof typeof translations;
