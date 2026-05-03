@@ -1,23 +1,24 @@
 import { useState, useEffect, useRef } from "react";
-import { LifeBuoy, Lock, User } from "lucide-react";
+import { LifeBuoy, Lock, User, ShieldAlert } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useI18n } from "@/lib/i18n";
 import {
   getSchools, getSelectedSchoolId, setSelectedSchoolId,
-  tryLogin, type School, HIDDEN_ADMIN_PASSWORD,
+  tryLogin, type School,
 } from "@/lib/schools";
 import goldenEmblem from "@/assets/golden-emblem.png";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import HiddenAdminPanel from "@/components/HiddenAdminPanel";
+import { checkLoginRate, recordLoginAttempt, clearLoginAttempts } from "@/lib/security";
 
 interface LoginScreenProps {
   onUnlock: () => void;
@@ -31,8 +32,9 @@ export default function LoginScreen({ onUnlock }: LoginScreenProps) {
   const [showAdmin, setShowAdmin] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot
+  const [retryIn, setRetryIn] = useState(0);
 
-  // Hidden admin: 5 rapid clicks on emblem
   const clickCountRef = useRef(0);
   const clickTimerRef = useRef<number | null>(null);
 
@@ -41,9 +43,7 @@ export default function LoginScreen({ onUnlock }: LoginScreenProps) {
   const handleEmblemClick = () => {
     clickCountRef.current += 1;
     if (clickTimerRef.current) window.clearTimeout(clickTimerRef.current);
-    clickTimerRef.current = window.setTimeout(() => {
-      clickCountRef.current = 0;
-    }, 1500);
+    clickTimerRef.current = window.setTimeout(() => { clickCountRef.current = 0; }, 1500);
     if (clickCountRef.current >= 5) {
       clickCountRef.current = 0;
       setShowAdmin(true);
@@ -53,22 +53,47 @@ export default function LoginScreen({ onUnlock }: LoginScreenProps) {
   const handleSchoolSelect = (id: string) => {
     setSelectedSchoolId(id);
     setSelected(id);
-    const s = getSchools().find((x) => x.id === id);
-    if (s) {
-      setUsername(s.username);
-      setPassword("");
-      setShowLogin(true);
-    }
+    setUsername("");
+    setPassword("");
+    setWebsite("");
+    setShowLogin(true);
   };
+
+  // Always clear sensitive fields when modal closes/opens
+  useEffect(() => {
+    setPassword("");
+    setWebsite("");
+  }, [showLogin]);
+
+  // Live retry countdown
+  useEffect(() => {
+    if (retryIn <= 0) return;
+    const id = window.setInterval(() => {
+      setRetryIn((s) => Math.max(0, s - 1));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [retryIn]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const ok = tryLogin(selected, username.trim(), password);
+    if (website) { setShowLogin(false); return; } // bot — drop silently
+    const rate = checkLoginRate();
+    if (!rate.allowed) {
+      setRetryIn(rate.retryInSec);
+      toast.error(`${t("login.tooMany")} ${rate.retryInSec}s`);
+      return;
+    }
+    recordLoginAttempt();
+    const ok = tryLogin(selected, username, password);
     if (ok) {
-      toast.success("✅");
+      clearLoginAttempts();
+      setPassword("");
       setShowLogin(false);
       onUnlock();
     } else {
+      setPassword("");
+      const after = checkLoginRate();
+      if (!after.allowed) setRetryIn(after.retryInSec);
       toast.error(t("login.invalid"));
     }
   };
@@ -94,7 +119,7 @@ export default function LoginScreen({ onUnlock }: LoginScreenProps) {
         >
           <img
             src={goldenEmblem}
-            alt="ГДБҲ Emblem"
+            alt="Emblem"
             className="h-32 w-32 object-contain drop-shadow-lg mx-auto select-none"
             draggable={false}
           />
@@ -129,32 +154,66 @@ export default function LoginScreen({ onUnlock }: LoginScreenProps) {
         </p>
       </div>
 
-      {/* Login dialog */}
       <Dialog open={showLogin} onOpenChange={setShowLogin}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-base">
               {schools.find((s) => s.id === selected)?.name}
             </DialogTitle>
+            <DialogDescription className="sr-only">login</DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleLogin} className="space-y-3">
+          <form onSubmit={handleLogin} className="space-y-3" autoComplete="off">
+            {/* honeypot */}
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              className="hidden"
+              aria-hidden
+            />
             <div className="space-y-1.5">
-              <Label className="text-xs flex items-center gap-1"><User className="h-3 w-3" /> {t("login.username")}</Label>
-              <Input value={username} onChange={(e) => setUsername(e.target.value)} autoFocus />
+              <Label className="text-xs flex items-center gap-1">
+                <User className="h-3 w-3" /> {t("login.username")}
+              </Label>
+              <Input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoFocus
+                autoComplete="off"
+                name="login-id"
+                maxLength={64}
+              />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs flex items-center gap-1"><Lock className="h-3 w-3" /> {t("login.password")}</Label>
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Label className="text-xs flex items-center gap-1">
+                <Lock className="h-3 w-3" /> {t("login.password")}
+              </Label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                name="login-secret"
+                maxLength={64}
+              />
             </div>
+            {retryIn > 0 && (
+              <div className="flex items-center gap-2 text-xs text-destructive">
+                <ShieldAlert className="h-3.5 w-3.5" />
+                {t("login.tooMany")} {retryIn}s
+              </div>
+            )}
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setShowLogin(false)}>{t("edit.cancel")}</Button>
-              <Button type="submit">{t("login.signIn")}</Button>
+              <Button type="submit" disabled={retryIn > 0}>{t("login.signIn")}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Hidden admin panel */}
       <HiddenAdminPanel
         open={showAdmin}
         onClose={() => setShowAdmin(false)}
