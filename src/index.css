@@ -126,3 +126,27 @@
 .animate-shake {
   animation: shake 0.5s ease-in-out;
 }
+
+/* Print styles: hide all interactive UI; only print-area content remains */
+@media print {
+  .no-print,
+  [data-sidebar],
+  header,
+  footer,
+  nav,
+  button,
+  [role="dialog"],
+  .lucide-pencil,
+  .lucide-trash-2 {
+    display: none !important;
+  }
+  .print-area {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  body, html {
+    background: white !important;
+    color: black !important;
+  }
+}
