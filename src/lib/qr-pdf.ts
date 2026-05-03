@@ -1,6 +1,7 @@
-// Professional A4 QR PDF generator (4 cards per row)
+// Professional A4 QR PDF generator (4 cards per row), Cyrillic-safe
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
+import { registerCyrillicFont } from "./pdf-fonts";
 
 interface QrStudent {
   id: string;
@@ -36,6 +37,8 @@ async function loadImageAsDataUrl(src: string): Promise<string> {
 
 export async function generateQrPdf({ students, schoolName, logoSrc }: Options) {
   const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+  let fontName = "helvetica";
+  try { fontName = await registerCyrillicFont(pdf); } catch (e) { console.warn("font fallback", e); }
 
   // A4 = 210 x 297 mm
   const pageW = 210;
@@ -90,13 +93,13 @@ export async function generateQrPdf({ students, schoolName, logoSrc }: Options) 
 
     // Bottom: name + class
     const textY = qrY + qrSize + 2.5;
-    pdf.setFont("helvetica", "bold");
+    pdf.setFont(fontName, "bold");
     pdf.setFontSize(7);
     pdf.setTextColor(20);
     const name = s.name.length > 28 ? s.name.slice(0, 27) + "…" : s.name;
     pdf.text(name, x + cardW / 2, textY, { align: "center", maxWidth: cardW - 2 });
 
-    pdf.setFont("helvetica", "normal");
+    pdf.setFont(fontName, "normal");
     pdf.setFontSize(6);
     pdf.setTextColor(100);
     pdf.text(`${s.id} • ${s.grade}`, x + cardW / 2, textY + 3, { align: "center" });
@@ -106,7 +109,7 @@ export async function generateQrPdf({ students, schoolName, logoSrc }: Options) 
   const pageCount = pdf.getNumberOfPages();
   for (let p = 1; p <= pageCount; p++) {
     pdf.setPage(p);
-    pdf.setFont("helvetica", "bold");
+    pdf.setFont(fontName, "bold");
     pdf.setFontSize(8);
     pdf.setTextColor(120);
     pdf.text(schoolName, pageW / 2, 6, { align: "center" });
