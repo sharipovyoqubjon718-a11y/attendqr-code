@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Trophy, Medal, Award } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { getStudents, getTodayStats, getLogs } from "@/lib/store";
@@ -32,7 +32,13 @@ function buildRanking(): Row[] {
       present: v.present,
       rate: v.total ? Math.round((v.present / v.total) * 100) : 0,
     }))
-    .sort((a, b) => b.rate - a.rate || b.total - a.total);
+    .sort((a, b) => {
+      if (b.rate !== a.rate) return b.rate - a.rate;
+      const na = parseInt(a.grade, 10);
+      const nb = parseInt(b.grade, 10);
+      if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
+      return a.grade.localeCompare(b.grade);
+    });
 }
 
 const PODIUM_ICON = [Trophy, Medal, Award];
@@ -40,8 +46,18 @@ const PODIUM_TONE = ["text-yellow-500", "text-slate-400", "text-amber-700"];
 
 export default function Rankings() {
   const { t } = useI18n();
-  const rows = useMemo(() => buildRanking(), []);
-  // ensure today stats touched (keeps reset trigger consistent)
+  const [rows, setRows] = useState(() => buildRanking());
+  useEffect(() => {
+    const tick = () => setRows(buildRanking());
+    const id = window.setInterval(tick, 3000);
+    window.addEventListener("storage", tick);
+    window.addEventListener("focus", tick);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("storage", tick);
+      window.removeEventListener("focus", tick);
+    };
+  }, []);
   getTodayStats();
 
   return (

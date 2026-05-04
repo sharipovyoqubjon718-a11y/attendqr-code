@@ -1,17 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { Settings, Sun, Moon, Lock, Calendar as CalIcon, Image as ImageIcon, User } from "lucide-react";
+import { Settings, Sun, Moon, Lock, Calendar as CalIcon, Image as ImageIcon, User, ShieldCheck, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useI18n } from "@/lib/i18n";
-import { getSelectedSchool, updateSchool, getSelectedSchoolId } from "@/lib/schools";
+import {
+  getSelectedSchool, updateSchool, getSelectedSchoolId,
+  defaultShiftForGrade, getShiftForGrade,
+} from "@/lib/schools";
+import { getStudents } from "@/lib/store";
 import goldenEmblem from "@/assets/golden-emblem.png";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import HiddenAdminPanel from "@/components/HiddenAdminPanel";
 
 export default function SettingsPage() {
   const { t } = useI18n();
@@ -20,7 +26,8 @@ export default function SettingsPage() {
   const [name, setName] = useState(school.name);
   const [username, setUsername] = useState(school.username);
   const [password, setPassword] = useState(school.password);
-  const [website, setWebsite] = useState(""); // honeypot
+  const [website, setWebsite] = useState("");
+  const [showAdmin, setShowAdmin] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const restDays = (school.restDays || []).map((d) => new Date(d));
 
@@ -64,33 +71,37 @@ export default function SettingsPage() {
   };
 
   const saveName = () => {
-    if (website) return;
-    if (!name.trim()) return;
+    if (website || !name.trim()) return;
     updateSchool(getSelectedSchoolId(), { name });
     refresh();
     toast.success(t("security.saved"));
   };
 
   const saveCreds = () => {
-    if (website) return;
-    if (!username.trim() || !password.trim()) return;
+    if (website || !username.trim() || !password.trim()) return;
     updateSchool(getSelectedSchoolId(), { username, password });
     refresh();
     toast.success(t("security.saved"));
   };
 
-  const toggleRestDay = (date: Date | undefined) => {
-    if (!date) return;
-    const iso = format(date, "yyyy-MM-dd");
-    const current = school.restDays || [];
-    const next = current.includes(iso) ? current.filter((d) => d !== iso) : [...current, iso];
-    updateSchool(getSelectedSchoolId(), { restDays: next });
+  // Build distinct grades present in school's roster
+  const grades = Array.from(new Set(getStudents().map((s) => s.grade).filter(Boolean)))
+    .sort((a, b) => {
+      const na = parseInt(a, 10), nb = parseInt(b, 10);
+      if (na !== nb) return na - nb;
+      return a.localeCompare(b);
+    });
+
+  const setGradeShift = (grade: string, toMorning: boolean) => {
+    const overrides = { ...(school.shiftOverrides || {}) };
+    overrides[grade] = toMorning ? "morning" : "afternoon";
+    updateSchool(getSelectedSchoolId(), { shiftOverrides: overrides });
     refresh();
   };
 
   return (
     <div className="max-w-md mx-auto space-y-6 animate-fade-in">
-      {/* School logo at top */}
+      {/* School logo */}
       <div className="glass-card p-6 flex flex-col items-center gap-3">
         <img
           src={school.logoDataUrl || goldenEmblem}
@@ -102,6 +113,7 @@ export default function SettingsPage() {
         <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="gap-2">
           <ImageIcon className="h-4 w-4" /> {t("school.uploadLogo")}
         </Button>
+        <p className="text-[10px] text-muted-foreground text-center">{t("school.logoQrHint")}</p>
       </div>
 
       <div className="flex items-center gap-3">
@@ -122,7 +134,6 @@ export default function SettingsPage() {
             </Button>
           </div>
         </div>
-
         <div className="space-y-2">
           <Label className="text-sm font-semibold">{t("settings.language")}</Label>
           <LanguageSwitcher />
@@ -139,22 +150,15 @@ export default function SettingsPage() {
         <Button size="sm" onClick={saveName} className="w-full">{t("edit.save")}</Button>
       </div>
 
-      {/* Credentials */}
+      {/* Credentials (Login) */}
       <form
         className="glass-card p-6 space-y-4"
         autoComplete="off"
         onSubmit={(e) => { e.preventDefault(); saveCreds(); }}
       >
-        <input
-          type="text"
-          name="website"
-          tabIndex={-1}
-          autoComplete="off"
-          value={website}
-          onChange={(e) => setWebsite(e.target.value)}
-          className="hidden"
-          aria-hidden
-        />
+        <input type="text" name="website" tabIndex={-1} autoComplete="off"
+          value={website} onChange={(e) => setWebsite(e.target.value)}
+          className="hidden" aria-hidden />
         <div className="flex items-center gap-2">
           <Lock className="h-5 w-5 text-primary" />
           <Label className="text-sm font-semibold">{t("school.credentials")}</Label>
@@ -170,7 +174,55 @@ export default function SettingsPage() {
         <Button type="submit" size="sm" className="w-full">{t("edit.save")}</Button>
       </form>
 
-      {/* Rest days picker */}
+      {/* Admin Panel — between Login and Holidays */}
+      <div className="glass-card p-6 space-y-3">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 text-primary" />
+          <Label className="text-sm font-semibold">{t("admin.hiddenTitle")}</Label>
+        </div>
+        <p className="text-xs text-muted-foreground">{t("admin.hiddenDesc")}</p>
+        <Button size="sm" className="w-full" onClick={() => setShowAdmin(true)}>
+          {t("admin.open")}
+        </Button>
+      </div>
+
+      {/* Shift Management */}
+      <div className="glass-card p-6 space-y-3">
+        <div className="flex items-center gap-2">
+          <Clock className="h-5 w-5 text-primary" />
+          <Label className="text-sm font-semibold">{t("shift.management")}</Label>
+        </div>
+        <div className="text-[11px] text-muted-foreground space-y-0.5">
+          <p>{t("shift.shift1Desc")}</p>
+          <p>{t("shift.shift2Desc")}</p>
+        </div>
+        {grades.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-2">—</p>
+        ) : (
+          <div className="space-y-1">
+            {grades.map((g) => {
+              const current = getShiftForGrade(school, g);
+              const isMorning = current === "morning";
+              const isDefault = current === defaultShiftForGrade(g);
+              return (
+                <div key={g} className="flex items-center justify-between gap-2 px-2 py-1.5 rounded border">
+                  <div className="text-sm">
+                    {t("rankings.class")} {g}
+                    {!isDefault && <span className="ml-1 text-[9px] text-primary">●</span>}
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px]">
+                    <span className={cn(!isMorning && "text-muted-foreground")}>{t("shift.morning")}</span>
+                    <Switch checked={!isMorning} onCheckedChange={(v) => setGradeShift(g, !v)} />
+                    <span className={cn(isMorning && "text-muted-foreground")}>{t("shift.afternoon")}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Rest days picker (Holidays) */}
       <div className="glass-card p-6 space-y-3">
         <div className="flex items-center gap-2">
           <CalIcon className="h-5 w-5 text-primary" />
@@ -196,21 +248,13 @@ export default function SettingsPage() {
             />
           </PopoverContent>
         </Popover>
-        {restDays.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {restDays.slice(0, 8).map((d) => (
-              <button
-                key={d.toISOString()}
-                onClick={() => toggleRestDay(d)}
-                className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-destructive/10 hover:text-destructive transition"
-              >
-                {format(d, "dd.MM")} ✕
-              </button>
-            ))}
-            {restDays.length > 8 && <span className="text-[10px] text-muted-foreground self-center">+{restDays.length - 8}</span>}
-          </div>
-        )}
       </div>
+
+      <HiddenAdminPanel
+        open={showAdmin}
+        onClose={() => setShowAdmin(false)}
+        onSchoolsChanged={refresh}
+      />
     </div>
   );
 }

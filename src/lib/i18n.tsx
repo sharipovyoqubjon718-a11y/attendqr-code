@@ -269,6 +269,13 @@ const translations = {
   "rankings.empty": { tj: "Маълумот нест", ru: "Нет данных", en: "No data" },
   "rankings.rate": { tj: "Сатҳ", ru: "Уровень", en: "Rate" },
   "rankings.class": { tj: "Синф", ru: "Класс", en: "Class" },
+
+  // Admin / Shift extras
+  "admin.open": { tj: "Кушодани панели маъмур", ru: "Открыть админ-панель", en: "Open admin panel" },
+  "school.logoQrHint": { tj: "Ин лого дар маркази QR код намоиш дода мешавад", ru: "Этот логотип отображается в центре QR-кода", en: "This logo appears at the center of QR codes" },
+  "shift.management": { tj: "Идоракунии басти дарсӣ", ru: "Управление сменами", en: "Shift management" },
+  "shift.shift1Desc": { tj: "Басти 1 (08:00 - 13:00): синфҳои 1, 7, 8, 9, 10", ru: "Смена 1 (08:00 - 13:00): классы 1, 7, 8, 9, 10", en: "Shift 1 (08:00 - 13:00): grades 1, 7, 8, 9, 10" },
+  "shift.shift2Desc": { tj: "Басти 2 (13:00+): синфҳои 2, 3, 4, 5, 6", ru: "Смена 2 (13:00+): классы 2, 3, 4, 5, 6", en: "Shift 2 (13:00+): grades 2, 3, 4, 5, 6" },
 } as const;
 
 type TranslationKey = keyof typeof translations;
