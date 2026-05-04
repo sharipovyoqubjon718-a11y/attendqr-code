@@ -132,11 +132,18 @@ export default function LoginScreen({ onUnlock }: LoginScreenProps) {
               <SelectValue placeholder={t("school.select")} />
             </SelectTrigger>
             <SelectContent>
-              {schools.map((s) => (
+              {schools.filter((s) => s.active !== false).map((s) => (
                 <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <Button
+            type="button" variant="outline" size="sm"
+            className="w-full gap-2 mt-2"
+            onClick={() => setShowAdmin(true)}
+          >
+            <Plus className="h-4 w-4" /> {t("school.add")}
+          </Button>
         </div>
 
         <a
