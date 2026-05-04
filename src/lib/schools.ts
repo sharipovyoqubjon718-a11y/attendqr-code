@@ -9,6 +9,21 @@ export interface School {
   password: string;
   logoDataUrl?: string;
   restDays?: string[]; // ISO date strings YYYY-MM-DD
+  active?: boolean;    // inactive schools cannot be selected on login screen
+  shiftOverrides?: Record<string, 'morning' | 'afternoon'>; // grade -> shift
+}
+
+// Default shift rule based on leading class number
+// Shift 1 (Morning, 8:00 - 13:00): classes 1, 7, 8, 9, 10
+// Shift 2 (Afternoon, 13:00+):     classes 2, 3, 4, 5, 6
+const SHIFT1_GRADES = new Set([1, 7, 8, 9, 10]);
+export function defaultShiftForGrade(grade: string): 'morning' | 'afternoon' {
+  const n = parseInt(String(grade).match(/^\d+/)?.[0] ?? '', 10);
+  if (Number.isFinite(n) && SHIFT1_GRADES.has(n)) return 'morning';
+  return 'afternoon';
+}
+export function getShiftForGrade(school: School, grade: string): 'morning' | 'afternoon' {
+  return school.shiftOverrides?.[grade] ?? defaultShiftForGrade(grade);
 }
 
 const SCHOOLS_KEY = "sams_schools_v3";
