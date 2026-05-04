@@ -32,7 +32,13 @@ function buildRanking(): Row[] {
       present: v.present,
       rate: v.total ? Math.round((v.present / v.total) * 100) : 0,
     }))
-    .sort((a, b) => b.rate - a.rate || b.total - a.total);
+    .sort((a, b) => {
+      if (b.rate !== a.rate) return b.rate - a.rate;
+      const na = parseInt(a.grade, 10);
+      const nb = parseInt(b.grade, 10);
+      if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
+      return a.grade.localeCompare(b.grade);
+    });
 }
 
 const PODIUM_ICON = [Trophy, Medal, Award];
