@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { LifeBuoy, Lock, User, ShieldAlert } from "lucide-react";
+import { LifeBuoy, Lock, User, ShieldAlert, Plus } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useI18n } from "@/lib/i18n";
 import {
