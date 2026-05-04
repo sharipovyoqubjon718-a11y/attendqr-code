@@ -46,8 +46,18 @@ const PODIUM_TONE = ["text-yellow-500", "text-slate-400", "text-amber-700"];
 
 export default function Rankings() {
   const { t } = useI18n();
-  const rows = useMemo(() => buildRanking(), []);
-  // ensure today stats touched (keeps reset trigger consistent)
+  const [rows, setRows] = useState(() => buildRanking());
+  useEffect(() => {
+    const tick = () => setRows(buildRanking());
+    const id = window.setInterval(tick, 3000);
+    window.addEventListener("storage", tick);
+    window.addEventListener("focus", tick);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("storage", tick);
+      window.removeEventListener("focus", tick);
+    };
+  }, []);
   getTodayStats();
 
   return (
