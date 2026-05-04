@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Trophy, Medal, Award } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { getStudents, getTodayStats, getLogs } from "@/lib/store";
