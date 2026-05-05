@@ -26,10 +26,29 @@ export default function Students({ shift }: StudentsPageProps) {
   const allStudents = useMemo(() => getStudents(), [refreshKey]);
   const handleChanged = useCallback(() => setRefreshKey(k => k + 1), []);
 
-  const grades = shift === 'morning' ? MORNING_GRADES : shift === 'afternoon' ? AFTERNOON_GRADES : ALL_GRADES;
+  // Shift-based class filtering (strict):
+  // Shift 1 (morning, 08:00–13:00): classes 1, 7, 8, 9, 10
+  // Shift 2 (afternoon, 13:00–17:20): classes 2, 3, 4, 5, 6
+  const SHIFT1 = new Set([1, 7, 8, 9, 10]);
+  const gradeNum = (g: string) => parseInt(String(g).match(/^\d+/)?.[0] ?? "", 10);
+  const inShift = (g: string) => {
+    const n = gradeNum(g);
+    if (!Number.isFinite(n)) return true;
+    return shift === 'morning' ? SHIFT1.has(n) : shift === 'afternoon' ? !SHIFT1.has(n) : true;
+  };
+
+  const grades = useMemo(() => {
+    const all = Array.from(new Set(allStudents.map(s => s.grade).filter(Boolean)));
+    const filteredGrades = shift ? all.filter(inShift) : all;
+    return filteredGrades.sort((a, b) => {
+      const na = gradeNum(a), nb = gradeNum(b);
+      if (na !== nb) return na - nb;
+      return a.localeCompare(b);
+    });
+  }, [allStudents, shift]);
 
   const students = useMemo(() => {
-    let list = shift ? allStudents.filter(s => s.shift === shift) : allStudents;
+    let list = shift ? allStudents.filter(s => inShift(s.grade)) : allStudents;
     if (gradeFilter !== 'all') list = list.filter(s => s.grade === gradeFilter);
     return list;
   }, [allStudents, shift, gradeFilter]);
