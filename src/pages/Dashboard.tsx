@@ -57,9 +57,9 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="glass-card p-6 flex items-center gap-4 flex-wrap">
-        <img src={gdbhLogo} alt="ГДБҲ" className="h-16 w-16 rounded-full border-2 border-primary shadow-md" />
+        <img src={logoSrc} alt={school.name} className="h-16 w-16 rounded-full border-2 border-primary shadow-md object-contain bg-card" />
         <div className="flex-1 min-w-[200px]">
-          <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">{t("dash.title")}</h2>
+          <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">{school.name}</h2>
           <p className="text-muted-foreground text-sm">{t("dash.subtitle")}</p>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant="outline" className="gap-1">
