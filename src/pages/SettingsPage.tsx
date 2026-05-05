@@ -174,17 +174,19 @@ export default function SettingsPage() {
         <Button type="submit" size="sm" className="w-full">{t("edit.save")}</Button>
       </form>
 
-      {/* Admin Panel — between Login and Holidays */}
-      <div className="glass-card p-6 space-y-3">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="h-5 w-5 text-primary" />
-          <Label className="text-sm font-semibold">{t("admin.hiddenTitle")}</Label>
+      {/* Admin Panel — visible only on master account (ГДБҲ) */}
+      {school.id === "gdbh" && (
+        <div className="glass-card p-6 space-y-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            <Label className="text-sm font-semibold">{t("admin.hiddenTitle")}</Label>
+          </div>
+          <p className="text-xs text-muted-foreground">{t("admin.hiddenDesc")}</p>
+          <Button size="sm" className="w-full" onClick={() => setShowAdmin(true)}>
+            {t("admin.open")}
+          </Button>
         </div>
-        <p className="text-xs text-muted-foreground">{t("admin.hiddenDesc")}</p>
-        <Button size="sm" className="w-full" onClick={() => setShowAdmin(true)}>
-          {t("admin.open")}
-        </Button>
-      </div>
+      )}
 
       {/* Shift Management */}
       <div className="glass-card p-6 space-y-3">
