@@ -8,7 +8,8 @@ import { getCurrentShift, SHIFT_TIMES } from "@/lib/students-data";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { toast } from "@/components/ui/sonner";
 import { useI18n } from "@/lib/i18n";
-import gdbhLogo from "@/assets/gdbh-logo.png";
+import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import goldenEmblem from "@/assets/golden-emblem.png";
 
 export default function Dashboard() {
   const { t } = useI18n();
