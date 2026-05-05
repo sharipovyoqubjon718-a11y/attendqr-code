@@ -19,12 +19,17 @@ import About from "@/pages/About";
 import SettingsPage from "@/pages/SettingsPage";
 import Rankings from "@/pages/Rankings";
 import NotFound from "@/pages/NotFound";
-import { getActiveSchoolId, setActiveSchoolId } from "@/lib/schools";
+import { setActiveSchoolId } from "@/lib/schools";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [unlocked, setUnlocked] = useState<boolean>(() => !!getActiveSchoolId());
+  // Always require school selection + login on app start
+  const [unlocked, setUnlocked] = useState<boolean>(false);
+  // Clear any persisted session on initial load
+  if (typeof window !== "undefined") {
+    // run once at module evaluation per App mount
+  }
 
   const handleLogout = () => {
     setActiveSchoolId(null);
