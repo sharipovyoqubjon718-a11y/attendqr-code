@@ -13,6 +13,8 @@ import goldenEmblem from "@/assets/golden-emblem.png";
 
 export default function Dashboard() {
   const { t } = useI18n();
+  const school = getActiveSchool() || getSelectedSchool();
+  const logoSrc = school.logoDataUrl || goldenEmblem;
   const [sessionActive, setSessionActive] = useState(isSessionActive());
   const currentShift = getCurrentShift();
   const [stats, setStats] = useState(getTodayStats(currentShift));
