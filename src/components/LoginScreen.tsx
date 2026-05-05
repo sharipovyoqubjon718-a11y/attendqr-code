@@ -60,9 +60,11 @@ export default function LoginScreen({ onUnlock }: LoginScreenProps) {
   };
 
   // Always clear sensitive fields when modal closes/opens
+  // Always clear sensitive fields when modal closes/opens; reset selection on close
   useEffect(() => {
     setPassword("");
     setWebsite("");
+    if (!showLogin) setSelected("");
   }, [showLogin]);
 
   // Live retry countdown
