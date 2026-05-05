@@ -27,7 +27,7 @@ interface LoginScreenProps {
 export default function LoginScreen({ onUnlock }: LoginScreenProps) {
   const { t } = useI18n();
   const [schools, setSchools] = useState<School[]>(getSchools());
-  const [selected, setSelected] = useState(getSelectedSchoolId());
+  const [selected, setSelected] = useState<string>("");
   const [showLogin, setShowLogin] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [username, setUsername] = useState("");
@@ -60,9 +60,11 @@ export default function LoginScreen({ onUnlock }: LoginScreenProps) {
   };
 
   // Always clear sensitive fields when modal closes/opens
+  // Always clear sensitive fields when modal closes/opens; reset selection on close
   useEffect(() => {
     setPassword("");
     setWebsite("");
+    if (!showLogin) setSelected("");
   }, [showLogin]);
 
   // Live retry countdown
