@@ -39,7 +39,7 @@ const translations = {
 
   // Dashboard
   "dash.title": { tj: "ГИМНАЗИЯИ ДАВЛАТИИ БОҒИ ҲАБИБ", ru: "ГОСУДАРСТВЕННАЯ ГИМНАЗИЯ БОГИ ХАБИБ", en: "BOGHI HABIB STATE GYMNASIUM" },
-  "dash.subtitle": { tj: "Панели идоракунӣ — н. Муъминобод", ru: "Панель управления — н. Муъминобод", en: "Dashboard — Mu'minobod" },
+  "dash.subtitle": { tj: "Панели идоракунӣ", ru: "Панель управления", en: "Dashboard" },
   "dash.students": { tj: "хонанда", ru: "учеников", en: "students" },
   "dash.shiftStudents": { tj: "Хонандагони навбат", ru: "Учеников смены", en: "Shift Students" },
   "dash.present": { tj: "Имрӯз ҳозир", ru: "Сегодня присутствуют", en: "Present Today" },

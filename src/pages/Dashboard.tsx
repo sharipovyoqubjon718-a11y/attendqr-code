@@ -8,10 +8,13 @@ import { getCurrentShift, SHIFT_TIMES } from "@/lib/students-data";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { toast } from "@/components/ui/sonner";
 import { useI18n } from "@/lib/i18n";
-import gdbhLogo from "@/assets/gdbh-logo.png";
+import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import goldenEmblem from "@/assets/golden-emblem.png";
 
 export default function Dashboard() {
   const { t } = useI18n();
+  const school = getActiveSchool() || getSelectedSchool();
+  const logoSrc = school.logoDataUrl || goldenEmblem;
   const [sessionActive, setSessionActive] = useState(isSessionActive());
   const currentShift = getCurrentShift();
   const [stats, setStats] = useState(getTodayStats(currentShift));
@@ -54,9 +57,9 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="glass-card p-6 flex items-center gap-4 flex-wrap">
-        <img src={gdbhLogo} alt="ГДБҲ" className="h-16 w-16 rounded-full border-2 border-primary shadow-md" />
+        <img src={logoSrc} alt={school.name} className="h-16 w-16 rounded-full border-2 border-primary shadow-md object-contain bg-card" />
         <div className="flex-1 min-w-[200px]">
-          <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">{t("dash.title")}</h2>
+          <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">{school.name}</h2>
           <p className="text-muted-foreground text-sm">{t("dash.subtitle")}</p>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant="outline" className="gap-1">
