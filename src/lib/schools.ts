@@ -31,7 +31,7 @@ const SELECTED_KEY = "sams_selected_school";
 const SESSION_KEY = "sams_active_session";
 
 const DEFAULT_SCHOOLS: School[] = [
-  { id: "gdbh", prefix: "ГДБҲ", name: "ГДБҲ — н. Муъминобод", username: "GDBH", password: "2004" },
+  { id: "gdbh", prefix: "ГДБҲ", name: "ГДБҲ", username: "GDBH", password: "2004" },
 ];
 
 export const MASTER_USERNAME = "GDBH";
