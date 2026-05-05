@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getStudents } from "@/lib/store";
 import { getSelectedSchool } from "@/lib/schools";
-import { MORNING_GRADES, AFTERNOON_GRADES, ALL_GRADES } from "@/lib/students-data";
+
 import goldenEmblem from "@/assets/golden-emblem.png";
 import AddStudentDialog from "@/components/AddStudentDialog";
 import { StudentListView } from "@/components/StudentListView";
