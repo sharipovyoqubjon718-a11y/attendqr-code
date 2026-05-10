@@ -264,6 +264,7 @@ const translations = {
 
   // Rankings
   "nav.rankings": { tj: "Рейтинги синфҳо", ru: "Рейтинг классов", en: "Class Rankings" },
+  "nav.journal": { tj: "Журнал", ru: "Журнал", en: "Journal" },
   "rankings.title": { tj: "Рейтинги синфҳо", ru: "Рейтинг классов", en: "Class Rankings" },
   "rankings.subtitle": { tj: "Дар асоси сатҳи давомот дар вақти воқеӣ", ru: "В реальном времени по уровню посещаемости", en: "Real-time by attendance rate" },
   "rankings.empty": { tj: "Маълумот нест", ru: "Нет данных", en: "No data" },
