@@ -18,6 +18,7 @@ import Reports from "@/pages/Reports";
 import About from "@/pages/About";
 import SettingsPage from "@/pages/SettingsPage";
 import Rankings from "@/pages/Rankings";
+import Journal from "@/pages/Journal";
 import NotFound from "@/pages/NotFound";
 import { setActiveSchoolId } from "@/lib/schools";
 
@@ -64,6 +65,7 @@ const App = () => {
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/rankings" element={<Rankings />} />
+                  <Route path="/journal" element={<Journal />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
