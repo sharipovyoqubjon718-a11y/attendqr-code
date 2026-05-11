@@ -48,36 +48,25 @@ export default function Journal() {
   const [activeTab, setActiveTab] = useState<string>("q1");
   const [date, setDate] = useState<Date | undefined>(new Date());
 
-  // Available class numbers + letters from current roster
-  const { classes, lettersByClass } = useMemo(() => {
-    const cs = new Set<string>();
-    const lbc: Record<string, Set<string>> = {};
-    for (const s of students) {
-      const { cls: c, letter: l } = parseStudentGrade(s.grade);
-      if (!c) continue;
-      cs.add(c);
-      lbc[c] = lbc[c] || new Set();
-      if (l) lbc[c].add(l);
-    }
-    return {
-      classes: [...cs].sort((a, b) => parseInt(a) - parseInt(b)),
-      lettersByClass: Object.fromEntries(
-        Object.entries(lbc).map(([k, v]) => [k, [...v].sort()])
-      ) as Record<string, string[]>,
-    };
-  }, [students]);
+  // Fixed class list 1..11 and parallel letters А..Д
+  const classes = useMemo(() => Array.from({ length: 11 }, (_, i) => String(i + 1)), []);
+  const PARALLELS = ["А", "Б", "В", "Г", "Д"] as const;
 
   const ready = !!cls && !!letter && !!subject;
 
-  // Filtered roster, alphabetical by last name
+  // Filtered roster, alphabetical by last name (last name is first token in saved "Насаб Ном")
   const roster = useMemo(() => {
-    if (!cls) return [];
+    if (!cls || !letter) return [];
     return students
       .filter((s) => {
         const p = parseStudentGrade(s.grade);
-        return p.cls === cls && (letter ? p.letter === letter : true);
+        return p.cls === cls && p.letter === letter;
       })
-      .sort((a, b) => a.name.localeCompare(b.name, "ru"));
+      .sort((a, b) => {
+        const la = (a.name.trim().split(/\s+/)[0] || a.name);
+        const lb = (b.name.trim().split(/\s+/)[0] || b.name);
+        return la.localeCompare(lb, "ru");
+      });
   }, [students, cls, letter]);
 
   // Journal data
@@ -158,7 +147,7 @@ export default function Journal() {
             <Select value={letter} onValueChange={setLetter} disabled={!cls}>
               <SelectTrigger><SelectValue placeholder="А, Б, В..." /></SelectTrigger>
               <SelectContent>
-                {(lettersByClass[cls] || []).map((l) => (
+                {PARALLELS.map((l) => (
                   <SelectItem key={l} value={l}>{l}</SelectItem>
                 ))}
               </SelectContent>
@@ -403,15 +392,18 @@ function AddStudentInline({ cls, letter, onAdded }: { cls: string; letter: strin
 
   useEffect(() => { setClassNum(cls); setClassLetter(letter); }, [cls, letter, open]);
 
+  const CLASSES = Array.from({ length: 11 }, (_, i) => String(i + 1));
+  const PARALLELS = ["А", "Б", "В", "Г", "Д"];
+
   const submit = () => {
     const f = sanitizeText(first, 60);
     const l = sanitizeText(last, 60);
-    if (!f || !l || !classNum) { toast.error("Майдонҳоро пур кунед"); return; }
+    if (!f || !l || !classNum || !classLetter) { toast.error("Ҳамаи майдонҳоро пур кунед"); return; }
     const id = `${school.prefix}${Date.now().toString().slice(-6)}`;
     const ok = addStudent({
       id,
       name: `${l} ${f}`,
-      grade: `${classNum}-${classLetter || ""}`.replace(/-$/, ""),
+      grade: `${classNum}-${classLetter}`,
       shift: "morning",
       qrCode: id,
     });
@@ -429,11 +421,27 @@ function AddStudentInline({ cls, letter, onAdded }: { cls: string; letter: strin
       <DialogContent>
         <DialogHeader><DialogTitle>Иловаи хонанда</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>Ном</Label><Input value={first} onChange={(e) => setFirst(e.target.value)} /></div>
           <div><Label>Насаб</Label><Input value={last} onChange={(e) => setLast(e.target.value)} /></div>
+          <div><Label>Ном</Label><Input value={first} onChange={(e) => setFirst(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Синф</Label><Input value={classNum} onChange={(e) => setClassNum(e.target.value)} /></div>
-            <div><Label>Параллел</Label><Input value={classLetter} onChange={(e) => setClassLetter(e.target.value.toUpperCase())} /></div>
+            <div>
+              <Label>Синф *</Label>
+              <Select value={classNum} onValueChange={setClassNum}>
+                <SelectTrigger><SelectValue placeholder="Интихоб..." /></SelectTrigger>
+                <SelectContent>
+                  {CLASSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Параллел *</Label>
+              <Select value={classLetter} onValueChange={setClassLetter}>
+                <SelectTrigger><SelectValue placeholder="А, Б, В..." /></SelectTrigger>
+                <SelectContent>
+                  {PARALLELS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         <DialogFooter><Button onClick={submit}>Сабт</Button></DialogFooter>
