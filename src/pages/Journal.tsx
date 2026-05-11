@@ -147,7 +147,7 @@ export default function Journal() {
             <Select value={letter} onValueChange={setLetter} disabled={!cls}>
               <SelectTrigger><SelectValue placeholder="А, Б, В..." /></SelectTrigger>
               <SelectContent>
-                {(lettersByClass[cls] || []).map((l) => (
+                {PARALLELS.map((l) => (
                   <SelectItem key={l} value={l}>{l}</SelectItem>
                 ))}
               </SelectContent>
