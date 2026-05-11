@@ -392,15 +392,18 @@ function AddStudentInline({ cls, letter, onAdded }: { cls: string; letter: strin
 
   useEffect(() => { setClassNum(cls); setClassLetter(letter); }, [cls, letter, open]);
 
+  const CLASSES = Array.from({ length: 11 }, (_, i) => String(i + 1));
+  const PARALLELS = ["А", "Б", "В", "Г", "Д"];
+
   const submit = () => {
     const f = sanitizeText(first, 60);
     const l = sanitizeText(last, 60);
-    if (!f || !l || !classNum) { toast.error("Майдонҳоро пур кунед"); return; }
+    if (!f || !l || !classNum || !classLetter) { toast.error("Ҳамаи майдонҳоро пур кунед"); return; }
     const id = `${school.prefix}${Date.now().toString().slice(-6)}`;
     const ok = addStudent({
       id,
       name: `${l} ${f}`,
-      grade: `${classNum}-${classLetter || ""}`.replace(/-$/, ""),
+      grade: `${classNum}-${classLetter}`,
       shift: "morning",
       qrCode: id,
     });
@@ -418,11 +421,27 @@ function AddStudentInline({ cls, letter, onAdded }: { cls: string; letter: strin
       <DialogContent>
         <DialogHeader><DialogTitle>Иловаи хонанда</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>Ном</Label><Input value={first} onChange={(e) => setFirst(e.target.value)} /></div>
           <div><Label>Насаб</Label><Input value={last} onChange={(e) => setLast(e.target.value)} /></div>
+          <div><Label>Ном</Label><Input value={first} onChange={(e) => setFirst(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Синф</Label><Input value={classNum} onChange={(e) => setClassNum(e.target.value)} /></div>
-            <div><Label>Параллел</Label><Input value={classLetter} onChange={(e) => setClassLetter(e.target.value.toUpperCase())} /></div>
+            <div>
+              <Label>Синф *</Label>
+              <Select value={classNum} onValueChange={setClassNum}>
+                <SelectTrigger><SelectValue placeholder="Интихоб..." /></SelectTrigger>
+                <SelectContent>
+                  {CLASSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Параллел *</Label>
+              <Select value={classLetter} onValueChange={setClassLetter}>
+                <SelectTrigger><SelectValue placeholder="А, Б, В..." /></SelectTrigger>
+                <SelectContent>
+                  {PARALLELS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         <DialogFooter><Button onClick={submit}>Сабт</Button></DialogFooter>
