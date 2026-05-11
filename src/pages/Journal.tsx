@@ -48,24 +48,9 @@ export default function Journal() {
   const [activeTab, setActiveTab] = useState<string>("q1");
   const [date, setDate] = useState<Date | undefined>(new Date());
 
-  // Available class numbers + letters from current roster
-  const { classes, lettersByClass } = useMemo(() => {
-    const cs = new Set<string>();
-    const lbc: Record<string, Set<string>> = {};
-    for (const s of students) {
-      const { cls: c, letter: l } = parseStudentGrade(s.grade);
-      if (!c) continue;
-      cs.add(c);
-      lbc[c] = lbc[c] || new Set();
-      if (l) lbc[c].add(l);
-    }
-    return {
-      classes: [...cs].sort((a, b) => parseInt(a) - parseInt(b)),
-      lettersByClass: Object.fromEntries(
-        Object.entries(lbc).map(([k, v]) => [k, [...v].sort()])
-      ) as Record<string, string[]>,
-    };
-  }, [students]);
+  // Fixed class list 1..11 and parallel letters А..Д
+  const classes = useMemo(() => Array.from({ length: 11 }, (_, i) => String(i + 1)), []);
+  const PARALLELS = ["А", "Б", "В", "Г", "Д"] as const;
 
   const ready = !!cls && !!letter && !!subject;
 
