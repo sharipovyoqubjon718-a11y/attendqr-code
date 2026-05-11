@@ -54,15 +54,19 @@ export default function Journal() {
 
   const ready = !!cls && !!letter && !!subject;
 
-  // Filtered roster, alphabetical by last name
+  // Filtered roster, alphabetical by last name (last name is first token in saved "Насаб Ном")
   const roster = useMemo(() => {
-    if (!cls) return [];
+    if (!cls || !letter) return [];
     return students
       .filter((s) => {
         const p = parseStudentGrade(s.grade);
-        return p.cls === cls && (letter ? p.letter === letter : true);
+        return p.cls === cls && p.letter === letter;
       })
-      .sort((a, b) => a.name.localeCompare(b.name, "ru"));
+      .sort((a, b) => {
+        const la = (a.name.trim().split(/\s+/)[0] || a.name);
+        const lb = (b.name.trim().split(/\s+/)[0] || b.name);
+        return la.localeCompare(lb, "ru");
+      });
   }, [students, cls, letter]);
 
   // Journal data
