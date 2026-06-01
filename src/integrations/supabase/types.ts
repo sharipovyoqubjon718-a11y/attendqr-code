@@ -46,6 +46,42 @@ export type Database = {
           },
         ]
       }
+      parent_contacts: {
+        Row: {
+          chat_id: string | null
+          created_at: string
+          id: string
+          last_start_date: string | null
+          phone: string | null
+          school_id: string
+          student_id: string
+          student_name: string
+          updated_at: string
+        }
+        Insert: {
+          chat_id?: string | null
+          created_at?: string
+          id?: string
+          last_start_date?: string | null
+          phone?: string | null
+          school_id: string
+          student_id: string
+          student_name?: string
+          updated_at?: string
+        }
+        Update: {
+          chat_id?: string | null
+          created_at?: string
+          id?: string
+          last_start_date?: string | null
+          phone?: string | null
+          school_id?: string
+          student_id?: string
+          student_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       students: {
         Row: {
           class_name: string
