@@ -22,6 +22,7 @@ import {
   quarterForDate, quarterAvg, avgForStudent, gradeColorClass,
   type Quarter, type JournalData,
 } from "@/lib/journal";
+import { CLASSES as SHARED_CLASSES, PARALLELS as SHARED_PARALLELS, parseGrade, makeGrade, matchesClassParallel } from "@/lib/classes";
 
 const QUARTERS: { id: Quarter; label: string }[] = [
   { id: "q1", label: "Чоряки 1" },
