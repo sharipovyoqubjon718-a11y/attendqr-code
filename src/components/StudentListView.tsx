@@ -1,24 +1,66 @@
+import { useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EditDeleteActions } from "@/components/EditDeleteActions";
 import { useI18n } from "@/lib/i18n";
-import gdbhLogo from "@/assets/gdbh-logo.png";
+import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import goldenEmblem from "@/assets/golden-emblem.png";
 import type { Student } from "@/lib/store";
 
-function QRWithLogo({ value, size, logoSize }: { value: string; size: number; logoSize: number }) {
+function useSchoolLogo() {
+  const school = getActiveSchool() || getSelectedSchool();
+  return school.logoDataUrl || goldenEmblem;
+}
+
+function downloadSvg(svg: SVGSVGElement | null, fileName: string) {
+  if (!svg) return;
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  const source = new XMLSerializer().serializeToString(clone);
+  const blob = new Blob(['<?xml version="1.0" standalone="no"?>\n', source], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${fileName}.svg`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function QrCode({ value, size, logoSize, logoSrc }: { value: string; size: number; logoSize: number; logoSrc: string }) {
   return (
-    <div className="relative inline-block" style={{ width: size, height: size }}>
-      <QRCodeSVG value={value} size={size} level="H" />
-      <div
-        className="absolute bg-card rounded-full flex items-center justify-center"
-        style={{
-          top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-          width: logoSize + 6, height: logoSize + 6,
-        }}
-      >
-        <img src={gdbhLogo} alt="ГДБҲ" className="rounded-full" style={{ width: logoSize, height: logoSize }} />
+    <QRCodeSVG
+      value={value}
+      size={size}
+      level="H"
+      imageSettings={{
+        src: logoSrc,
+        height: logoSize,
+        width: logoSize,
+        excavate: true,
+      }}
+    />
+  );
+}
+
+function QrCell({ student, size, logoSize, logoSrc }: { student: Student; size: number; logoSize: number; logoSrc: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const handleDownload = () => {
+    const svg = ref.current?.querySelector("svg") as SVGSVGElement | null;
+    downloadSvg(svg, `QR_${student.name}_${student.id}`);
+  };
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div ref={ref} className="inline-block">
+        <QrCode value={student.id} size={size} logoSize={logoSize} logoSrc={logoSrc} />
       </div>
+      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleDownload} title="SVG">
+        <Download className="h-3.5 w-3.5" />
+      </Button>
     </div>
   );
 }
@@ -31,6 +73,7 @@ interface Props {
 
 export function StudentListView({ filtered, view, onChanged }: Props) {
   const { t } = useI18n();
+  const logoSrc = useSchoolLogo();
 
   if (view === "gallery") {
     return (
@@ -38,7 +81,7 @@ export function StudentListView({ filtered, view, onChanged }: Props) {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
           {filtered.slice(0, 150).map((s) => (
             <div key={s.id} className="flex flex-col items-center rounded-lg border border-dashed border-border bg-card p-4 shadow-sm animate-fade-in">
-              <QRWithLogo value={s.id} size={120} logoSize={28} />
+              <QrCell student={s} size={120} logoSize={28} logoSrc={logoSrc} />
               <p className="mt-2 text-center text-[10px] text-muted-foreground leading-tight font-semibold">
                 {s.name}<br /><span className="font-mono">({s.id})</span>
               </p>
@@ -78,7 +121,7 @@ export function StudentListView({ filtered, view, onChanged }: Props) {
                 <TableCell className="font-medium">{s.name}</TableCell>
                 <TableCell><Badge variant="secondary">{s.grade}</Badge></TableCell>
                 <TableCell><Badge variant="outline">{s.shift === 'morning' ? t("shift.morning") : t("shift.afternoon")}</Badge></TableCell>
-                <TableCell><QRWithLogo value={s.id} size={56} logoSize={16} /></TableCell>
+                <TableCell><QrCell student={s} size={56} logoSize={16} logoSrc={logoSrc} /></TableCell>
                 <TableCell><EditDeleteActions student={s} onChanged={onChanged} /></TableCell>
               </TableRow>
             ))}
