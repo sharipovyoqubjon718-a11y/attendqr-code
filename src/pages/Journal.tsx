@@ -386,8 +386,8 @@ function AddStudentInline({ cls, letter, onAdded }: { cls: string; letter: strin
 
   useEffect(() => { setClassNum(cls); setClassLetter(letter); }, [cls, letter, open]);
 
-  const CLASSES = Array.from({ length: 11 }, (_, i) => String(i + 1));
-  const PARALLELS = ["А", "Б", "В", "Г", "Д"];
+  const CLASSES = SHARED_CLASSES;
+  const PARALLELS = SHARED_PARALLELS;
 
   const submit = () => {
     const f = sanitizeText(first, 60);
@@ -397,7 +397,7 @@ function AddStudentInline({ cls, letter, onAdded }: { cls: string; letter: strin
     const ok = addStudent({
       id,
       name: `${l} ${f}`,
-      grade: `${classNum}-${classLetter}`,
+      grade: makeGrade(classNum, classLetter),
       shift: "morning",
       qrCode: id,
     });
