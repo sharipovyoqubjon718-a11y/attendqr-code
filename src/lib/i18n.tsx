@@ -277,6 +277,35 @@ const translations = {
   "shift.management": { tj: "Идоракунии басти дарсӣ", ru: "Управление сменами", en: "Shift management" },
   "shift.shift1Desc": { tj: "Басти 1 (08:00 - 13:00): синфҳои 1, 7, 8, 9, 10", ru: "Смена 1 (08:00 - 13:00): классы 1, 7, 8, 9, 10", en: "Shift 1 (08:00 - 13:00): grades 1, 7, 8, 9, 10" },
   "shift.shift2Desc": { tj: "Басти 2 (13:00+): синфҳои 2, 3, 4, 5, 6", ru: "Смена 2 (13:00+): классы 2, 3, 4, 5, 6", en: "Shift 2 (13:00+): grades 2, 3, 4, 5, 6" },
+
+  // Navigation extras
+  "nav.parents": { tj: "Рақами волидайн", ru: "Номера родителей", en: "Parent Numbers" },
+  "nav.messageParents": { tj: "Паём ба волидайн", ru: "Сообщение родителям", en: "Message to Parents" },
+
+  // Parent Numbers
+  "parents.title": { tj: "Рақами волидайн", ru: "Номера родителей", en: "Parent Numbers" },
+  "parents.class": { tj: "Синф", ru: "Класс", en: "Class" },
+  "parents.parallel": { tj: "Параллел", ru: "Параллель", en: "Parallel" },
+  "parents.select": { tj: "Интихоб...", ru: "Выбрать...", en: "Select..." },
+  "parents.selectHint": { tj: "Барои оғоз: синф ва параллелро интихоб кунед.", ru: "Для начала выберите класс и параллель.", en: "Select a class and parallel to begin." },
+  "parents.studentName": { tj: "Номи хонанда", ru: "Имя ученика", en: "Student Name" },
+  "parents.contact": { tj: "Telegram Chat ID / Телефон", ru: "Telegram Chat ID / Телефон", en: "Telegram Chat ID / Phone" },
+  "parents.contactPlaceholder": { tj: "Chat ID ё рақами телефон", ru: "Chat ID или телефон", en: "Chat ID or phone" },
+  "parents.action": { tj: "Амал", ru: "Действие", en: "Action" },
+  "parents.save": { tj: "Сабт", ru: "Сохранить", en: "Save" },
+  "parents.saved": { tj: "Сабт шуд", ru: "Сохранено", en: "Saved" },
+  "parents.saveError": { tj: "Хатои сабт", ru: "Ошибка сохранения", en: "Save error" },
+  "parents.noStudents": { tj: "Хонанда нест", ru: "Нет учеников", en: "No students" },
+
+  // Message to Parents
+  "msg.title": { tj: "Паём ба волидайн", ru: "Сообщение родителям", en: "Message to Parents" },
+  "msg.search": { tj: "Ҷустуҷӯ бо ном...", ru: "Поиск по имени...", en: "Search by name..." },
+  "msg.placeholder": { tj: "Матни паём...", ru: "Текст сообщения...", en: "Message text..." },
+  "msg.send": { tj: "Фиристодан", ru: "Отправить", en: "Send" },
+  "msg.sent": { tj: "Паём фиристода шуд", ru: "Сообщение отправлено", en: "Message sent" },
+  "msg.sendError": { tj: "Хатои фиристодан", ru: "Ошибка отправки", en: "Send error" },
+  "msg.empty": { tj: "Матн холӣ аст", ru: "Текст пуст", en: "Text is empty" },
+  "msg.noChatId": { tj: "Chat ID сабт нашудааст", ru: "Chat ID не сохранён", en: "No Chat ID saved" },
 } as const;
 
 type TranslationKey = keyof typeof translations;
