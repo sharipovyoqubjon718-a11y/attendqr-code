@@ -19,6 +19,8 @@ import About from "@/pages/About";
 import SettingsPage from "@/pages/SettingsPage";
 import Rankings from "@/pages/Rankings";
 import Journal from "@/pages/Journal";
+import ParentNumbers from "@/pages/ParentNumbers";
+import MessageToParents from "@/pages/MessageToParents";
 import NotFound from "@/pages/NotFound";
 import { setActiveSchoolId } from "@/lib/schools";
 
@@ -66,6 +68,8 @@ const App = () => {
                   <Route path="/about" element={<About />} />
                   <Route path="/rankings" element={<Rankings />} />
                   <Route path="/journal" element={<Journal />} />
+                  <Route path="/parents" element={<ParentNumbers />} />
+                  <Route path="/message-parents" element={<MessageToParents />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
