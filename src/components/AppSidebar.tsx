@@ -1,4 +1,4 @@
-import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy, Trophy, BookOpen } from "lucide-react";
+import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy, Trophy, BookOpen, Phone, MessageSquare } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useI18n } from "@/lib/i18n";
 import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
@@ -25,6 +25,8 @@ export function AppSidebar() {
     { title: t("nav.reports"), url: "/reports", icon: BarChart3 },
     { title: t("nav.rankings"), url: "/rankings", icon: Trophy },
     { title: t("nav.journal"), url: "/journal", icon: BookOpen },
+    { title: t("nav.parents"), url: "/parents", icon: Phone },
+    { title: t("nav.messageParents"), url: "/message-parents", icon: MessageSquare },
     { title: t("nav.blacklist"), url: "/blacklist", icon: ShieldAlert },
     { title: t("nav.about"), url: "/about", icon: Info },
     { title: t("settings.title"), url: "/settings", icon: Settings },
