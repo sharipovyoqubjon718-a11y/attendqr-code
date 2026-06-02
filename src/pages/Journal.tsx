@@ -464,7 +464,7 @@ function QrAddStudent({ cls, letter, onAdded }: { cls: string; letter: string; o
     let payload: any = code.data;
     try { payload = JSON.parse(code.data); } catch {}
     const name = typeof payload === "object" ? (payload.name || `${payload.last || ""} ${payload.first || ""}`.trim()) : String(payload);
-    const grade = typeof payload === "object" ? (payload.grade || `${cls}-${letter}`) : `${cls}-${letter}`;
+    const grade = typeof payload === "object" ? (payload.grade || makeGrade(cls, letter)) : makeGrade(cls, letter);
     if (!name) { toast.error("Маълумоти QR хато"); return; }
     const id = `${school.prefix}${Date.now().toString().slice(-6)}`;
     const ok = addStudent({ id, name: sanitizeText(name, 100), grade, shift: "morning", qrCode: id });
