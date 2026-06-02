@@ -31,11 +31,6 @@ const QUARTERS: { id: Quarter; label: string }[] = [
   { id: "q4", label: "Чоряки 4" },
 ];
 
-function parseStudentGrade(g: string): { cls: string; letter: string } {
-  const m = String(g || "").match(/^(\d{1,2})\s*[-\s]?\s*([А-Яа-яA-Za-zӢӯҶҷҲҳҚқҒғӣЁё]?)/);
-  return { cls: m?.[1] || "", letter: (m?.[2] || "").toUpperCase() };
-}
-
 export default function Journal() {
   const school = getActiveSchool() || getSelectedSchool();
   const [students, setStudents] = useState<Student[]>(() => getStudents());
@@ -49,9 +44,9 @@ export default function Journal() {
   const [activeTab, setActiveTab] = useState<string>("q1");
   const [date, setDate] = useState<Date | undefined>(new Date());
 
-  // Fixed class list 1..11 and parallel letters А..Д
-  const classes = useMemo(() => Array.from({ length: 11 }, (_, i) => String(i + 1)), []);
-  const PARALLELS = ["А", "Б", "В", "Г", "Д"] as const;
+  // Fixed class list 1..11 and parallel options ("-", А..Д)
+  const classes = SHARED_CLASSES;
+  const PARALLELS = SHARED_PARALLELS;
 
   const ready = !!cls && !!letter && !!subject;
 
@@ -59,16 +54,14 @@ export default function Journal() {
   const roster = useMemo(() => {
     if (!cls || !letter) return [];
     return students
-      .filter((s) => {
-        const p = parseStudentGrade(s.grade);
-        return p.cls === cls && p.letter === letter;
-      })
+      .filter((s) => matchesClassParallel(s.grade, cls, letter))
       .sort((a, b) => {
         const la = (a.name.trim().split(/\s+/)[0] || a.name);
         const lb = (b.name.trim().split(/\s+/)[0] || b.name);
         return la.localeCompare(lb, "ru");
       });
   }, [students, cls, letter]);
+
 
   // Journal data
   const [data, setData] = useState<JournalData>(() => ({
