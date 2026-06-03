@@ -296,6 +296,11 @@ const translations = {
   "parents.saved": { tj: "Сабт шуд", ru: "Сохранено", en: "Saved" },
   "parents.saveError": { tj: "Хатои сабт", ru: "Ошибка сохранения", en: "Save error" },
   "parents.noStudents": { tj: "Хонанда нест", ru: "Нет учеников", en: "No students" },
+  "parents.phone": { tj: "Рақами телефон", ru: "Номер телефона", en: "Phone Number" },
+  "parents.phonePlaceholder": { tj: "масалан: 900000000", ru: "напр: 900000000", en: "e.g. 900000000" },
+  "parents.status": { tj: "Ҳолат", ru: "Статус", en: "Status" },
+  "parents.linked": { tj: "Пайваст", ru: "Привязан", en: "Linked" },
+  "parents.notLinked": { tj: "Пайваст нест", ru: "Не привязан", en: "Not linked" },
 
   // Message to Parents
   "msg.title": { tj: "Паём ба волидайн", ru: "Сообщение родителям", en: "Message to Parents" },

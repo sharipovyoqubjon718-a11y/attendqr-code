@@ -1,8 +1,13 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
-const ALREADY_TODAY = 'Шумо аллакай имрӯз ботро фаъол кардаед! Лутфан паёми навбатиро фардо фиристед.'
-const CONFIRMED = 'Ташаккур! Фаъолияти шумо барои имрӯз тасдиқ шуд. Паёмҳоро аз мактаб интизор шавед.'
-const WELCOME = 'Салом! Барои фаъолсозӣ фармони /start -ро фиристед.'
+const ASK_PHONE =
+  'Лутфан, рақами телефони худро нависед (масалан: 900000000), то мо шуморо ба мактаб пайваст кунем.'
+const LINKED_OK =
+  'Ташаккур! Аккаунти шумо бомуваффақият бо хонанда пайваст карда шуд. Акнун шумо паёмҳоро аз мактаб қабул мекунед.'
+const ALREADY_LINKED =
+  'Аккаунти шумо аллакай бо хонанда пайваст шудааст. Шумо паёмҳоро аз мактаб қабул мекунед.'
+const NOT_FOUND =
+  'Бубахшед, бо ин рақами телефон хонанда ёфт нашуд. Лутфан рақамеро, ки дар мактаб сабт шудааст, дубора нависед.'
 
 async function sendMessage(token: string, chatId: number | string, text: string) {
   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -10,6 +15,11 @@ async function sendMessage(token: string, chatId: number | string, text: string)
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text }),
   })
+}
+
+// Keep only digits for phone matching.
+function normalizePhone(raw: string): string {
+  return (raw || '').replace(/\D/g, '')
 }
 
 Deno.serve(async (req) => {
@@ -23,40 +33,65 @@ Deno.serve(async (req) => {
   const update = await req.json().catch(() => null)
   const message = update?.message ?? update?.edited_message
   const chatId = message?.chat?.id
-  const text: string = message?.text ?? ''
+  const text: string = (message?.text ?? '').trim()
 
   if (!chatId) return new Response(JSON.stringify({ ok: true }))
+
+  const chatIdStr = String(chatId)
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
 
-  if (text.trim().startsWith('/start')) {
-    const today = new Date().toISOString().split('T')[0]
-    const chatIdStr = String(chatId)
+  // Check if this chat is already linked to a student.
+  const { data: linkedRows } = await supabase
+    .from('parent_contacts')
+    .select('id, student_name')
+    .eq('chat_id', chatIdStr)
+    .limit(1)
 
-    // Find existing contact(s) by chat_id
-    const { data: rows } = await supabase
+  const isLinked = !!(linkedRows && linkedRows.length > 0)
+
+  if (text.startsWith('/start')) {
+    await sendMessage(token, chatId, isLinked ? ALREADY_LINKED : ASK_PHONE)
+    return new Response(JSON.stringify({ ok: true }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  // Already linked — nothing else to do.
+  if (isLinked) {
+    await sendMessage(token, chatId, ALREADY_LINKED)
+    return new Response(JSON.stringify({ ok: true }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  // Treat any non-command text as a phone number attempt.
+  const phone = normalizePhone(text)
+  if (phone.length >= 6) {
+    // Match a student by phone (compare digits-only on both sides).
+    const { data: matches } = await supabase
       .from('parent_contacts')
-      .select('id, last_start_date')
-      .eq('chat_id', chatIdStr)
+      .select('id, phone, student_name')
+      .not('phone', 'is', null)
 
-    const existing = rows && rows.length > 0 ? rows[0] : null
+    const found = (matches ?? []).find(
+      (r) => normalizePhone(r.phone as string) === phone,
+    )
 
-    if (existing && existing.last_start_date === today) {
-      await sendMessage(token, chatId, ALREADY_TODAY)
-    } else if (existing) {
-      await supabase.from('parent_contacts')
-        .update({ last_start_date: today })
-        .eq('chat_id', chatIdStr)
-      await sendMessage(token, chatId, CONFIRMED)
+    if (found) {
+      await supabase
+        .from('parent_contacts')
+        .update({ chat_id: chatIdStr })
+        .eq('id', found.id)
+      await sendMessage(token, chatId, LINKED_OK)
     } else {
-      // No registered student linked to this chat yet — still confirm activation
-      await sendMessage(token, chatId, CONFIRMED)
+      await sendMessage(token, chatId, NOT_FOUND)
     }
   } else {
-    await sendMessage(token, chatId, WELCOME)
+    await sendMessage(token, chatId, ASK_PHONE)
   }
 
   return new Response(JSON.stringify({ ok: true }), {

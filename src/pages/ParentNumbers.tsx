@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Phone, Save } from "lucide-react";
+import { Phone, Save, Link2, Link2Off } from "lucide-react";
 import { toast } from "sonner";
 import { getStudents, type Student } from "@/lib/store";
 import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
@@ -19,7 +20,8 @@ export default function ParentNumbers() {
   const [students] = useState<Student[]>(() => getStudents());
   const [cls, setCls] = useState("");
   const [parallel, setParallel] = useState("");
-  const [contacts, setContacts] = useState<Record<string, string>>({});
+  const [phones, setPhones] = useState<Record<string, string>>({});
+  const [linked, setLinked] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState<string | null>(null);
 
   const ready = !!cls && !!parallel;
@@ -33,11 +35,14 @@ export default function ParentNumbers() {
 
   useEffect(() => {
     fetchParentContacts().then((map) => {
-      const next: Record<string, string> = {};
+      const nextPhones: Record<string, string> = {};
+      const nextLinked: Record<string, boolean> = {};
       for (const [sid, c] of Object.entries(map)) {
-        next[sid] = c.chat_id || c.phone || "";
+        nextPhones[sid] = c.phone || "";
+        nextLinked[sid] = !!c.chat_id;
       }
-      setContacts((prev) => ({ ...next, ...prev }));
+      setPhones((prev) => ({ ...nextPhones, ...prev }));
+      setLinked(nextLinked);
     });
   }, []);
 
@@ -46,7 +51,7 @@ export default function ParentNumbers() {
     const ok = await saveParentContact({
       student_id: s.id,
       student_name: s.name,
-      contact: contacts[s.id] || "",
+      phone: phones[s.id] || "",
     });
     setSaving(null);
     if (ok) toast.success(t("parents.saved"));
@@ -100,7 +105,8 @@ export default function ParentNumbers() {
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold">{t("parents.studentName")}</TableHead>
-                    <TableHead className="font-semibold">{t("parents.contact")}</TableHead>
+                    <TableHead className="font-semibold">{t("parents.phone")}</TableHead>
+                    <TableHead className="font-semibold">{t("parents.status")}</TableHead>
                     <TableHead className="font-semibold text-right">{t("parents.action")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -110,11 +116,23 @@ export default function ParentNumbers() {
                       <TableCell className="font-medium">{s.name}</TableCell>
                       <TableCell>
                         <Input
-                          value={contacts[s.id] ?? ""}
-                          onChange={(e) => setContacts((p) => ({ ...p, [s.id]: e.target.value }))}
-                          placeholder={t("parents.contactPlaceholder")}
+                          value={phones[s.id] ?? ""}
+                          onChange={(e) => setPhones((p) => ({ ...p, [s.id]: e.target.value }))}
+                          placeholder={t("parents.phonePlaceholder")}
+                          inputMode="tel"
                           className="max-w-xs"
                         />
+                      </TableCell>
+                      <TableCell>
+                        {linked[s.id] ? (
+                          <Badge variant="secondary" className="gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                            <Link2 className="h-3 w-3" /> {t("parents.linked")}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1 text-muted-foreground">
+                            <Link2Off className="h-3 w-3" /> {t("parents.notLinked")}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" onClick={() => handleSave(s)} disabled={saving === s.id} className="gap-1">
@@ -124,7 +142,7 @@ export default function ParentNumbers() {
                     </TableRow>
                   ))}
                   {roster.length === 0 && (
-                    <TableRow><TableCell colSpan={3} className="text-center py-6 text-muted-foreground">{t("parents.noStudents")}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">{t("parents.noStudents")}</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
