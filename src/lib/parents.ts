@@ -31,16 +31,14 @@ export async function fetchParentContacts(): Promise<Record<string, ParentContac
   return map;
 }
 
-// Save (upsert) a single parent contact.
+// Save (upsert) a student's phone number. The chat_id is linked automatically
+// by the Telegram bot when the parent self-activates, so we never overwrite it here.
 export async function saveParentContact(input: {
   student_id: string;
   student_name: string;
-  contact: string;
+  phone: string;
 }): Promise<boolean> {
-  const value = input.contact.trim();
-  // Heuristic: digits-only / leading + with no spaces of length >=6 → treat as chat_id,
-  // but we store the same value in both so either flow works. Phone is the human-readable field.
-  const isChatId = /^-?\d{5,}$/.test(value);
+  const phone = input.phone.trim();
   const { error } = await supabase
     .from("parent_contacts")
     .upsert(
@@ -48,8 +46,7 @@ export async function saveParentContact(input: {
         school_id: schoolId(),
         student_id: input.student_id,
         student_name: input.student_name,
-        chat_id: value || null,
-        phone: isChatId ? null : value || null,
+        phone: phone || null,
       },
       { onConflict: "school_id,student_id" }
     );
