@@ -301,6 +301,13 @@ const translations = {
   "parents.status": { tj: "Ҳолат", ru: "Статус", en: "Status" },
   "parents.linked": { tj: "Пайваст", ru: "Привязан", en: "Linked" },
   "parents.notLinked": { tj: "Пайваст нест", ru: "Не привязан", en: "Not linked" },
+  "parents.reset": { tj: "Бекор кардан", ru: "Сбросить", en: "Reset" },
+  "parents.resetConfirmTitle": { tj: "Пайвастро бекор кардан?", ru: "Отвязать родителя?", en: "Disconnect parent?" },
+  "parents.resetConfirmDesc": { tj: "Оё шумо мутмаин ҳастед, ки ин хонандаро ҷудо кунед? Ин амал барқарор намешавад.", ru: "Вы уверены, что хотите отвязать этого ученика? Это действие нельзя отменить.", en: "Are you sure you want to disconnect this student? This action cannot be undone." },
+  "parents.resetSuccess": { tj: "Пайваст бомуваффақият бекор карда шуд", ru: "Привязка успешно сброшена", en: "Student connection has been successfully reset." },
+  "parents.resetError": { tj: "Хатои бекор кардани пайваст", ru: "Ошибка сброса привязки", en: "Reset error" },
+  "parents.cancel": { tj: "Бекор", ru: "Отмена", en: "Cancel" },
+  "parents.confirm": { tj: "Тасдиқ", ru: "Подтвердить", en: "Confirm" },
 
   // Message to Parents
   "msg.title": { tj: "Паём ба волидайн", ru: "Сообщение родителям", en: "Message to Parents" },

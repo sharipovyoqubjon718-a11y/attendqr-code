@@ -6,12 +6,22 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Phone, Save, Link2, Link2Off } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Phone, Save, Link2, Link2Off, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { getStudents, type Student } from "@/lib/store";
 import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
 import { CLASSES, PARALLELS, matchesClassParallel } from "@/lib/classes";
-import { fetchParentContacts, saveParentContact } from "@/lib/parents";
+import { fetchParentContacts, saveParentContact, resetChatId } from "@/lib/parents";
 import { useI18n } from "@/lib/i18n";
 
 export default function ParentNumbers() {
@@ -23,6 +33,9 @@ export default function ParentNumbers() {
   const [phones, setPhones] = useState<Record<string, string>>({});
   const [linked, setLinked] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState<string | null>(null);
+  const [resetting, setResetting] = useState<string | null>(null);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertStudent, setAlertStudent] = useState<Student | null>(null);
 
   const ready = !!cls && !!parallel;
 
@@ -33,17 +46,20 @@ export default function ParentNumbers() {
       .sort((a, b) => a.name.localeCompare(b.name, "ru"));
   }, [students, cls, parallel, ready]);
 
+  const refreshContacts = async () => {
+    const map = await fetchParentContacts();
+    const nextPhones: Record<string, string> = {};
+    const nextLinked: Record<string, boolean> = {};
+    for (const [sid, c] of Object.entries(map)) {
+      nextPhones[sid] = c.phone || "";
+      nextLinked[sid] = !!c.chat_id;
+    }
+    setPhones((prev) => ({ ...nextPhones, ...prev }));
+    setLinked(nextLinked);
+  };
+
   useEffect(() => {
-    fetchParentContacts().then((map) => {
-      const nextPhones: Record<string, string> = {};
-      const nextLinked: Record<string, boolean> = {};
-      for (const [sid, c] of Object.entries(map)) {
-        nextPhones[sid] = c.phone || "";
-        nextLinked[sid] = !!c.chat_id;
-      }
-      setPhones((prev) => ({ ...nextPhones, ...prev }));
-      setLinked(nextLinked);
-    });
+    refreshContacts();
   }, []);
 
   const handleSave = async (s: Student) => {
@@ -56,6 +72,26 @@ export default function ParentNumbers() {
     setSaving(null);
     if (ok) toast.success(t("parents.saved"));
     else toast.error(t("parents.saveError"));
+  };
+
+  const openResetDialog = (s: Student) => {
+    setAlertStudent(s);
+    setAlertOpen(true);
+  };
+
+  const handleConfirmReset = async () => {
+    if (!alertStudent) return;
+    setAlertOpen(false);
+    setResetting(alertStudent.id);
+    const ok = await resetChatId(alertStudent.id);
+    setResetting(null);
+    if (ok) {
+      toast.success(t("parents.resetSuccess"));
+      await refreshContacts();
+    } else {
+      toast.error(t("parents.resetError"));
+    }
+    setAlertStudent(null);
   };
 
   return (
@@ -108,6 +144,7 @@ export default function ParentNumbers() {
                     <TableHead className="font-semibold">{t("parents.phone")}</TableHead>
                     <TableHead className="font-semibold">{t("parents.status")}</TableHead>
                     <TableHead className="font-semibold text-right">{t("parents.action")}</TableHead>
+                    <TableHead className="font-semibold text-center">{t("th.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -139,10 +176,22 @@ export default function ParentNumbers() {
                           <Save className="h-4 w-4" /> {t("parents.save")}
                         </Button>
                       </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openResetDialog(s)}
+                          disabled={resetting === s.id || !linked[s.id]}
+                          className="gap-1"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                          {resetting === s.id ? "..." : t("parents.reset")}
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                   {roster.length === 0 && (
-                    <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">{t("parents.noStudents")}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">{t("parents.noStudents")}</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -150,6 +199,25 @@ export default function ParentNumbers() {
           </CardContent>
         </Card>
       )}
+
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("parents.resetConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("parents.resetConfirmDesc")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setAlertStudent(null)}>
+              {t("parents.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmReset}>
+              {t("parents.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

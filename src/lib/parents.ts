@@ -53,6 +53,16 @@ export async function saveParentContact(input: {
   return !error;
 }
 
+// Reset (disconnect) a student's Telegram chat_id by setting it to NULL.
+export async function resetChatId(studentId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("parent_contacts")
+    .update({ chat_id: null })
+    .eq("school_id", schoolId())
+    .eq("student_id", studentId);
+  return !error;
+}
+
 // Send a Telegram message to a student's parent via edge function.
 export async function sendParentMessage(chatId: string, text: string): Promise<{ ok: boolean; error?: string }> {
   const { data, error } = await supabase.functions.invoke("send-telegram", {
