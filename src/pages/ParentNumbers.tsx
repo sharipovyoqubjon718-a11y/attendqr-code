@@ -16,12 +16,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Phone, Save, Link2, Link2Off, RotateCcw } from "lucide-react";
+import { Phone, Save, Link2, Link2Off, RotateCcw, WifiOff, RefreshCw, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { getStudents, type Student } from "@/lib/store";
 import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
 import { CLASSES, PARALLELS, matchesClassParallel } from "@/lib/classes";
-import { fetchParentContacts, saveParentContact, resetChatId } from "@/lib/parents";
+import { fetchParentContacts, getCachedParentContacts, saveParentContact, resetChatId, type ParentContact } from "@/lib/parents";
 import { useI18n } from "@/lib/i18n";
 
 export default function ParentNumbers() {
