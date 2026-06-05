@@ -309,6 +309,13 @@ const translations = {
   "parents.cancel": { tj: "Бекор", ru: "Отмена", en: "Cancel" },
   "parents.confirm": { tj: "Тасдиқ", ru: "Подтвердить", en: "Confirm" },
 
+  // Connectivity & error handling
+  "conn.online": { tj: "Онлайн", ru: "В сети", en: "Online" },
+  "conn.offline": { tj: "Офлайн", ru: "Не в сети", en: "Offline" },
+  "conn.lost": { tj: "Пайвасти интернет қатъ шуд. Лутфан пайвасти интернетро тафтиш кунед.", ru: "Соединение потеряно. Пожалуйста, проверьте подключение к интернету.", en: "Connection lost. Please check your internet connection." },
+  "conn.retry": { tj: "Аз нав кӯшиш кунед", ru: "Повторить", en: "Retry" },
+  "conn.stale": { tj: "Маълумоти нишондодашуда метавонад кӯҳна бошад.", ru: "Отображаемые данные могут быть устаревшими.", en: "Showing last known data — it may be outdated." },
+
   // Message to Parents
   "msg.title": { tj: "Паём ба волидайн", ru: "Сообщение родителям", en: "Message to Parents" },
   "msg.search": { tj: "Ҷустуҷӯ бо ном...", ru: "Поиск по имени...", en: "Search by name..." },
