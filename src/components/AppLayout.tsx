@@ -2,6 +2,7 @@ import { LogOut } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { useI18n } from "@/lib/i18n";
 import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
 import goldenEmblem from "@/assets/golden-emblem.png";
