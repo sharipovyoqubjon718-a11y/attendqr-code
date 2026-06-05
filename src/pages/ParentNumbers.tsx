@@ -148,7 +148,25 @@ export default function ParentNumbers() {
         </CardContent>
       </Card>
 
-      {!ready ? (
+      {stale && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700/50 dark:bg-amber-900/20 dark:text-amber-300">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>{t("conn.stale")}</span>
+        </div>
+      )}
+
+      {loadError ? (
+        <Card className="border-destructive/40">
+          <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
+            <WifiOff className="h-8 w-8 text-destructive" />
+            <p className="text-sm font-medium text-foreground">{t("conn.lost")}</p>
+            <Button onClick={refreshContacts} disabled={loading} className="gap-2">
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              {t("conn.retry")}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : !ready ? (
         <Card className="border-dashed">
           <CardContent className="p-8 text-center text-muted-foreground">
             {t("parents.selectHint")}
