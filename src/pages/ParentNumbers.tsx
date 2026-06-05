@@ -36,6 +36,9 @@ export default function ParentNumbers() {
   const [resetting, setResetting] = useState<string | null>(null);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertStudent, setAlertStudent] = useState<Student | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [stale, setStale] = useState(false);
 
   const ready = !!cls && !!parallel;
 
@@ -46,8 +49,7 @@ export default function ParentNumbers() {
       .sort((a, b) => a.name.localeCompare(b.name, "ru"));
   }, [students, cls, parallel, ready]);
 
-  const refreshContacts = async () => {
-    const map = await fetchParentContacts();
+  const applyContacts = (map: Record<string, ParentContact>) => {
     const nextPhones: Record<string, string> = {};
     const nextLinked: Record<string, boolean> = {};
     for (const [sid, c] of Object.entries(map)) {
@@ -56,6 +58,28 @@ export default function ParentNumbers() {
     }
     setPhones((prev) => ({ ...nextPhones, ...prev }));
     setLinked(nextLinked);
+  };
+
+  const refreshContacts = async () => {
+    setLoading(true);
+    try {
+      const map = await fetchParentContacts();
+      applyContacts(map);
+      setLoadError(false);
+      setStale(false);
+    } catch {
+      // Network/database error: fall back to cached data if available.
+      const cached = getCachedParentContacts();
+      if (cached) {
+        applyContacts(cached);
+        setStale(true);
+        setLoadError(false);
+      } else {
+        setLoadError(true);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
