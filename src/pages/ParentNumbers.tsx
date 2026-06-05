@@ -185,7 +185,7 @@ export default function ParentNumbers() {
                           className="gap-1"
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
-                          {resetting === s.id ? t("common.loading") || "..." : t("parents.reset")}
+                          {resetting === s.id ? "..." : t("parents.reset")}
                         </Button>
                       </TableCell>
                     </TableRow>
