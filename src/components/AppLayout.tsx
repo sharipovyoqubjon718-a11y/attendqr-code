@@ -28,7 +28,8 @@ export function AppLayout({ children, onLogout }: Props) {
             <h1 className="font-display text-sm sm:text-base font-bold text-foreground flex-1 leading-tight truncate">
               {school.name}
             </h1>
-            <div className="flex items-center gap-1">
+            <div class="flex items-center gap-2">
+              <ConnectionStatus />
               <Button variant="ghost" size="icon" onClick={onLogout} title={t("login.logout")}>
                 <LogOut className="h-4 w-4" />
               </Button>
