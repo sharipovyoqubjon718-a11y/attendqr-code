@@ -2,6 +2,7 @@ import { LogOut } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { useI18n } from "@/lib/i18n";
 import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
 import goldenEmblem from "@/assets/golden-emblem.png";
@@ -28,7 +29,8 @@ export function AppLayout({ children, onLogout }: Props) {
             <h1 className="font-display text-sm sm:text-base font-bold text-foreground flex-1 leading-tight truncate">
               {school.name}
             </h1>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
+              <ConnectionStatus />
               <Button variant="ghost" size="icon" onClick={onLogout} title={t("login.logout")}>
                 <LogOut className="h-4 w-4" />
               </Button>

@@ -16,12 +16,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Phone, Save, Link2, Link2Off, RotateCcw } from "lucide-react";
+import { Phone, Save, Link2, Link2Off, RotateCcw, WifiOff, RefreshCw, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { getStudents, type Student } from "@/lib/store";
 import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
 import { CLASSES, PARALLELS, matchesClassParallel } from "@/lib/classes";
-import { fetchParentContacts, saveParentContact, resetChatId } from "@/lib/parents";
+import { fetchParentContacts, getCachedParentContacts, saveParentContact, resetChatId, type ParentContact } from "@/lib/parents";
 import { useI18n } from "@/lib/i18n";
 
 export default function ParentNumbers() {
@@ -36,6 +36,9 @@ export default function ParentNumbers() {
   const [resetting, setResetting] = useState<string | null>(null);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertStudent, setAlertStudent] = useState<Student | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [stale, setStale] = useState(false);
 
   const ready = !!cls && !!parallel;
 
@@ -46,8 +49,7 @@ export default function ParentNumbers() {
       .sort((a, b) => a.name.localeCompare(b.name, "ru"));
   }, [students, cls, parallel, ready]);
 
-  const refreshContacts = async () => {
-    const map = await fetchParentContacts();
+  const applyContacts = (map: Record<string, ParentContact>) => {
     const nextPhones: Record<string, string> = {};
     const nextLinked: Record<string, boolean> = {};
     for (const [sid, c] of Object.entries(map)) {
@@ -56,6 +58,28 @@ export default function ParentNumbers() {
     }
     setPhones((prev) => ({ ...nextPhones, ...prev }));
     setLinked(nextLinked);
+  };
+
+  const refreshContacts = async () => {
+    setLoading(true);
+    try {
+      const map = await fetchParentContacts();
+      applyContacts(map);
+      setLoadError(false);
+      setStale(false);
+    } catch {
+      // Network/database error: fall back to cached data if available.
+      const cached = getCachedParentContacts();
+      if (cached) {
+        applyContacts(cached);
+        setStale(true);
+        setLoadError(false);
+      } else {
+        setLoadError(true);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -124,7 +148,25 @@ export default function ParentNumbers() {
         </CardContent>
       </Card>
 
-      {!ready ? (
+      {stale && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700/50 dark:bg-amber-900/20 dark:text-amber-300">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>{t("conn.stale")}</span>
+        </div>
+      )}
+
+      {loadError ? (
+        <Card className="border-destructive/40">
+          <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
+            <WifiOff className="h-8 w-8 text-destructive" />
+            <p className="text-sm font-medium text-foreground">{t("conn.lost")}</p>
+            <Button onClick={refreshContacts} disabled={loading} className="gap-2">
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              {t("conn.retry")}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : !ready ? (
         <Card className="border-dashed">
           <CardContent className="p-8 text-center text-muted-foreground">
             {t("parents.selectHint")}
