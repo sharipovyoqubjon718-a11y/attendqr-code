@@ -316,6 +316,14 @@ const translations = {
   "conn.retry": { tj: "Аз нав кӯшиш кунед", ru: "Повторить", en: "Retry" },
   "conn.stale": { tj: "Маълумоти нишондодашуда метавонад кӯҳна бошад.", ru: "Отображаемые данные могут быть устаревшими.", en: "Showing last known data — it may be outdated." },
 
+  // Messages / Notifications
+  "nav.messages": { tj: "Паёмҳо", ru: "Сообщения", en: "Messages" },
+  "messages.title": { tj: "Паёмҳо", ru: "Сообщения", en: "Messages" },
+  "messages.markAll": { tj: "Ҳамаро хонда қайд кунед", ru: "Отметить все прочитанными", en: "Mark all read" },
+  "messages.allRead": { tj: "Ҳама паёмҳо хонда шуданд", ru: "Все сообщения отмечены прочитанными", en: "All messages marked as read" },
+  "messages.empty": { tj: "Ҳоло паёме нест", ru: "Пока нет сообщений", en: "No messages yet" },
+  "messages.unknown": { tj: "Номаълум", ru: "Неизвестно", en: "Unknown" },
+
   // Message to Parents
   "msg.title": { tj: "Паём ба волидайн", ru: "Сообщение родителям", en: "Message to Parents" },
   "msg.search": { tj: "Ҷустуҷӯ бо ном...", ru: "Поиск по имени...", en: "Search by name..." },

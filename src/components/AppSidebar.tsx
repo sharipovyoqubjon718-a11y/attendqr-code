@@ -1,7 +1,10 @@
-import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy, Trophy, BookOpen, Phone, MessageSquare } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy, Trophy, BookOpen, Phone, MessageSquare, Bell } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useI18n } from "@/lib/i18n";
-import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import { getActiveSchool, getSelectedSchool, getActiveSchoolId, getSelectedSchoolId } from "@/lib/schools";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
 import goldenEmblem from "@/assets/golden-emblem.png";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -14,8 +17,35 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const school = getActiveSchool() || getSelectedSchool();
   const logoSrc = school.logoDataUrl || goldenEmblem;
+  const schoolId = getActiveSchoolId() || getSelectedSchoolId() || "gdbh";
+  const [unread, setUnread] = useState(0);
 
-  const navItems = [
+  useEffect(() => {
+    let active = true;
+    const loadCount = async () => {
+      const { count } = await supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("school_id", schoolId)
+        .eq("status", "unread");
+      if (active) setUnread(count ?? 0);
+    };
+    loadCount();
+    const channel = supabase
+      .channel("sidebar-messages")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages", filter: `school_id=eq.${schoolId}` },
+        () => loadCount()
+      )
+      .subscribe();
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
+  }, [schoolId]);
+
+  const navItems: { title: string; url: string; icon: typeof LayoutDashboard; badge?: number }[] = [
     { title: t("nav.dashboard"), url: "/", icon: LayoutDashboard },
     { title: t("nav.shift1"), url: "/students", icon: Sun },
     { title: t("nav.shift2"), url: "/students2", icon: Moon },
@@ -27,6 +57,7 @@ export function AppSidebar() {
     { title: t("nav.journal"), url: "/journal", icon: BookOpen },
     { title: t("nav.parents"), url: "/parents", icon: Phone },
     { title: t("nav.messageParents"), url: "/message-parents", icon: MessageSquare },
+    { title: t("nav.messages"), url: "/messages", icon: Bell, badge: unread },
     { title: t("nav.blacklist"), url: "/blacklist", icon: ShieldAlert },
     { title: t("nav.about"), url: "/about", icon: Info },
     { title: t("settings.title"), url: "/settings", icon: Settings },
@@ -57,7 +88,12 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end={item.url === "/"} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-semibold">
                       <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!collapsed && <span className="flex-1">{item.title}</span>}
+                      {item.badge ? (
+                        <Badge variant="destructive" className="ml-auto h-5 min-w-5 justify-center px-1 text-[10px]">
+                          {item.badge}
+                        </Badge>
+                      ) : null}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

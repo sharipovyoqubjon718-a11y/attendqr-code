@@ -21,6 +21,7 @@ import Rankings from "@/pages/Rankings";
 import Journal from "@/pages/Journal";
 import ParentNumbers from "@/pages/ParentNumbers";
 import MessageToParents from "@/pages/MessageToParents";
+import Messages from "@/pages/Messages";
 import NotFound from "@/pages/NotFound";
 import { setActiveSchoolId } from "@/lib/schools";
 
@@ -70,6 +71,7 @@ const App = () => {
                   <Route path="/journal" element={<Journal />} />
                   <Route path="/parents" element={<ParentNumbers />} />
                   <Route path="/message-parents" element={<MessageToParents />} />
+                  <Route path="/messages" element={<Messages />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

@@ -56,11 +56,33 @@ Deno.serve(async (req) => {
     // Check if this chat is already linked.
     const { data: linkedRows } = await supabase
       .from('parent_contacts')
-      .select('id')
+      .select('id, school_id, student_name')
       .eq('chat_id', chatIdStr)
       .limit(1)
 
     const isLinked = !!(linkedRows && linkedRows.length > 0)
+    const linkedContact = isLinked ? linkedRows![0] : null
+
+    // Save every non-/start text message into the notifications feed so the
+    // dashboard can show it in real time.
+    if (text && !text.startsWith('/start')) {
+      const senderFromName = [message?.from?.first_name, message?.from?.last_name]
+        .filter(Boolean)
+        .join(' ')
+      const senderName =
+        (linkedContact?.student_name as string) || senderFromName || `ID ${chatIdStr}`
+      try {
+        await supabase.from('messages').insert({
+          school_id: (linkedContact?.school_id as string) || 'gdbh',
+          chat_id: chatIdStr,
+          sender_name: senderName,
+          message_content: text,
+          status: 'unread',
+        })
+      } catch {
+        // never block the bot on a logging failure
+      }
+    }
 
     if (text.startsWith('/start')) {
       await sendMessage(token, chatId, isLinked ? ALREADY_LINKED : ASK_PHONE)
