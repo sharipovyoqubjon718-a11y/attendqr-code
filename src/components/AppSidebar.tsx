@@ -17,6 +17,33 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const school = getActiveSchool() || getSelectedSchool();
   const logoSrc = school.logoDataUrl || goldenEmblem;
+  const schoolId = getActiveSchoolId() || getSelectedSchoolId() || "gdbh";
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    const loadCount = async () => {
+      const { count } = await supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("school_id", schoolId)
+        .eq("status", "unread");
+      if (active) setUnread(count ?? 0);
+    };
+    loadCount();
+    const channel = supabase
+      .channel("sidebar-messages")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages", filter: `school_id=eq.${schoolId}` },
+        () => loadCount()
+      )
+      .subscribe();
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
+  }, [schoolId]);
 
   const navItems = [
     { title: t("nav.dashboard"), url: "/", icon: LayoutDashboard },
@@ -30,6 +57,7 @@ export function AppSidebar() {
     { title: t("nav.journal"), url: "/journal", icon: BookOpen },
     { title: t("nav.parents"), url: "/parents", icon: Phone },
     { title: t("nav.messageParents"), url: "/message-parents", icon: MessageSquare },
+    { title: t("nav.messages"), url: "/messages", icon: Bell, badge: unread },
     { title: t("nav.blacklist"), url: "/blacklist", icon: ShieldAlert },
     { title: t("nav.about"), url: "/about", icon: Info },
     { title: t("settings.title"), url: "/settings", icon: Settings },
