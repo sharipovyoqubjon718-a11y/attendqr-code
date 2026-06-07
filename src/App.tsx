@@ -71,6 +71,7 @@ const App = () => {
                   <Route path="/journal" element={<Journal />} />
                   <Route path="/parents" element={<ParentNumbers />} />
                   <Route path="/message-parents" element={<MessageToParents />} />
+                  <Route path="/messages" element={<Messages />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
