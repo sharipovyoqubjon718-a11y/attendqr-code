@@ -45,7 +45,7 @@ export function AppSidebar() {
     };
   }, [schoolId]);
 
-  const navItems = [
+  const navItems: { title: string; url: string; icon: typeof LayoutDashboard; badge?: number }[] = [
     { title: t("nav.dashboard"), url: "/", icon: LayoutDashboard },
     { title: t("nav.shift1"), url: "/students", icon: Sun },
     { title: t("nav.shift2"), url: "/students2", icon: Moon },
