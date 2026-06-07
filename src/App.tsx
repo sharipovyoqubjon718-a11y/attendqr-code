@@ -21,6 +21,7 @@ import Rankings from "@/pages/Rankings";
 import Journal from "@/pages/Journal";
 import ParentNumbers from "@/pages/ParentNumbers";
 import MessageToParents from "@/pages/MessageToParents";
+import Messages from "@/pages/Messages";
 import NotFound from "@/pages/NotFound";
 import { setActiveSchoolId } from "@/lib/schools";
 
