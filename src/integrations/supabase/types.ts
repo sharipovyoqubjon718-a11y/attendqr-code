@@ -46,6 +46,39 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          chat_id: string | null
+          created_at: string
+          id: string
+          message_content: string
+          school_id: string
+          sender_name: string
+          status: string
+          timestamp: string
+        }
+        Insert: {
+          chat_id?: string | null
+          created_at?: string
+          id?: string
+          message_content?: string
+          school_id?: string
+          sender_name?: string
+          status?: string
+          timestamp?: string
+        }
+        Update: {
+          chat_id?: string | null
+          created_at?: string
+          id?: string
+          message_content?: string
+          school_id?: string
+          sender_name?: string
+          status?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
       parent_contacts: {
         Row: {
           chat_id: string | null
