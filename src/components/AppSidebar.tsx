@@ -1,7 +1,10 @@
-import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy, Trophy, BookOpen, Phone, MessageSquare } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy, Trophy, BookOpen, Phone, MessageSquare, Bell } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useI18n } from "@/lib/i18n";
-import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import { getActiveSchool, getSelectedSchool, getActiveSchoolId, getSelectedSchoolId } from "@/lib/schools";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
 import goldenEmblem from "@/assets/golden-emblem.png";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
