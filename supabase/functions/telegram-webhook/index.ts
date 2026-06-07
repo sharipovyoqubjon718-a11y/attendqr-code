@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (text.startsWith('/start')) {
       await sendMessage(token, chatId, isLinked ? ALREADY_LINKED : ASK_PHONE)
       return new Response('ok', { status: 200 })
     }
