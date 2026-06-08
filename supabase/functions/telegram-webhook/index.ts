@@ -1,13 +1,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
-const ASK_PHONE =
-  'Лутфан, рақами телефони худро нависед (масалан: 900000000), то мо шуморо ба мактаб пайваст кунем.'
-const LINKED_OK =
-  'Ташаккур! Аккаунти шумо бомуваффақият бо хонанда пайваст карда шуд. Акнун шумо паёмҳоро аз мактаб қабул мекунед.'
-const ALREADY_LINKED =
-  'Аккаунти шумо аллакай бо хонанда пайваст шудааст. Шумо паёмҳоро аз мактаб қабул мекунед.'
-const NOT_FOUND =
-  'Бубахшед, бо ин рақами телефон хонанда ёфт нашуд. Лутфан рақамеро, ки дар мактаб сабт шудааст, дубора нависед.'
+// Exact daily activation reply (sent only on the first message of a calendar day).
+const DAILY_REPLY =
+  'Шумо ботро имрӯз фаъол кардед! Лутфан паёми навбатиро фардо фиристед!'
 
 async function sendMessage(token: string, chatId: number | string, text: string) {
   try {
@@ -21,16 +16,19 @@ async function sendMessage(token: string, chatId: number | string, text: string)
   }
 }
 
-// Keep only digits for phone matching.
-function normalizePhone(raw: string): string {
-  return (raw || '').replace(/\D/g, '')
+// Today's date in YYYY-MM-DD (UTC) for daily-limit comparisons.
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10)
 }
 
 // IMPORTANT: This handler ALWAYS returns HTTP 200 so Telegram never retries
-// and never reports a "non-2xx status code" error. The registration flow is
-// kept simple: /start asks for a phone number, a valid phone links the chat.
+// and never reports a "non-2xx status code" error.
+//
+// Behaviour:
+//  - Every incoming text is saved to the `messages` table (dashboard feed).
+//  - On the FIRST message of a calendar day, the bot replies with DAILY_REPLY.
+//  - On subsequent messages the same day, the bot stays completely silent.
 Deno.serve(async (req) => {
-  // Always respond 200, even on unexpected input.
   try {
     if (req.method !== 'POST') {
       return new Response('ok', { status: 200 })
@@ -53,19 +51,18 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    // Check if this chat is already linked.
+    // Look up the linked contact (so the message shows the student's name).
     const { data: linkedRows } = await supabase
       .from('parent_contacts')
-      .select('id, school_id, student_name')
+      .select('id, school_id, student_name, last_start_date')
       .eq('chat_id', chatIdStr)
       .limit(1)
 
-    const isLinked = !!(linkedRows && linkedRows.length > 0)
-    const linkedContact = isLinked ? linkedRows![0] : null
+    const linkedContact =
+      linkedRows && linkedRows.length > 0 ? linkedRows[0] : null
 
-    // Save every non-/start text message into the notifications feed so the
-    // dashboard can show it in real time.
-    if (text && !text.startsWith('/start')) {
+    // Always save the message into the notifications feed.
+    if (text) {
       const senderFromName = [message?.from?.first_name, message?.from?.last_name]
         .filter(Boolean)
         .join(' ')
@@ -84,44 +81,28 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (text.startsWith('/start')) {
-      await sendMessage(token, chatId, isLinked ? ALREADY_LINKED : ASK_PHONE)
-      return new Response('ok', { status: 200 })
-    }
+    // Daily-limit reply: only on the first message of the calendar day.
+    const today = todayStr()
+    const lastDate = (linkedContact?.last_start_date as string | null) ?? null
+    const isFirstOfDay = lastDate !== today
 
-    if (isLinked) {
-      await sendMessage(token, chatId, ALREADY_LINKED)
-      return new Response('ok', { status: 200 })
-    }
-
-    // Not linked: treat any text as a phone number attempt.
-    const phone = normalizePhone(text)
-    if (phone.length >= 6) {
-      const { data: matches } = await supabase
-        .from('parent_contacts')
-        .select('id, phone')
-        .not('phone', 'is', null)
-
-      const found = (matches ?? []).find(
-        (r) => normalizePhone(r.phone as string) === phone,
-      )
-
-      if (found) {
-        await supabase
-          .from('parent_contacts')
-          .update({ chat_id: chatIdStr })
-          .eq('id', found.id)
-        await sendMessage(token, chatId, LINKED_OK)
-      } else {
-        await sendMessage(token, chatId, NOT_FOUND)
+    if (isFirstOfDay) {
+      if (linkedContact) {
+        try {
+          await supabase
+            .from('parent_contacts')
+            .update({ last_start_date: today })
+            .eq('id', linkedContact.id)
+        } catch {
+          // ignore tracking failures
+        }
       }
-    } else {
-      await sendMessage(token, chatId, ASK_PHONE)
+      await sendMessage(token, chatId, DAILY_REPLY)
     }
+    // Subsequent messages the same day: stay completely silent.
 
     return new Response('ok', { status: 200 })
   } catch {
-    // Never surface an error to Telegram.
     return new Response('ok', { status: 200 })
   }
 })
