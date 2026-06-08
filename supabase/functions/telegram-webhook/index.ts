@@ -44,6 +44,12 @@ Deno.serve(async (req) => {
 
     if (!chatId) return new Response('ok', { status: 200 })
 
+    // Filter out system/slash commands (e.g. /start). These are never saved
+    // to the database, never shown in the dashboard, and never trigger a reply.
+    if (text.startsWith('/')) {
+      return new Response('ok', { status: 200 })
+    }
+
     const chatIdStr = String(chatId)
 
     const supabase = createClient(
