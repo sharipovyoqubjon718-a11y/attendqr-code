@@ -101,6 +101,25 @@ export default function Messages() {
               <CheckCheck className="h-4 w-4 mr-1" /> {t("messages.markAll")}
             </Button>
           )}
+          {messages.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-1" /> {t("messages.clear")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("messages.clear")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("messages.clearConfirm")}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("messages.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleClear}>{t("messages.clear")}</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </div>
 
