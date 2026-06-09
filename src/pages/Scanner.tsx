@@ -7,8 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { addLog, formatTajikTime, getLogs, getStudentById, isSessionActive } from "@/lib/store";
 import { getSelectedSchool } from "@/lib/schools";
+import { fetchParentContacts, sendParentMessage } from "@/lib/parents";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
+
+const PARENT_SCAN_NOTICE = "Хонандаи шумо бомуваффақият сабт шуд.";
 
 type ScanResult = { status: "success" | "error"; message: string; studentName?: string; type?: "check-in" | "check-out"; time?: string };
 type FacingMode = "environment" | "user";
