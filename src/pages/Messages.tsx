@@ -72,6 +72,16 @@ export default function Messages() {
     toast.success(t("messages.allRead"));
   };
 
+  const handleClear = async () => {
+    try {
+      await clearAllMessages();
+      setMessages([]);
+      toast.success(t("messages.cleared"));
+    } catch {
+      toast.error(t("conn.lost"));
+    }
+  };
+
   const unreadCount = messages.filter((m) => m.status === "unread").length;
 
   return (
