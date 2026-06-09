@@ -7,8 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { addLog, formatTajikTime, getLogs, getStudentById, isSessionActive } from "@/lib/store";
 import { getSelectedSchool } from "@/lib/schools";
+import { fetchParentContacts, sendParentMessage } from "@/lib/parents";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
+
+const PARENT_SCAN_NOTICE = "Хонандаи шумо бомуваффақият сабт шуд.";
 
 type ScanResult = { status: "success" | "error"; message: string; studentName?: string; type?: "check-in" | "check-out"; time?: string };
 type FacingMode = "environment" | "user";
@@ -53,7 +56,21 @@ export default function Scanner() {
     const label = type === "check-in" ? t("scanner.checkin") : t("scanner.checkout");
     setResult({ status: "success", message: `${label}`, studentName: student.name, type, time: formatTajikTime(timestamp) });
     toast.success(`${student.name} — ${label}`);
+
+    // Notify the parent via Telegram (best-effort, non-blocking).
+    void (async () => {
+      try {
+        const contacts = await fetchParentContacts();
+        const chatId = contacts[student.id]?.chat_id;
+        if (chatId) {
+          await sendParentMessage(chatId, PARENT_SCAN_NOTICE);
+        }
+      } catch {
+        // ignore notification failures
+      }
+    })();
   }, [t]);
+
 
   const stopCamera = useCallback(() => {
     if (frameRef.current !== null) { cancelAnimationFrame(frameRef.current); frameRef.current = null; }

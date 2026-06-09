@@ -3,10 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, CheckCheck, WifiOff, RefreshCw, Inbox } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { MessageSquare, CheckCheck, WifiOff, RefreshCw, Inbox, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchMessages, markMessageRead, markAllMessagesRead, type Message } from "@/lib/messages";
+import { fetchMessages, markMessageRead, markAllMessagesRead, clearAllMessages, type Message } from "@/lib/messages";
 import { getActiveSchoolId, getSelectedSchoolId } from "@/lib/schools";
 import { useI18n } from "@/lib/i18n";
 
@@ -68,6 +72,16 @@ export default function Messages() {
     toast.success(t("messages.allRead"));
   };
 
+  const handleClear = async () => {
+    try {
+      await clearAllMessages();
+      setMessages([]);
+      toast.success(t("messages.cleared"));
+    } catch {
+      toast.error(t("conn.lost"));
+    }
+  };
+
   const unreadCount = messages.filter((m) => m.status === "unread").length;
 
   return (
@@ -86,6 +100,25 @@ export default function Messages() {
             <Button variant="secondary" size="sm" onClick={handleReadAll}>
               <CheckCheck className="h-4 w-4 mr-1" /> {t("messages.markAll")}
             </Button>
+          )}
+          {messages.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-1" /> {t("messages.clear")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("messages.clear")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("messages.clearConfirm")}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("messages.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleClear}>{t("messages.clear")}</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
         </div>
       </div>
