@@ -56,7 +56,21 @@ export default function Scanner() {
     const label = type === "check-in" ? t("scanner.checkin") : t("scanner.checkout");
     setResult({ status: "success", message: `${label}`, studentName: student.name, type, time: formatTajikTime(timestamp) });
     toast.success(`${student.name} — ${label}`);
+
+    // Notify the parent via Telegram (best-effort, non-blocking).
+    void (async () => {
+      try {
+        const contacts = await fetchParentContacts();
+        const chatId = contacts[student.id]?.chat_id;
+        if (chatId) {
+          await sendParentMessage(chatId, PARENT_SCAN_NOTICE);
+        }
+      } catch {
+        // ignore notification failures
+      }
+    })();
   }, [t]);
+
 
   const stopCamera = useCallback(() => {
     if (frameRef.current !== null) { cancelAnimationFrame(frameRef.current); frameRef.current = null; }
