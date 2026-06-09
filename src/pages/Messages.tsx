@@ -3,10 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, CheckCheck, WifiOff, RefreshCw, Inbox } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { MessageSquare, CheckCheck, WifiOff, RefreshCw, Inbox, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchMessages, markMessageRead, markAllMessagesRead, type Message } from "@/lib/messages";
+import { fetchMessages, markMessageRead, markAllMessagesRead, clearAllMessages, type Message } from "@/lib/messages";
 import { getActiveSchoolId, getSelectedSchoolId } from "@/lib/schools";
 import { useI18n } from "@/lib/i18n";
 
