@@ -35,3 +35,11 @@ export async function markAllMessagesRead(): Promise<void> {
     .eq("school_id", schoolId())
     .eq("status", "unread");
 }
+
+export async function clearAllMessages(): Promise<void> {
+  const { error } = await supabase
+    .from("messages")
+    .delete()
+    .eq("school_id", schoolId());
+  if (error) throw error;
+}

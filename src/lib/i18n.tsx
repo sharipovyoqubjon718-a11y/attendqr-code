@@ -323,6 +323,10 @@ const translations = {
   "messages.allRead": { tj: "Ҳама паёмҳо хонда шуданд", ru: "Все сообщения отмечены прочитанными", en: "All messages marked as read" },
   "messages.empty": { tj: "Ҳоло паёме нест", ru: "Пока нет сообщений", en: "No messages yet" },
   "messages.unknown": { tj: "Номаълум", ru: "Неизвестно", en: "Unknown" },
+  "messages.clear": { tj: "Тоза кардан", ru: "Очистить", en: "Clear" },
+  "messages.clearConfirm": { tj: "Оё шумо боварӣ доред, ки мехоҳед ҳамаи паёмҳоро нест кунед?", ru: "Вы уверены, что хотите удалить все сообщения?", en: "Are you sure you want to delete all messages?" },
+  "messages.cleared": { tj: "Ҳама паёмҳо нест карда шуданд", ru: "Все сообщения удалены", en: "All messages deleted" },
+  "messages.cancel": { tj: "Бекор кардан", ru: "Отмена", en: "Cancel" },
 
   // Message to Parents
   "msg.title": { tj: "Паём ба волидайн", ru: "Сообщение родителям", en: "Message to Parents" },
