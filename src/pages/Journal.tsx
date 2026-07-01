@@ -22,7 +22,7 @@ import { getStudents, addStudent, type Student } from "@/lib/store";
 import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
 import { sanitizeText } from "@/lib/security";
 import {
-  loadJournal, saveJournal, getSubjects,
+  loadJournal, saveJournal, getSubjects, setSubjects as persistSubjects,
   quarterForDate, quarterAvg, avgForStudent, gradeColorClass,
   type Quarter, type JournalData,
 } from "@/lib/journal";
