@@ -64,7 +64,7 @@ export default function Scanner() {
         const contacts = await fetchParentContacts();
         const chatId = contacts[student.id]?.chat_id;
         if (chatId) {
-          await sendParentMessage(chatId, PARENT_SCAN_NOTICE);
+          await sendParentMessage(chatId, parentScanNotice(student.name, formatTajikTime(timestamp)));
         }
       } catch {
         // ignore notification failures
