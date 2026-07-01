@@ -40,7 +40,11 @@ export default function Journal() {
   const [students, setStudents] = useState<Student[]>(() => getStudents());
   const refresh = () => setStudents(getStudents());
 
-  const subjects = useMemo(() => getSubjects(), []);
+  const [subjects, setSubjectsState] = useState<string[]>(() => getSubjects());
+  const commitSubjects = (next: string[]) => {
+    persistSubjects(next);
+    setSubjectsState(next);
+  };
 
   const [cls, setCls] = useState<string>("");
   const [letter, setLetter] = useState<string>("");
