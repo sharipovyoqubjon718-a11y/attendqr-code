@@ -83,6 +83,7 @@ export type Database = {
         Row: {
           chat_id: string | null
           created_at: string
+          grade: string
           id: string
           last_start_date: string | null
           phone: string | null
@@ -94,6 +95,7 @@ export type Database = {
         Insert: {
           chat_id?: string | null
           created_at?: string
+          grade?: string
           id?: string
           last_start_date?: string | null
           phone?: string | null
@@ -105,6 +107,7 @@ export type Database = {
         Update: {
           chat_id?: string | null
           created_at?: string
+          grade?: string
           id?: string
           last_start_date?: string | null
           phone?: string | null
