@@ -11,7 +11,11 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, QrCode, Trash2, BookOpen } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, QrCode, Trash2, BookOpen, Pencil, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import jsQR from "jsqr";
 import { getStudents, addStudent, type Student } from "@/lib/store";
