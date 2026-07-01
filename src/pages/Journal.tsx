@@ -156,7 +156,10 @@ export default function Journal() {
             </Select>
           </div>
           <div>
-            <Label className="text-xs">Фан</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Фан</Label>
+              <SubjectManager subjects={subjects} onChange={commitSubjects} />
+            </div>
             <Select value={subject} onValueChange={setSubject}>
               <SelectTrigger><SelectValue placeholder="Интихоб..." /></SelectTrigger>
               <SelectContent>
@@ -166,6 +169,7 @@ export default function Journal() {
           </div>
         </CardContent>
       </Card>
+
 
       {!ready ? (
         <Card className="border-dashed">
