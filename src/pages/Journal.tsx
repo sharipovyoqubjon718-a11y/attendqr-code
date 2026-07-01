@@ -11,14 +11,18 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, QrCode, Trash2, BookOpen } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, QrCode, Trash2, BookOpen, Pencil, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import jsQR from "jsqr";
 import { getStudents, addStudent, type Student } from "@/lib/store";
 import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
 import { sanitizeText } from "@/lib/security";
 import {
-  loadJournal, saveJournal, getSubjects,
+  loadJournal, saveJournal, getSubjects, setSubjects as persistSubjects,
   quarterForDate, quarterAvg, avgForStudent, gradeColorClass,
   type Quarter, type JournalData,
 } from "@/lib/journal";
@@ -36,7 +40,11 @@ export default function Journal() {
   const [students, setStudents] = useState<Student[]>(() => getStudents());
   const refresh = () => setStudents(getStudents());
 
-  const subjects = useMemo(() => getSubjects(), []);
+  const [subjects, setSubjectsState] = useState<string[]>(() => getSubjects());
+  const commitSubjects = (next: string[]) => {
+    persistSubjects(next);
+    setSubjectsState(next);
+  };
 
   const [cls, setCls] = useState<string>("");
   const [letter, setLetter] = useState<string>("");
@@ -148,7 +156,10 @@ export default function Journal() {
             </Select>
           </div>
           <div>
-            <Label className="text-xs">Фан</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Фан</Label>
+              <SubjectManager subjects={subjects} onChange={commitSubjects} />
+            </div>
             <Select value={subject} onValueChange={setSubject}>
               <SelectTrigger><SelectValue placeholder="Интихоб..." /></SelectTrigger>
               <SelectContent>
@@ -158,6 +169,7 @@ export default function Journal() {
           </div>
         </CardContent>
       </Card>
+
 
       {!ready ? (
         <Card className="border-dashed">
@@ -483,3 +495,131 @@ function QrAddStudent({ cls, letter, onAdded }: { cls: string; letter: string; o
     </>
   );
 }
+
+/* ---- Subject management (add / edit / delete per School_ID) ------------- */
+function SubjectManager({
+  subjects,
+  onChange,
+}: {
+  subjects: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editIndex, setEditIndex] = useState<number | null>(null); // null = adding new
+  const [name, setName] = useState("");
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+
+  const openAdd = () => { setEditIndex(null); setName(""); setEditOpen(true); };
+  const openEdit = (i: number) => { setEditIndex(i); setName(subjects[i]); setEditOpen(true); };
+
+  const save = () => {
+    const clean = sanitizeText(name).trim();
+    if (!clean) { toast.error("Номи фанро ворид кунед"); return; }
+    if (subjects.some((s, i) => s.toLowerCase() === clean.toLowerCase() && i !== editIndex)) {
+      toast.error("Ин фан аллакай мавҷуд аст");
+      return;
+    }
+    const next = [...subjects];
+    if (editIndex === null) next.push(clean);
+    else next[editIndex] = clean;
+    onChange(next);
+    setEditOpen(false);
+    toast.success("Захира шуд");
+  };
+
+  const confirmDelete = () => {
+    if (deleteIndex === null) return;
+    const next = subjects.filter((_, i) => i !== deleteIndex);
+    onChange(next);
+    setDeleteIndex(null);
+    toast.success("Фан нест карда шуд");
+  };
+
+  return (
+    <>
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        className="h-6 gap-1 px-2 text-xs"
+        onClick={() => setOpen(true)}
+      >
+        <Settings2 className="h-3.5 w-3.5" /> Идоракунӣ
+      </Button>
+
+      {/* Manager list */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Идоракунии фанҳо</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-72 overflow-y-auto">
+            {subjects.length === 0 && (
+              <p className="text-sm text-muted-foreground">Ягон фан нест.</p>
+            )}
+            {subjects.map((s, i) => (
+              <div key={s} className="flex items-center justify-between rounded-md border bg-card px-3 py-2">
+                <span className="text-sm">{s}</span>
+                <div className="flex items-center gap-1">
+                  <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(i)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteIndex(i)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button type="button" className="gap-1" onClick={openAdd}>
+              <Plus className="h-4 w-4" /> Иловаи фан
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add / edit modal */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editIndex === null ? "Иловаи фан" : "Таҳрири фан"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label className="text-xs">Номи фан</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Намуна: Математика"
+              onKeyDown={(e) => e.key === "Enter" && save()}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Бекор кардан</Button>
+            <Button type="button" onClick={save}>Захира кардан</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={deleteIndex !== null} onOpenChange={(o) => !o && setDeleteIndex(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Оё ин фанро нест кардан мехоҳед?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteIndex !== null ? subjects[deleteIndex] : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Не</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Ҳа
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
