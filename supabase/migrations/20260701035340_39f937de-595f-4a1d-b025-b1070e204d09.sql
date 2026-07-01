@@ -1,0 +1,1 @@
+ALTER TABLE public.parent_contacts ADD COLUMN IF NOT EXISTS grade text NOT NULL DEFAULT '';
