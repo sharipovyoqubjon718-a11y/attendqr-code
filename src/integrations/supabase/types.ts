@@ -118,6 +118,36 @@ export type Database = {
         }
         Relationships: []
       }
+      school_credentials: {
+        Row: {
+          created_at: string
+          logo_data_url: string | null
+          name: string
+          password: string
+          school_id: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          logo_data_url?: string | null
+          name?: string
+          password?: string
+          school_id: string
+          updated_at?: string
+          username?: string
+        }
+        Update: {
+          created_at?: string
+          logo_data_url?: string | null
+          name?: string
+          password?: string
+          school_id?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       students: {
         Row: {
           class_name: string
@@ -147,7 +177,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      upsert_school_credentials: {
+        Args: {
+          p_logo_data_url?: string
+          p_name?: string
+          p_password: string
+          p_school_id: string
+          p_username: string
+        }
+        Returns: {
+          created_at: string
+          logo_data_url: string | null
+          name: string
+          password: string
+          school_id: string
+          updated_at: string
+          username: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "school_credentials"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       [_ in never]: never
