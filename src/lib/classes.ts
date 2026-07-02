@@ -22,7 +22,7 @@ export function makeGrade(cls: string, parallel: string): string {
 // Parse a stored grade like "2", "2-Б", "10 А" into { cls, letter }.
 // letter is "-" when there's no parallel letter.
 export function parseGrade(g: string): { cls: string; letter: string } {
-  const m = String(g || "").match(/^(\d{1,2})\s*[-\s]?\s*([А-Яа-яA-Za-zӢӯҶҷҲҳҚқҒғӣЁё]?)/);
+  const m = String(g || "").match(/^(\d{1,2})\s*[-\s]?\s*([А-Яа-яA-Za-zӢӣӮӯҶҷҲҳҚқҒғЁё]?)/u);
   const cls = m?.[1] || "";
   const letter = (m?.[2] || "").toUpperCase();
   return { cls, letter: letter || "-" };
