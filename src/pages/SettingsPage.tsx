@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import HiddenAdminPanel from "@/components/HiddenAdminPanel";
+import { syncSchoolCredentials } from "@/lib/school-credentials";
 
 export default function SettingsPage() {
   const { t } = useI18n();
