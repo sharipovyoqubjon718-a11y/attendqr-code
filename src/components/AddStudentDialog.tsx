@@ -3,9 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserPlus } from "lucide-react";
 import { addStudent } from "@/lib/store";
-import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import { getActiveSchool, getSelectedSchool, getShiftForGrade } from "@/lib/schools";
+import { CLASSES, PARALLELS, makeGrade } from "@/lib/classes";
 import { sanitizeText } from "@/lib/security";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -19,18 +21,20 @@ export default function AddStudentDialog({ onStudentAdded }: AddStudentDialogPro
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [idNum, setIdNum] = useState("");
+  const [cls, setCls] = useState("");
+  const [parallel, setParallel] = useState("");
   const [website, setWebsite] = useState(""); // honeypot
   const school = getActiveSchool() || getSelectedSchool();
   const prefix = school.prefix;
 
-  const reset = () => { setName(""); setIdNum(""); setWebsite(""); };
+  const reset = () => { setName(""); setIdNum(""); setCls(""); setParallel(""); setWebsite(""); };
 
   const handleSave = () => {
     if (website) { setOpen(false); return; }
     const trimmedName = sanitizeText(name, 100);
     const trimmedNum = idNum.trim();
 
-    if (!trimmedName || !trimmedNum) {
+    if (!trimmedName || !trimmedNum || !cls || !parallel) {
       toast.error(t("admin.fillAll"));
       return;
     }
@@ -39,11 +43,12 @@ export default function AddStudentDialog({ onStudentAdded }: AddStudentDialogPro
       return;
     }
     const fullId = `${prefix}${trimmedNum.padStart(3, "0")}`;
+    const grade = makeGrade(cls, parallel);
     const success = addStudent({
       id: fullId,
       name: trimmedName,
-      grade: "",
-      shift: "morning",
+      grade,
+      shift: getShiftForGrade(school, grade),
       qrCode: fullId,
     });
     if (!success) {
@@ -90,6 +95,26 @@ export default function AddStudentDialog({ onStudentAdded }: AddStudentDialogPro
               onChange={(e) => setName(e.target.value)}
               maxLength={100}
             />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Синф *</Label>
+              <Select value={cls} onValueChange={setCls}>
+                <SelectTrigger><SelectValue placeholder="Интихоб..." /></SelectTrigger>
+                <SelectContent>
+                  {CLASSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Параллел *</Label>
+              <Select value={parallel} onValueChange={setParallel}>
+                <SelectTrigger><SelectValue placeholder="А, Б, В..." /></SelectTrigger>
+                <SelectContent>
+                  {PARALLELS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="space-y-2">
             <Label>{t("addStudent.idNum")}</Label>
