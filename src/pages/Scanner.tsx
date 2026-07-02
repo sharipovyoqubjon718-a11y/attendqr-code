@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { addLog, formatTajikTime, getLogs, getStudentById, isSessionActive } from "@/lib/store";
 import { getSelectedSchool } from "@/lib/schools";
-import { fetchParentContacts, sendParentMessage } from "@/lib/parents";
+import { findChatIdForStudent, sendParentMessage } from "@/lib/parents";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
