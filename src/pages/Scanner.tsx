@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { addLog, formatTajikTime, getLogs, getStudentById, isSessionActive } from "@/lib/store";
 import { getSelectedSchool } from "@/lib/schools";
-import { fetchParentContacts, sendParentMessage } from "@/lib/parents";
+import { findChatIdForStudent, sendParentMessage } from "@/lib/parents";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -61,8 +61,7 @@ export default function Scanner() {
     // Notify the parent via Telegram (best-effort, non-blocking).
     void (async () => {
       try {
-        const contacts = await fetchParentContacts();
-        const chatId = contacts[student.id]?.chat_id;
+        const chatId = await findChatIdForStudent(student.id, student.name);
         if (chatId) {
           await sendParentMessage(chatId, parentScanNotice(student.name, formatTajikTime(timestamp)));
         }

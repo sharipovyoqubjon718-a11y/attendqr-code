@@ -3,8 +3,14 @@
 
 export const CLASSES: string[] = Array.from({ length: 11 }, (_, i) => String(i + 1));
 
-// "-" means the class has no parallel letter (e.g. "2" instead of "2-Б")
-export const PARALLELS = ["-", "А", "Б", "В", "Г", "Д"] as const;
+// "-" means the class has no parallel letter (e.g. "2" instead of "2-Б").
+// Includes the full Tajik Cyrillic letter set (ғ, ҷ, ҳ, қ, ӯ, ӣ) so parallels
+// like 5-Ғ or 5-Ҷ are supported (UTF-8).
+export const PARALLELS = [
+  "-", "А", "Б", "В", "Г", "Ғ", "Д", "Е", "Ж", "З", "И", "Ӣ",
+  "К", "Қ", "Л", "М", "Н", "О", "П", "Р", "С", "Т", "У", "Ӯ",
+  "Ф", "Х", "Ҳ", "Ҷ", "Ш",
+] as const;
 export type Parallel = (typeof PARALLELS)[number];
 
 // Build the stored grade value from class number + parallel.
@@ -16,7 +22,7 @@ export function makeGrade(cls: string, parallel: string): string {
 // Parse a stored grade like "2", "2-Б", "10 А" into { cls, letter }.
 // letter is "-" when there's no parallel letter.
 export function parseGrade(g: string): { cls: string; letter: string } {
-  const m = String(g || "").match(/^(\d{1,2})\s*[-\s]?\s*([А-Яа-яA-Za-zӢӯҶҷҲҳҚқҒғӣЁё]?)/);
+  const m = String(g || "").match(/^(\d{1,2})\s*[-\s]?\s*([А-Яа-яA-Za-zӢӣӮӯҶҷҲҳҚқҒғЁё]?)/u);
   const cls = m?.[1] || "";
   const letter = (m?.[2] || "").toUpperCase();
   return { cls, letter: letter || "-" };

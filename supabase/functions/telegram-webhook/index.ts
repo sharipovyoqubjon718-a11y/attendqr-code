@@ -109,19 +109,40 @@ Deno.serve(async (req) => {
 
     const grade = makeGrade(parsed.cls, parsed.letter)
     const schoolId = (children[0]?.school_id as string) || 'gdbh'
-    const studentId = `TG-${chatIdStr}-${Date.now()}`
+    const nameNorm = parsed.name.trim().toLowerCase().replace(/\s+/g, ' ')
 
     try {
-      await supabase.from('parent_contacts').insert({
-        school_id: schoolId,
-        student_id: studentId,
-        student_name: parsed.name,
-        chat_id: chatIdStr,
-        grade,
-      })
+      // Prefer linking to an existing student record (added by the school) so
+      // that QR scans — which look up by the real student_id — can notify the
+      // parent. Match on name within the school; only create a new TG-* row
+      // when no matching student exists yet.
+      const { data: existing } = await supabase
+        .from('parent_contacts')
+        .select('id, student_name, chat_id')
+        .eq('school_id', schoolId)
+
+      const match = (existing ?? []).find(
+        (r) => (r.student_name ?? '').trim().toLowerCase().replace(/\s+/g, ' ') === nameNorm,
+      )
+
+      if (match) {
+        await supabase
+          .from('parent_contacts')
+          .update({ chat_id: chatIdStr, grade })
+          .eq('id', match.id)
+      } else {
+        await supabase.from('parent_contacts').insert({
+          school_id: schoolId,
+          student_id: `TG-${chatIdStr}-${Date.now()}`,
+          student_name: parsed.name,
+          chat_id: chatIdStr,
+          grade,
+        })
+      }
     } catch {
-      // ignore insert failures so Telegram never sees a non-2xx response
+      // ignore db failures so Telegram never sees a non-2xx response
     }
+
 
     await sendMessage(token, chatId, registered(parsed.name, grade))
     return new Response('ok', { status: 200 })

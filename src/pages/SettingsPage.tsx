@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import HiddenAdminPanel from "@/components/HiddenAdminPanel";
+import { syncSchoolCredentials } from "@/lib/school-credentials";
 
 export default function SettingsPage() {
   const { t } = useI18n();
@@ -77,10 +78,22 @@ export default function SettingsPage() {
     toast.success(t("security.saved"));
   };
 
-  const saveCreds = () => {
+  const saveCreds = async () => {
     if (website || !username.trim() || !password.trim()) return;
     updateSchool(getSelectedSchoolId(), { username, password });
     refresh();
+    // Persist credentials to the database via the secure upsert (no data loss).
+    const res = await syncSchoolCredentials({
+      schoolId: getSelectedSchoolId(),
+      username: username.trim(),
+      password: password.trim(),
+      name: school.name,
+      logoDataUrl: school.logoDataUrl,
+    });
+    if (!res.ok) {
+      toast.error(res.error || "DB");
+      return;
+    }
     toast.success(t("security.saved"));
   };
 
