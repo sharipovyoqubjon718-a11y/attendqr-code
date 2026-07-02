@@ -83,6 +83,32 @@ export async function resetChatId(studentId: string): Promise<boolean> {
   return !error;
 }
 
+// Normalise a name for tolerant matching (lowercase, collapse spaces).
+function normName(s: string): string {
+  return (s || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+// Find the parent chat_id for a student. Matches by exact student_id first,
+// then falls back to a name match — this covers parents who self-registered
+// through the Telegram bot (their row has a generated TG-* student_id).
+export async function findChatIdForStudent(
+  studentId: string,
+  studentName: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("parent_contacts")
+    .select("student_id, student_name, chat_id")
+    .eq("school_id", schoolId());
+  if (error || !data) return null;
+
+  const byId = data.find((r) => r.student_id === studentId && r.chat_id);
+  if (byId?.chat_id) return byId.chat_id;
+
+  const target = normName(studentName);
+  const byName = data.find((r) => r.chat_id && normName(r.student_name) === target);
+  return byName?.chat_id ?? null;
+}
+
 // Send a Telegram message to a student's parent via edge function.
 export async function sendParentMessage(chatId: string, text: string): Promise<{ ok: boolean; error?: string }> {
   const { data, error } = await supabase.functions.invoke("send-telegram", {
