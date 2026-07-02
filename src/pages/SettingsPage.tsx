@@ -77,10 +77,22 @@ export default function SettingsPage() {
     toast.success(t("security.saved"));
   };
 
-  const saveCreds = () => {
+  const saveCreds = async () => {
     if (website || !username.trim() || !password.trim()) return;
     updateSchool(getSelectedSchoolId(), { username, password });
     refresh();
+    // Persist credentials to the database via the secure upsert (no data loss).
+    const res = await syncSchoolCredentials({
+      schoolId: getSelectedSchoolId(),
+      username: username.trim(),
+      password: password.trim(),
+      name: school.name,
+      logoDataUrl: school.logoDataUrl,
+    });
+    if (!res.ok) {
+      toast.error(res.error || "DB");
+      return;
+    }
     toast.success(t("security.saved"));
   };
 
