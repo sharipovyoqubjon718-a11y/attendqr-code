@@ -145,7 +145,7 @@ export default function AddStudent() {
             <div className="relative inline-block" style={{ width: 160, height: 160 }}>
               <QRCodeSVG value={lastAdded.id} size={160} level="H" />
               <div className="absolute bg-card rounded-full flex items-center justify-center" style={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 38, height: 38 }}>
-                <img src={gdbhLogo} alt="ГДБҲ" className="rounded-full" style={{ width: 32, height: 32 }} />
+                <img src={logoSrc} alt="ГДБҲ" className="rounded-full" style={{ width: 32, height: 32 }} />
               </div>
             </div>
             <p className="text-xs text-muted-foreground">{lastAdded.name} ({lastAdded.id})</p>
