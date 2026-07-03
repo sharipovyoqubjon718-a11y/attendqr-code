@@ -1,14 +1,17 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useI18n } from "@/lib/i18n";
-import gdbhLogo from "@/assets/gdbh-logo.png";
+import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import goldenEmblem from "@/assets/golden-emblem.png";
 
 export default function About() {
   const { t } = useI18n();
+  const school = getActiveSchool() || getSelectedSchool();
+  const logoSrc = school.logoDataUrl || goldenEmblem;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       <div className="text-center">
-        <img src={gdbhLogo} alt="ГДБҲ" className="h-24 w-24 rounded-full mx-auto mb-4 border-4 border-primary shadow-lg" />
+        <img src={logoSrc} alt="ГДБҲ" className="h-24 w-24 rounded-full mx-auto mb-4 border-4 border-primary shadow-lg" />
         <h2 className="font-display text-2xl font-bold text-foreground">{t("about.title")}</h2>
         <div className="tajik-gradient-bar w-32 mx-auto mt-2 rounded-full" />
       </div>
