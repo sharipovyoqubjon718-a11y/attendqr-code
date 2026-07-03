@@ -148,7 +148,36 @@ export default function MessageToParents() {
                     placeholder={t("msg.placeholder")}
                     rows={2}
                   />
-                  <div className="flex justify-end">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <input
+                        ref={(el) => { fileInputs.current[s.id] = el; }}
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => { void handleFile(s.id, e.target.files?.[0]); e.target.value = ""; }}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => fileInputs.current[s.id]?.click()}
+                        className="gap-1"
+                      >
+                        <Paperclip className="h-4 w-4" /> {t("msg.attach")}
+                      </Button>
+                      {attachments[s.id] && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+                          <span className="truncate max-w-[120px]">{attachments[s.id].name}</span>
+                          <button
+                            type="button"
+                            onClick={() => setAttachments((p) => { const n = { ...p }; delete n[s.id]; return n; })}
+                            className="text-destructive"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      )}
+                    </div>
                     <Button
                       size="sm"
                       onClick={() => handleSend(s)}
