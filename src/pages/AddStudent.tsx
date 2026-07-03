@@ -12,7 +12,8 @@ import { UserPlus, CheckCircle2, Sun, Moon, Calendar } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { CLASSES, PARALLELS, makeGrade } from "@/lib/classes";
 import { getShiftForGrade, isSaturdayRestDay } from "@/lib/students-data";
-import gdbhLogo from "@/assets/gdbh-logo.png";
+import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import goldenEmblem from "@/assets/golden-emblem.png";
 
 export default function AddStudent() {
   const { t } = useI18n();
