@@ -109,12 +109,23 @@ export async function findChatIdForStudent(
   return byName?.chat_id ?? null;
 }
 
-// Send a Telegram message to a student's parent via edge function.
-export async function sendParentMessage(chatId: string, text: string): Promise<{ ok: boolean; error?: string }> {
+// Send a Telegram message (optionally with a file attachment) to a student's
+// parent via edge function. `file` is an optional base64 payload.
+export async function sendParentMessage(
+  chatId: string,
+  text: string,
+  file?: { base64: string; name: string; type: string },
+): Promise<{ ok: boolean; error?: string }> {
   const { data, error } = await supabase.functions.invoke("send-telegram", {
-    body: { chat_id: chatId, text },
+    body: {
+      chat_id: chatId,
+      text,
+      ...(file ? { file_base64: file.base64, file_name: file.name, file_type: file.type } : {}),
+    },
   });
   if (error) return { ok: false, error: error.message };
-  if (data && (data as { error?: string }).error) return { ok: false, error: (data as { error: string }).error };
+  if (data && (data as { ok?: boolean; error?: string }).ok === false) {
+    return { ok: false, error: (data as { error?: string }).error };
+  }
   return { ok: true };
 }
