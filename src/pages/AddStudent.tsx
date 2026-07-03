@@ -10,16 +10,19 @@ import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { UserPlus, CheckCircle2, Sun, Moon, Calendar } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { ALL_GRADES, getShiftForGrade, isSaturdayRestDay } from "@/lib/students-data";
+import { CLASSES, PARALLELS, makeGrade } from "@/lib/classes";
+import { getShiftForGrade, isSaturdayRestDay } from "@/lib/students-data";
 import gdbhLogo from "@/assets/gdbh-logo.png";
 
 export default function AddStudent() {
   const { t } = useI18n();
   const [name, setName] = useState("");
   const [idNum, setIdNum] = useState("");
-  const [grade, setGrade] = useState("");
+  const [cls, setCls] = useState("");
+  const [parallel, setParallel] = useState("");
   const [lastAdded, setLastAdded] = useState<{ name: string; id: string } | null>(null);
 
+  const grade = cls && parallel ? makeGrade(cls, parallel) : "";
   const selectedShift = grade ? getShiftForGrade(grade) : null;
   const saturdayRest = grade ? isSaturdayRestDay(grade) : null;
 
@@ -30,8 +33,8 @@ export default function AddStudent() {
       toast.error("Лутфан ном ва рақами ID-ро пур кунед");
       return;
     }
-    if (!grade) {
-      toast.error("Лутфан синфро интихоб кунед");
+    if (!cls || !parallel) {
+      toast.error("Лутфан синф ва параллелро интихоб кунед");
       return;
     }
     if (!/^\d{1,3}$/.test(trimmedNum)) {
@@ -49,7 +52,8 @@ export default function AddStudent() {
     setLastAdded({ name: trimmedName, id: fullId });
     setName("");
     setIdNum("");
-    setGrade("");
+    setCls("");
+    setParallel("");
   };
 
   return (
