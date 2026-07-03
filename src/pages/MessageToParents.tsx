@@ -1,17 +1,30 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Send, MessageSquare } from "lucide-react";
+import { Search, Send, MessageSquare, Paperclip, X } from "lucide-react";
 import { toast } from "sonner";
 import { getStudents, type Student } from "@/lib/store";
 import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
 import { CLASSES, PARALLELS, matchesClassParallel } from "@/lib/classes";
 import { fetchParentContacts, sendParentMessage, type ParentContact } from "@/lib/parents";
 import { useI18n } from "@/lib/i18n";
+
+type Attachment = { base64: string; name: string; type: string };
+
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function MessageToParents() {
   const { t } = useI18n();
@@ -22,7 +35,9 @@ export default function MessageToParents() {
   const [search, setSearch] = useState("");
   const [contacts, setContacts] = useState<Record<string, ParentContact>>({});
   const [messages, setMessages] = useState<Record<string, string>>({});
+  const [attachments, setAttachments] = useState<Record<string, Attachment>>({});
   const [sending, setSending] = useState<string | null>(null);
+  const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const ready = !!cls && !!parallel;
 
@@ -38,17 +53,30 @@ export default function MessageToParents() {
       .sort((a, b) => a.name.localeCompare(b.name, "ru"));
   }, [students, cls, parallel, ready, search]);
 
+  const handleFile = async (studentId: string, file: File | undefined) => {
+    if (!file) return;
+    if (file.size > MAX_FILE_BYTES) { toast.error(t("msg.fileTooBig")); return; }
+    try {
+      const base64 = await readFileAsBase64(file);
+      setAttachments((p) => ({ ...p, [studentId]: { base64, name: file.name, type: file.type } }));
+    } catch {
+      toast.error(t("msg.sendError"));
+    }
+  };
+
   const handleSend = async (s: Student) => {
     const text = (messages[s.id] || "").trim();
-    if (!text) { toast.error(t("msg.empty")); return; }
+    const file = attachments[s.id];
+    if (!text && !file) { toast.error(t("msg.empty")); return; }
     const chatId = contacts[s.id]?.chat_id || contacts[s.id]?.phone || "";
     if (!chatId) { toast.error(t("msg.noChatId")); return; }
     setSending(s.id);
-    const res = await sendParentMessage(chatId, text);
+    const res = await sendParentMessage(chatId, text, file);
     setSending(null);
     if (res.ok) {
       toast.success(t("msg.sent"));
       setMessages((p) => ({ ...p, [s.id]: "" }));
+      setAttachments((p) => { const n = { ...p }; delete n[s.id]; return n; });
     } else {
       toast.error(res.error || t("msg.sendError"));
     }
@@ -120,7 +148,36 @@ export default function MessageToParents() {
                     placeholder={t("msg.placeholder")}
                     rows={2}
                   />
-                  <div className="flex justify-end">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <input
+                        ref={(el) => { fileInputs.current[s.id] = el; }}
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => { void handleFile(s.id, e.target.files?.[0]); e.target.value = ""; }}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => fileInputs.current[s.id]?.click()}
+                        className="gap-1"
+                      >
+                        <Paperclip className="h-4 w-4" /> {t("msg.attach")}
+                      </Button>
+                      {attachments[s.id] && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+                          <span className="truncate max-w-[120px]">{attachments[s.id].name}</span>
+                          <button
+                            type="button"
+                            onClick={() => setAttachments((p) => { const n = { ...p }; delete n[s.id]; return n; })}
+                            className="text-destructive"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      )}
+                    </div>
                     <Button
                       size="sm"
                       onClick={() => handleSend(s)}

@@ -10,16 +10,22 @@ import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { UserPlus, CheckCircle2, Sun, Moon, Calendar } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { ALL_GRADES, getShiftForGrade, isSaturdayRestDay } from "@/lib/students-data";
-import gdbhLogo from "@/assets/gdbh-logo.png";
+import { CLASSES, PARALLELS, makeGrade } from "@/lib/classes";
+import { getShiftForGrade, isSaturdayRestDay } from "@/lib/students-data";
+import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import goldenEmblem from "@/assets/golden-emblem.png";
 
 export default function AddStudent() {
   const { t } = useI18n();
+  const school = getActiveSchool() || getSelectedSchool();
+  const logoSrc = school.logoDataUrl || goldenEmblem;
   const [name, setName] = useState("");
   const [idNum, setIdNum] = useState("");
-  const [grade, setGrade] = useState("");
+  const [cls, setCls] = useState("");
+  const [parallel, setParallel] = useState("");
   const [lastAdded, setLastAdded] = useState<{ name: string; id: string } | null>(null);
 
+  const grade = cls && parallel ? makeGrade(cls, parallel) : "";
   const selectedShift = grade ? getShiftForGrade(grade) : null;
   const saturdayRest = grade ? isSaturdayRestDay(grade) : null;
 
@@ -30,8 +36,8 @@ export default function AddStudent() {
       toast.error("Лутфан ном ва рақами ID-ро пур кунед");
       return;
     }
-    if (!grade) {
-      toast.error("Лутфан синфро интихоб кунед");
+    if (!cls || !parallel) {
+      toast.error("Лутфан синф ва параллелро интихоб кунед");
       return;
     }
     if (!/^\d{1,3}$/.test(trimmedNum)) {
@@ -49,7 +55,8 @@ export default function AddStudent() {
     setLastAdded({ name: trimmedName, id: fullId });
     setName("");
     setIdNum("");
-    setGrade("");
+    setCls("");
+    setParallel("");
   };
 
   return (
@@ -79,19 +86,36 @@ export default function AddStudent() {
             <p className="text-xs text-muted-foreground">{t("addStudent.idAuto")}</p>
           </div>
 
-          {/* Grade selector */}
+          {/* Class + Parallel selectors */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Синф *</Label>
+              <Select value={cls} onValueChange={setCls}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Интихоб..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {CLASSES.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Параллел *</Label>
+              <Select value={parallel} onValueChange={setParallel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="А, Б, В..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PARALLELS.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="space-y-2">
-            <Label>{t("addStudent.grade")}</Label>
-            <Select value={grade} onValueChange={setGrade}>
-              <SelectTrigger>
-                <SelectValue placeholder={t("addStudent.selectGrade")} />
-              </SelectTrigger>
-              <SelectContent>
-                {ALL_GRADES.map((g) => (
-                  <SelectItem key={g} value={g}>{t("students.grade")} {g}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             {selectedShift && (
               <div className="flex flex-wrap gap-2 mt-1">
                 <Badge variant="outline" className="gap-1 text-xs">
@@ -121,7 +145,7 @@ export default function AddStudent() {
             <div className="relative inline-block" style={{ width: 160, height: 160 }}>
               <QRCodeSVG value={lastAdded.id} size={160} level="H" />
               <div className="absolute bg-card rounded-full flex items-center justify-center" style={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 38, height: 38 }}>
-                <img src={gdbhLogo} alt="ГДБҲ" className="rounded-full" style={{ width: 32, height: 32 }} />
+                <img src={logoSrc} alt="ГДБҲ" className="rounded-full" style={{ width: 32, height: 32 }} />
               </div>
             </div>
             <p className="text-xs text-muted-foreground">{lastAdded.name} ({lastAdded.id})</p>

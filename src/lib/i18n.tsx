@@ -144,7 +144,7 @@ const translations = {
   "about.project": { tj: "Лоиҳа:", ru: "Проект:", en: "Project:" },
   "about.projectName": { tj: "Гимназияи давлатии Боғи Ҳабиб н. Муъминобод (ГДБҲ)", ru: "Государственная гимназия Боги Хабиб н. Муъминобод (ГДБҲ)", en: "Boghi Habib State Gymnasium, Mu'minobod (ГДБҲ)" },
   "about.orderedBy": { tj: "Супориш:", ru: "Заказ:", en: "Ordered by:" },
-  "about.itTeacher": { tj: "Муаллими Технологияи иттилоотӣ", ru: "Учитель информационных технологий", en: "IT Teacher" },
+  "about.itTeacher": { tj: "Устод Фаррухи Сафаралӣ", ru: "Устод Фаррухи Сафаралӣ", en: "Ustod Farrukhi Safarali" },
   "about.developer": { tj: "Созанда ва таҳиягар:", ru: "Разработчик:", en: "Developer:" },
   "about.system": { tj: "Система:", ru: "Система:", en: "System:" },
   "about.systemDesc": { tj: "AttendQR — Системаи идоракунии давоматӣ бо сканери QR", ru: "AttendQR — Система управления посещаемостью с QR-сканером", en: "AttendQR — QR-based Attendance Management System" },
@@ -337,6 +337,8 @@ const translations = {
   "msg.sendError": { tj: "Хатои фиристодан", ru: "Ошибка отправки", en: "Send error" },
   "msg.empty": { tj: "Матн холӣ аст", ru: "Текст пуст", en: "Text is empty" },
   "msg.noChatId": { tj: "Chat ID сабт нашудааст", ru: "Chat ID не сохранён", en: "No Chat ID saved" },
+  "msg.attach": { tj: "Замима кардани файл", ru: "Прикрепить файл", en: "Attach file" },
+  "msg.fileTooBig": { tj: "Ҳаҷми файл аз 5MB зиёд аст", ru: "Размер файла больше 5МБ", en: "File is larger than 5MB" },
 } as const;
 
 type TranslationKey = keyof typeof translations;
