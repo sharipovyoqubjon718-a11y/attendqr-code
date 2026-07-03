@@ -27,12 +27,12 @@ export default function About() {
           <div className="border-t border-border" />
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground font-semibold">{t("about.developer")}</p>
-            <p className="font-display font-bold text-lg text-primary">Шарипов Ёқубҷон</p>
+            <p className="font-medium text-foreground">Шарипов Ёқубҷон</p>
           </div>
           <div className="border-t border-border" />
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground font-semibold">{t("about.system")}</p>
-            <p className="text-foreground">{t("about.systemDesc")}</p>
+            <p className="font-medium text-foreground">{t("about.systemDesc")}</p>
           </div>
         </CardContent>
       </Card>
