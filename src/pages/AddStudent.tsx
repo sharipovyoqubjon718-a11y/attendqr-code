@@ -17,6 +17,8 @@ import goldenEmblem from "@/assets/golden-emblem.png";
 
 export default function AddStudent() {
   const { t } = useI18n();
+  const school = getActiveSchool() || getSelectedSchool();
+  const logoSrc = school.logoDataUrl || goldenEmblem;
   const [name, setName] = useState("");
   const [idNum, setIdNum] = useState("");
   const [cls, setCls] = useState("");
