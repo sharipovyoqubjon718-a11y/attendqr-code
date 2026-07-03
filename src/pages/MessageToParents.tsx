@@ -1,17 +1,30 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Send, MessageSquare } from "lucide-react";
+import { Search, Send, MessageSquare, Paperclip, X } from "lucide-react";
 import { toast } from "sonner";
 import { getStudents, type Student } from "@/lib/store";
 import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
 import { CLASSES, PARALLELS, matchesClassParallel } from "@/lib/classes";
 import { fetchParentContacts, sendParentMessage, type ParentContact } from "@/lib/parents";
 import { useI18n } from "@/lib/i18n";
+
+type Attachment = { base64: string; name: string; type: string };
+
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function MessageToParents() {
   const { t } = useI18n();
