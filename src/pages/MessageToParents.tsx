@@ -53,17 +53,30 @@ export default function MessageToParents() {
       .sort((a, b) => a.name.localeCompare(b.name, "ru"));
   }, [students, cls, parallel, ready, search]);
 
+  const handleFile = async (studentId: string, file: File | undefined) => {
+    if (!file) return;
+    if (file.size > MAX_FILE_BYTES) { toast.error(t("msg.fileTooBig")); return; }
+    try {
+      const base64 = await readFileAsBase64(file);
+      setAttachments((p) => ({ ...p, [studentId]: { base64, name: file.name, type: file.type } }));
+    } catch {
+      toast.error(t("msg.sendError"));
+    }
+  };
+
   const handleSend = async (s: Student) => {
     const text = (messages[s.id] || "").trim();
-    if (!text) { toast.error(t("msg.empty")); return; }
+    const file = attachments[s.id];
+    if (!text && !file) { toast.error(t("msg.empty")); return; }
     const chatId = contacts[s.id]?.chat_id || contacts[s.id]?.phone || "";
     if (!chatId) { toast.error(t("msg.noChatId")); return; }
     setSending(s.id);
-    const res = await sendParentMessage(chatId, text);
+    const res = await sendParentMessage(chatId, text, file);
     setSending(null);
     if (res.ok) {
       toast.success(t("msg.sent"));
       setMessages((p) => ({ ...p, [s.id]: "" }));
+      setAttachments((p) => { const n = { ...p }; delete n[s.id]; return n; });
     } else {
       toast.error(res.error || t("msg.sendError"));
     }
