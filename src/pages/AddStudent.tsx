@@ -83,19 +83,36 @@ export default function AddStudent() {
             <p className="text-xs text-muted-foreground">{t("addStudent.idAuto")}</p>
           </div>
 
-          {/* Grade selector */}
+          {/* Class + Parallel selectors */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Синф *</Label>
+              <Select value={cls} onValueChange={setCls}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Интихоб..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {CLASSES.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Параллел *</Label>
+              <Select value={parallel} onValueChange={setParallel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="А, Б, В..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PARALLELS.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="space-y-2">
-            <Label>{t("addStudent.grade")}</Label>
-            <Select value={grade} onValueChange={setGrade}>
-              <SelectTrigger>
-                <SelectValue placeholder={t("addStudent.selectGrade")} />
-              </SelectTrigger>
-              <SelectContent>
-                {ALL_GRADES.map((g) => (
-                  <SelectItem key={g} value={g}>{t("students.grade")} {g}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             {selectedShift && (
               <div className="flex flex-wrap gap-2 mt-1">
                 <Badge variant="outline" className="gap-1 text-xs">
