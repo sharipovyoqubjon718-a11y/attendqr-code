@@ -11,8 +11,10 @@ import { findChatIdForStudent, sendParentMessage } from "@/lib/parents";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
-const parentScanNotice = (name: string, time: string) =>
-  `🕒 Сабти ҳузур: Фарзанди шумо ${name} дар соати ${time} ба дарс омад.`;
+const parentScanNotice = (name: string, time: string, type: "check-in" | "check-out") =>
+  type === "check-in"
+    ? `Фарзанди шумо ${name} дар соати ${time} ба мактаб расид`
+    : `Фарзанди шумо ${name} дар соати ${time} аз мактаб баромад`;
 
 type ScanResult = { status: "success" | "error"; message: string; studentName?: string; type?: "check-in" | "check-out"; time?: string };
 type FacingMode = "environment" | "user";
@@ -63,7 +65,7 @@ export default function Scanner() {
       try {
         const chatId = await findChatIdForStudent(student.id, student.name);
         if (chatId) {
-          await sendParentMessage(chatId, parentScanNotice(student.name, formatTajikTime(timestamp)));
+          await sendParentMessage(chatId, parentScanNotice(student.name, formatTajikTime(timestamp), type));
         }
       } catch {
         // ignore notification failures
