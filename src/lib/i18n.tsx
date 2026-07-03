@@ -337,6 +337,8 @@ const translations = {
   "msg.sendError": { tj: "Хатои фиристодан", ru: "Ошибка отправки", en: "Send error" },
   "msg.empty": { tj: "Матн холӣ аст", ru: "Текст пуст", en: "Text is empty" },
   "msg.noChatId": { tj: "Chat ID сабт нашудааст", ru: "Chat ID не сохранён", en: "No Chat ID saved" },
+  "msg.attach": { tj: "Замима кардани файл", ru: "Прикрепить файл", en: "Attach file" },
+  "msg.fileTooBig": { tj: "Ҳаҷми файл аз 5MB зиёд аст", ru: "Размер файла больше 5МБ", en: "File is larger than 5MB" },
 } as const;
 
 type TranslationKey = keyof typeof translations;
