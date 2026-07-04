@@ -142,7 +142,7 @@ const translations = {
   // About
   "about.title": { tj: "Маълумот", ru: "О системе", en: "About" },
   "about.project": { tj: "Лоиҳа:", ru: "Проект:", en: "Project:" },
-  "about.projectName": { tj: "Гимназияи давлатии Боғи Ҳабиб н. Муъминобод (ГДБҲ)", ru: "Государственная гимназия Боги Хабиб н. Муъминобод (ГДБҲ)", en: "Boghi Habib State Gymnasium, Mu'minobod (ГДБҲ)" },
+  "about.projectName": { tj: "AttendQR-Системаи идоракунии мактаб бо сканери QR", ru: "AttendQR — Система управления школой с QR-сканером", en: "AttendQR — School Management System with QR Scanner" },
   "about.orderedBy": { tj: "Супориш:", ru: "Заказ:", en: "Ordered by:" },
   "about.itTeacher": { tj: "Устод Фаррухи Сафаралӣ", ru: "Устод Фаррухи Сафаралӣ", en: "Ustod Farrukhi Safarali" },
   "about.developer": { tj: "Созанда ва таҳиягар:", ru: "Разработчик:", en: "Developer:" },
