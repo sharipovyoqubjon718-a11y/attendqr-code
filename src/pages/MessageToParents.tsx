@@ -181,7 +181,7 @@ export default function MessageToParents() {
                     <Button
                       size="sm"
                       onClick={() => handleSend(s)}
-                      disabled={sending === s.id}
+                      disabled={sending === s.id || !hasChat}
                       className="gap-1 bg-green-600 hover:bg-green-700 text-white"
                     >
                       <Send className="h-4 w-4" /> {t("msg.send")}
