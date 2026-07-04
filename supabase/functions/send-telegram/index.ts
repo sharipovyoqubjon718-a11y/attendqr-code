@@ -1,4 +1,19 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
+import { createClient } from 'npm:@supabase/supabase-js@2'
+
+// If Telegram reports the chat is unreachable, wipe the stored chat_id so the
+// UI marks the parent as "Chat ID сабт нашудааст" and stops trying to send.
+async function nullifyChatId(chatId: string) {
+  try {
+    const url = Deno.env.get('SUPABASE_URL')
+    const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!url || !key) return
+    const supabase = createClient(url, key)
+    await supabase.from('parent_contacts').update({ chat_id: null }).eq('chat_id', chatId)
+  } catch {
+    // ignore cleanup failures
+  }
+}
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
