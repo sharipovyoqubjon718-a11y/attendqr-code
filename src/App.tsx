@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -24,7 +24,8 @@ import ParentNumbers from "@/pages/ParentNumbers";
 import MessageToParents from "@/pages/MessageToParents";
 import Messages from "@/pages/Messages";
 import NotFound from "@/pages/NotFound";
-import { setActiveSchoolId } from "@/lib/schools";
+import { setActiveSchoolId, getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import { applyFavicon } from "@/lib/favicon";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,11 @@ if (typeof window !== "undefined") {
 
 const App = () => {
   const [unlocked, setUnlocked] = useState<boolean>(false);
+
+  useEffect(() => {
+    const s = getActiveSchool() || getSelectedSchool();
+    applyFavicon(s?.logoDataUrl);
+  }, [unlocked]);
 
   const handleLogout = () => {
     setActiveSchoolId(null);

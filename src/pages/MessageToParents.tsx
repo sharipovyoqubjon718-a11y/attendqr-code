@@ -69,6 +69,7 @@ export default function MessageToParents() {
     const file = attachments[s.id];
     if (!text && !file) { toast.error(t("msg.empty")); return; }
     const chatId = contacts[s.id]?.chat_id || contacts[s.id]?.phone || "";
+    // Prevention: never attempt to send when there is no chat_id.
     if (!chatId) { toast.error(t("msg.noChatId")); return; }
     setSending(s.id);
     const res = await sendParentMessage(chatId, text, file);
@@ -79,6 +80,9 @@ export default function MessageToParents() {
       setAttachments((p) => { const n = { ...p }; delete n[s.id]; return n; });
     } else {
       toast.error(res.error || t("msg.sendError"));
+      // The Edge Function nullifies chat_id on "chat not found" / blocked errors.
+      // Re-fetch so the UI immediately shows "Chat ID сабт нашудааст" and disables Send.
+      fetchParentContacts().then(setContacts);
     }
   };
 

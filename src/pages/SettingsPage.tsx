@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import HiddenAdminPanel from "@/components/HiddenAdminPanel";
 import { syncSchoolCredentials } from "@/lib/school-credentials";
+import { applyFavicon } from "@/lib/favicon";
 
 export default function SettingsPage() {
   const { t } = useI18n();
@@ -64,7 +65,17 @@ export default function SettingsPage() {
     }
     const reader = new FileReader();
     reader.onload = () => {
-      updateSchool(getSelectedSchoolId(), { logoDataUrl: String(reader.result) });
+      const dataUrl = String(reader.result);
+      updateSchool(getSelectedSchoolId(), { logoDataUrl: dataUrl });
+      applyFavicon(dataUrl);
+      // Mirror the logo to the database so it syncs across devices.
+      void syncSchoolCredentials({
+        schoolId: getSelectedSchoolId(),
+        username: school.username,
+        password: school.password,
+        name: school.name,
+        logoDataUrl: dataUrl,
+      });
       refresh();
       toast.success(t("security.saved"));
     };
