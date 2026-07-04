@@ -89,8 +89,14 @@ Deno.serve(async (req) => {
     data = await tgRes.json().catch(() => ({}))
 
     if (!tgRes.ok || !data.ok) {
-      return json({ ok: false, error: data.description || 'Telegram send failed' })
+      const desc = data.description || 'Telegram send failed'
+      // Auto-cleanup: parent blocked the bot or chat no longer exists.
+      if (/chat not found|bot was blocked|user is deactivated|chat_id is empty/i.test(desc)) {
+        await nullifyChatId(chatId)
+      }
+      return json({ ok: false, error: desc })
     }
+
 
     return json({ ok: true, message_id: data.result?.message_id })
   } catch (err) {
