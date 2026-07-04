@@ -18,6 +18,7 @@ import Reports from "@/pages/Reports";
 import About from "@/pages/About";
 import SettingsPage from "@/pages/SettingsPage";
 import Rankings from "@/pages/Rankings";
+import ReadingRankings from "@/pages/ReadingRankings";
 import Journal from "@/pages/Journal";
 import ParentNumbers from "@/pages/ParentNumbers";
 import MessageToParents from "@/pages/MessageToParents";
@@ -68,6 +69,7 @@ const App = () => {
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/rankings" element={<Rankings />} />
+                  <Route path="/reading-rankings" element={<ReadingRankings />} />
                   <Route path="/journal" element={<Journal />} />
                   <Route path="/parents" element={<ParentNumbers />} />
                   <Route path="/message-parents" element={<MessageToParents />} />

@@ -142,7 +142,7 @@ const translations = {
   // About
   "about.title": { tj: "Маълумот", ru: "О системе", en: "About" },
   "about.project": { tj: "Лоиҳа:", ru: "Проект:", en: "Project:" },
-  "about.projectName": { tj: "Гимназияи давлатии Боғи Ҳабиб н. Муъминобод (ГДБҲ)", ru: "Государственная гимназия Боги Хабиб н. Муъминобод (ГДБҲ)", en: "Boghi Habib State Gymnasium, Mu'minobod (ГДБҲ)" },
+  "about.projectName": { tj: "AttendQR-Системаи идоракунии мактаб бо сканери QR", ru: "AttendQR — Система управления школой с QR-сканером", en: "AttendQR — School Management System with QR Scanner" },
   "about.orderedBy": { tj: "Супориш:", ru: "Заказ:", en: "Ordered by:" },
   "about.itTeacher": { tj: "Устод Фаррухи Сафаралӣ", ru: "Устод Фаррухи Сафаралӣ", en: "Ustod Farrukhi Safarali" },
   "about.developer": { tj: "Созанда ва таҳиягар:", ru: "Разработчик:", en: "Developer:" },
@@ -270,6 +270,11 @@ const translations = {
   "rankings.empty": { tj: "Маълумот нест", ru: "Нет данных", en: "No data" },
   "rankings.rate": { tj: "Сатҳ", ru: "Уровень", en: "Rate" },
   "rankings.class": { tj: "Синф", ru: "Класс", en: "Class" },
+  "nav.readingRankings": { tj: "Рейтинги хониш", ru: "Рейтинг учеников", en: "Reading Rankings" },
+  "reading.title": { tj: "Рейтинги хониш", ru: "Рейтинг учеников", en: "Reading Rankings" },
+  "reading.subtitle": { tj: "Дар асоси шумораи умумии ҳузур", ru: "По общему количеству посещений", en: "By total attendance count" },
+  "reading.empty": { tj: "Маълумот нест", ru: "Нет данных", en: "No data" },
+  "reading.count": { tj: "ҳузур", ru: "посещений", en: "attendances" },
 
   // Admin / Shift extras
   "admin.open": { tj: "Кушодани панели маъмур", ru: "Открыть админ-панель", en: "Open admin panel" },
