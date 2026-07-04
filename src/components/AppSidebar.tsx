@@ -54,6 +54,7 @@ export function AppSidebar() {
     { title: t("nav.logs"), url: "/logs", icon: ClipboardList },
     { title: t("nav.reports"), url: "/reports", icon: BarChart3 },
     { title: t("nav.rankings"), url: "/rankings", icon: Trophy },
+    { title: t("nav.readingRankings"), url: "/reading-rankings", icon: BookOpen },
     { title: t("nav.journal"), url: "/journal", icon: BookOpen },
     { title: t("nav.parents"), url: "/parents", icon: Phone },
     { title: t("nav.messageParents"), url: "/message-parents", icon: MessageSquare },
