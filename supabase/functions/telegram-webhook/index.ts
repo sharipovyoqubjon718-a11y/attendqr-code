@@ -1,17 +1,19 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
-// ---- Exact Tajik reply templates (Section 2) ---------------------------------
+// ---- Exact Tajik reply templates --------------------------------------------
 const WELCOME_NO_CHILDREN =
-  '👋 Салом! Хуш омадед ба системаи AttendQR. Барои пайваст кардани ҳисоби фарзандатон, лутфан маълумотро чунин нависед: [Ному насаб] [Синф] [Параллел]. (Намуна: Алиев Аҳмад 5 а)'
+  '👋 Салом! Хуш омадед ба системаи AttendQR. Барои пайваст кардани ҳисоби фарзандатон, лутфан маълумотро чунин нависед: [Ному насаб] [Синф] [Параллел]. (Намуна: Алиев Аҳмад 5 А)'
 
 const welcomeWithChildren = (names: string[]) =>
-  `👋 Салом! Рӯйхати хонандагони шумо: ${names.join(', ')}. Барои иловаи фарзанди нав маълумоти ӯро нависед.`
+  `👋 Салом! Рӯйхати хонандагони шумо: ${names.join(', ')}.\n\nАкнун ҳар паёме, ки шумо ин ҷо менависед, ба муаллим фиристода мешавад. Барои иловаи фарзанди нав маълумоти ӯро нависед: [Ному насаб] [Синф] [Параллел].`
 
 const REGISTER_HELP =
-  'Лутфан маълумотро чунин нависед: [Ному насаб] [Синф] [Параллел]. (Намуна: Алиев Аҳмад 5 а)'
+  'Лутфан маълумотро чунин нависед: [Ному насаб] [Синф] [Параллел]. (Намуна: Алиев Аҳмад 5 А)'
 
 const registered = (name: string, grade: string) =>
-  `✅ Хонанда «${name}» (синфи ${grade}) бомуваффақият пайваст карда шуд.`
+  `✅ Хонанда «${name}» (синфи ${grade}) бомуваффақият пайваст карда шуд. Акнун шумо метавонед ба муаллим паём нависед.`
+
+const MESSAGE_FORWARDED = '✅ Паёми шумо ба муаллим фиристода шуд.'
 
 async function sendMessage(token: string, chatId: number | string, text: string) {
   try {
@@ -31,8 +33,6 @@ function normLetter(s: string): string {
 }
 
 // Parse "[Ному насаб] [Синф] [Параллел]" -> { name, cls, letter }.
-// The class is the first standalone number token; the name is everything
-// before it; the parallel is the single letter right after the number.
 function parseRegistration(
   text: string,
 ): { name: string; cls: string; letter: string } | null {
@@ -58,6 +58,57 @@ function makeGrade(cls: string, letter: string): string {
   return `${cls}-${letter}`
 }
 
+// Build the monthly attendance ranking (Tajik) for a school.
+async function buildMonthlyRanking(
+  supabase: ReturnType<typeof createClient>,
+  schoolId: string,
+): Promise<string> {
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+
+  const { data: students } = await supabase
+    .from('students')
+    .select('id, name')
+
+  const { data: logs } = await supabase
+    .from('attendance_logs')
+    .select('student_id, type, timestamp')
+    .gte('timestamp', monthStart)
+    .eq('type', 'check-in')
+
+  const nameById = new Map<string, string>()
+  for (const s of students ?? []) nameById.set(s.id as string, s.name as string)
+
+  const counts = new Map<string, number>()
+  for (const l of logs ?? []) {
+    const sid = l.student_id as string
+    if (!nameById.has(sid)) continue // limit to real students of the roster
+    counts.set(sid, (counts.get(sid) ?? 0) + 1)
+  }
+
+  const ranked = [...counts.entries()]
+    .map(([sid, count]) => ({ name: nameById.get(sid) ?? sid, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 15)
+
+  const monthNames = [
+    'Январ', 'Феврал', 'Март', 'Апрел', 'Май', 'Июн',
+    'Июл', 'Август', 'Сентябр', 'Октябр', 'Ноябр', 'Декабр',
+  ]
+  const header = `🏆 Рейтинги ҳузури хонандагон — ${monthNames[now.getMonth()]} ${now.getFullYear()}\n`
+
+  if (ranked.length === 0) {
+    return header + '\nҲоло барои ин моҳ маълумоти ҳузур мавҷуд нест.'
+  }
+
+  const medals = ['🥇', '🥈', '🥉']
+  const lines = ranked.map((r, i) => {
+    const prefix = medals[i] ?? `${i + 1}.`
+    return `${prefix} ${r.name} — ${r.count} рӯз`
+  })
+  return header + '\n' + lines.join('\n')
+}
+
 // IMPORTANT: this handler ALWAYS returns HTTP 200 so Telegram never retries.
 Deno.serve(async (req) => {
   try {
@@ -73,6 +124,11 @@ Deno.serve(async (req) => {
     if (!chatId) return new Response('ok', { status: 200 })
 
     const chatIdStr = String(chatId)
+    const senderTgName =
+      [message?.from?.first_name, message?.from?.last_name].filter(Boolean).join(' ') ||
+      message?.from?.username ||
+      'Волидайн'
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -97,11 +153,39 @@ Deno.serve(async (req) => {
       return new Response('ok', { status: 200 })
     }
 
+    // ---- /reyting (monthly ranking, for administration) ------------------
+    if (text.startsWith('/reyting') || text.startsWith('/ranking')) {
+      const schoolId = (children[0]?.school_id as string) || 'gdbh'
+      const ranking = await buildMonthlyRanking(supabase, schoolId)
+      await sendMessage(token, chatId, ranking)
+      return new Response('ok', { status: 200 })
+    }
+
     // Ignore any other slash command.
     if (text.startsWith('/')) return new Response('ok', { status: 200 })
 
     // ---- Registration: parse "[Name] [Class] [Parallel]" -----------------
     const parsed = parseRegistration(text)
+
+    // Registered parent sending a free-form message -> forward to the app.
+    // A message that doesn't parse as a registration is treated as a chat.
+    if (children.length > 0 && !parsed) {
+      const child = children[0]
+      try {
+        await supabase.from('messages').insert({
+          school_id: child.school_id,
+          sender_name: `${senderTgName} (волиди ${child.student_name})`,
+          message_content: text,
+          chat_id: chatIdStr,
+          status: 'unread',
+        })
+      } catch {
+        // ignore db failures so Telegram never sees a non-2xx response
+      }
+      await sendMessage(token, chatId, MESSAGE_FORWARDED)
+      return new Response('ok', { status: 200 })
+    }
+
     if (!parsed) {
       await sendMessage(token, chatId, REGISTER_HELP)
       return new Response('ok', { status: 200 })
@@ -112,10 +196,9 @@ Deno.serve(async (req) => {
     const nameNorm = parsed.name.trim().toLowerCase().replace(/\s+/g, ' ')
 
     try {
-      // Prefer linking to an existing student record (added by the school) so
-      // that QR scans — which look up by the real student_id — can notify the
-      // parent. Match on name within the school; only create a new TG-* row
-      // when no matching student exists yet.
+      // Prefer linking to an existing student record so QR scans (which look up
+      // by real student_id) can notify the parent. Only create a TG-* row when
+      // no matching student exists yet.
       const { data: existing } = await supabase
         .from('parent_contacts')
         .select('id, student_name, chat_id')
@@ -142,7 +225,6 @@ Deno.serve(async (req) => {
     } catch {
       // ignore db failures so Telegram never sees a non-2xx response
     }
-
 
     await sendMessage(token, chatId, registered(parsed.name, grade))
     return new Response('ok', { status: 200 })
