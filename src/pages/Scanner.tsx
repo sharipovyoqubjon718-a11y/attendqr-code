@@ -13,8 +13,8 @@ import { toast } from "sonner";
 
 const parentScanNotice = (name: string, time: string, type: "check-in" | "check-out") =>
   type === "check-in"
-    ? `Фарзанди шумо ${name} дар соати ${time} ба мактаб расид`
-    : `Фарзанди шумо ${name} дар соати ${time} аз мактаб баромад`;
+    ? `Фарзанди шумо ${name}, соати ${time} ба мактаб омад.`
+    : `Фарзанди шумо ${name}, соати ${time} аз мактаб баромад.`;
 
 type ScanResult = { status: "success" | "error"; message: string; studentName?: string; type?: "check-in" | "check-out"; time?: string };
 type FacingMode = "environment" | "user";
