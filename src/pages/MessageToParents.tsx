@@ -37,7 +37,10 @@ export default function MessageToParents() {
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [attachments, setAttachments] = useState<Record<string, Attachment>>({});
   const [sending, setSending] = useState<string | null>(null);
+  const [recordingId, setRecordingId] = useState<string | null>(null);
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   const ready = !!cls && !!parallel;
 
