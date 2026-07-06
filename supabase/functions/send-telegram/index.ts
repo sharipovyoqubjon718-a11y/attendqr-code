@@ -64,11 +64,12 @@ Deno.serve(async (req) => {
     let data: { ok?: boolean; description?: string; result?: { message_id?: number } }
 
     if (fileBase64) {
-      // Send as a photo (images) or document (everything else) via multipart.
+      // Send images as photo, ogg voice notes as voice, everything else as document.
       const bytes = base64ToBytes(fileBase64)
       const isImage = fileType.startsWith('image/')
-      const method = isImage ? 'sendPhoto' : 'sendDocument'
-      const field = isImage ? 'photo' : 'document'
+      const isVoice = fileType === 'audio/ogg' || fileType === 'audio/ogg; codecs=opus'
+      const method = isImage ? 'sendPhoto' : isVoice ? 'sendVoice' : 'sendDocument'
+      const field = isImage ? 'photo' : isVoice ? 'voice' : 'document'
       const form = new FormData()
       form.append('chat_id', chatId)
       if (text) form.append('caption', text)

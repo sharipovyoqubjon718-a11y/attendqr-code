@@ -4,6 +4,7 @@ export interface StudentRecord {
   grade: string;
   shift: 'morning' | 'afternoon';
   qrCode: string;
+  archived?: boolean;
 }
 
 // Smart shift rules:

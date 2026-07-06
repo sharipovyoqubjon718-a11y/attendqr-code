@@ -162,8 +162,11 @@ export default function Messages() {
                     <span className="text-[11px] font-normal text-muted-foreground">{timeAgo(m.timestamp)}</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="py-0 pb-3 text-sm whitespace-pre-wrap break-words">
-                  {m.message_content}
+                <CardContent className="py-0 pb-3 text-sm whitespace-pre-wrap break-words space-y-2">
+                  {m.message_content && <div>{m.message_content}</div>}
+                  {m.audio_url && (
+                    <audio controls preload="none" src={m.audio_url} className="w-full max-w-xs" />
+                  )}
                 </CardContent>
               </Card>
             ))}

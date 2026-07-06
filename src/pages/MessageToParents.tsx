@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Send, MessageSquare, Paperclip, X } from "lucide-react";
+import { Search, Send, MessageSquare, Paperclip, X, Mic, Square } from "lucide-react";
 import { toast } from "sonner";
 import { getStudents, type Student } from "@/lib/store";
 import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
@@ -37,7 +37,10 @@ export default function MessageToParents() {
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [attachments, setAttachments] = useState<Record<string, Attachment>>({});
   const [sending, setSending] = useState<string | null>(null);
+  const [recordingId, setRecordingId] = useState<string | null>(null);
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   const ready = !!cls && !!parallel;
 
@@ -85,6 +88,60 @@ export default function MessageToParents() {
       fetchParentContacts().then(setContacts);
     }
   };
+
+  const sendVoiceNote = async (s: Student, blob: Blob) => {
+    const chatId = contacts[s.id]?.chat_id || contacts[s.id]?.phone || "";
+    if (!chatId) { toast.error(t("msg.noChatId")); return; }
+    const base64: string = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+    setSending(s.id);
+    const res = await sendParentMessage(chatId, "", {
+      base64,
+      name: "voice.ogg",
+      type: "audio/ogg",
+    });
+    setSending(null);
+    if (res.ok) {
+      toast.success(t("msg.voiceSent"));
+    } else {
+      toast.error(res.error || t("msg.sendError"));
+      fetchParentContacts().then(setContacts);
+    }
+  };
+
+  const startRecording = async (s: Student) => {
+    if (recordingId) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
+        ? "audio/ogg;codecs=opus"
+        : "audio/webm";
+      const rec = new MediaRecorder(stream, { mimeType: mime });
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      rec.onstop = () => {
+        stream.getTracks().forEach((tk) => tk.stop());
+        const blob = new Blob(chunksRef.current, { type: "audio/ogg" });
+        void sendVoiceNote(s, blob);
+      };
+      mediaRecorderRef.current = rec;
+      rec.start();
+      setRecordingId(s.id);
+    } catch {
+      toast.error(t("msg.micError"));
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+    setRecordingId(null);
+  };
+
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -168,6 +225,20 @@ export default function MessageToParents() {
                         className="gap-1"
                       >
                         <Paperclip className="h-4 w-4" /> {t("msg.attach")}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={recordingId === s.id ? "destructive" : "outline"}
+                        disabled={!hasChat || (recordingId !== null && recordingId !== s.id) || sending === s.id}
+                        onClick={() => (recordingId === s.id ? stopRecording() : startRecording(s))}
+                        className="gap-1"
+                      >
+                        {recordingId === s.id ? (
+                          <><Square className="h-4 w-4" /> {t("msg.stopRec")}</>
+                        ) : (
+                          <><Mic className="h-4 w-4" /> {t("msg.record")}</>
+                        )}
                       </Button>
                       {attachments[s.id] && (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground truncate">

@@ -27,6 +27,33 @@ async function sendMessage(token: string, chatId: number | string, text: string)
   }
 }
 
+// Download a Telegram file (voice/audio) and return it as a base64 data URL.
+async function downloadFileAsDataUrl(
+  token: string,
+  fileId: string,
+  mime: string,
+): Promise<string | null> {
+  try {
+    const infoRes = await fetch(`https://api.telegram.org/bot${token}/getFile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file_id: fileId }),
+    })
+    const info = await infoRes.json().catch(() => null)
+    const filePath = info?.result?.file_path
+    if (!filePath) return null
+    const fileRes = await fetch(`https://api.telegram.org/file/bot${token}/${filePath}`)
+    if (!fileRes.ok) return null
+    const buf = new Uint8Array(await fileRes.arrayBuffer())
+    let binary = ''
+    for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i])
+    const b64 = btoa(binary)
+    return `data:${mime};base64,${b64}`
+  } catch {
+    return null
+  }
+}
+
 // Normalise a parallel letter to uppercase (Cyrillic/Tajik).
 function normLetter(s: string): string {
   return (s || '').trim().toUpperCase()
@@ -141,6 +168,30 @@ Deno.serve(async (req) => {
       .eq('chat_id', chatIdStr)
 
     const children = linkedRows ?? []
+
+    // ---- Voice / audio message from a registered parent -> forward to app ----
+    const voice = message?.voice ?? message?.audio
+    if (voice?.file_id && children.length > 0) {
+      const child = children[0]
+      const mime = message?.voice ? 'audio/ogg' : (voice?.mime_type || 'audio/mpeg')
+      const dataUrl = await downloadFileAsDataUrl(token, voice.file_id, mime)
+      try {
+        await supabase.from('messages').insert({
+          school_id: child.school_id,
+          sender_name: `${senderTgName} (волиди ${child.student_name})`,
+          message_content: '🎤 Паёми овозӣ',
+          audio_url: dataUrl,
+          chat_id: chatIdStr,
+          status: 'unread',
+        })
+      } catch {
+        // ignore db failures so Telegram never sees a non-2xx response
+      }
+      await sendMessage(token, chatId, MESSAGE_FORWARDED)
+      return new Response('ok', { status: 200 })
+    }
+
+
 
     // ---- /start command --------------------------------------------------
     if (text.startsWith('/start')) {
