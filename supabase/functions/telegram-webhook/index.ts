@@ -27,6 +27,33 @@ async function sendMessage(token: string, chatId: number | string, text: string)
   }
 }
 
+// Download a Telegram file (voice/audio) and return it as a base64 data URL.
+async function downloadFileAsDataUrl(
+  token: string,
+  fileId: string,
+  mime: string,
+): Promise<string | null> {
+  try {
+    const infoRes = await fetch(`https://api.telegram.org/bot${token}/getFile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file_id: fileId }),
+    })
+    const info = await infoRes.json().catch(() => null)
+    const filePath = info?.result?.file_path
+    if (!filePath) return null
+    const fileRes = await fetch(`https://api.telegram.org/file/bot${token}/${filePath}`)
+    if (!fileRes.ok) return null
+    const buf = new Uint8Array(await fileRes.arrayBuffer())
+    let binary = ''
+    for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i])
+    const b64 = btoa(binary)
+    return `data:${mime};base64,${b64}`
+  } catch {
+    return null
+  }
+}
+
 // Normalise a parallel letter to uppercase (Cyrillic/Tajik).
 function normLetter(s: string): string {
   return (s || '').trim().toUpperCase()
