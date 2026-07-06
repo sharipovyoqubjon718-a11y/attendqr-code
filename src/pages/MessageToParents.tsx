@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Send, MessageSquare, Paperclip, X } from "lucide-react";
+import { Search, Send, MessageSquare, Paperclip, X, Mic, Square } from "lucide-react";
 import { toast } from "sonner";
 import { getStudents, type Student } from "@/lib/store";
 import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
