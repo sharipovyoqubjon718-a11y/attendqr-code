@@ -169,6 +169,30 @@ Deno.serve(async (req) => {
 
     const children = linkedRows ?? []
 
+    // ---- Voice / audio message from a registered parent -> forward to app ----
+    const voice = message?.voice ?? message?.audio
+    if (voice?.file_id && children.length > 0) {
+      const child = children[0]
+      const mime = message?.voice ? 'audio/ogg' : (voice?.mime_type || 'audio/mpeg')
+      const dataUrl = await downloadFileAsDataUrl(token, voice.file_id, mime)
+      try {
+        await supabase.from('messages').insert({
+          school_id: child.school_id,
+          sender_name: `${senderTgName} (волиди ${child.student_name})`,
+          message_content: '🎤 Паёми овозӣ',
+          audio_url: dataUrl,
+          chat_id: chatIdStr,
+          status: 'unread',
+        })
+      } catch {
+        // ignore db failures so Telegram never sees a non-2xx response
+      }
+      await sendMessage(token, chatId, MESSAGE_FORWARDED)
+      return new Response('ok', { status: 200 })
+    }
+
+
+
     // ---- /start command --------------------------------------------------
     if (text.startsWith('/start')) {
       if (children.length === 0) {
