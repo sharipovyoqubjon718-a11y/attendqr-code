@@ -17,7 +17,7 @@ function schoolId(): string {
 export async function fetchMessages(): Promise<Message[]> {
   const { data, error } = await supabase
     .from("messages")
-    .select("id, sender_name, message_content, status, timestamp")
+    .select("id, sender_name, message_content, status, timestamp, audio_url")
     .eq("school_id", schoolId())
     .order("timestamp", { ascending: false })
     .limit(200);
