@@ -18,6 +18,46 @@ const LOGS_KEY = () => `school_${activeId()}_logs`;
 const SESSION_KEY = () => `school_${activeId()}_session_active`;
 const LAST_RESET_KEY = () => `school_${activeId()}_last_reset`;
 const PURGE_KEY = () => `school_${activeId()}_logs_purged_v3`;
+const PROMO_KEY = () => `school_${activeId()}_last_promotion_year`;
+
+const MAX_GRADE = 11;
+
+// Promote a single grade label ("5-А" -> "6-А"). Returns null when the student
+// finishes the final grade and should be archived.
+function promoteGrade(grade: string): string | null {
+  const m = String(grade).match(/^(\d+)(.*)$/);
+  if (!m) return grade;
+  const num = parseInt(m[1], 10);
+  if (num >= MAX_GRADE) return null;
+  return `${num + 1}${m[2]}`;
+}
+
+// Annual promotion trigger: on/after 1 September each year, promote every
+// student one grade up. Final-grade students become archived (graduated).
+function checkAnnualPromotion() {
+  const now = new Date();
+  // The academic promotion happens on 1 September (month index 8).
+  const promoYear = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+  const last = parseInt(localStorage.getItem(PROMO_KEY()) || '0', 10);
+  if (last >= promoYear) return;
+
+  const raw = localStorage.getItem(STUDENTS_KEY());
+  if (raw) {
+    try {
+      const students: Student[] = JSON.parse(raw);
+      const updated = students.map((s) => {
+        if (s.archived) return s;
+        const next = promoteGrade(s.grade);
+        if (next === null) return { ...s, archived: true };
+        return { ...s, grade: next };
+      });
+      localStorage.setItem(STUDENTS_KEY(), JSON.stringify(updated));
+    } catch {
+      // ignore malformed data
+    }
+  }
+  localStorage.setItem(PROMO_KEY(), String(promoYear));
+}
 
 function normalizeStudentName(name: string): string {
   return name
