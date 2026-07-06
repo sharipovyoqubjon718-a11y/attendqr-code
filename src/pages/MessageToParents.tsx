@@ -226,6 +226,20 @@ export default function MessageToParents() {
                       >
                         <Paperclip className="h-4 w-4" /> {t("msg.attach")}
                       </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={recordingId === s.id ? "destructive" : "outline"}
+                        disabled={!hasChat || (recordingId !== null && recordingId !== s.id) || sending === s.id}
+                        onClick={() => (recordingId === s.id ? stopRecording() : startRecording(s))}
+                        className="gap-1"
+                      >
+                        {recordingId === s.id ? (
+                          <><Square className="h-4 w-4" /> {t("msg.stopRec")}</>
+                        ) : (
+                          <><Mic className="h-4 w-4" /> {t("msg.record")}</>
+                        )}
+                      </Button>
                       {attachments[s.id] && (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground truncate">
                           <span className="truncate max-w-[120px]">{attachments[s.id].name}</span>
