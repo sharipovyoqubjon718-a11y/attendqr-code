@@ -48,6 +48,7 @@ export type Database = {
       }
       messages: {
         Row: {
+          audio_url: string | null
           chat_id: string | null
           created_at: string
           id: string
@@ -58,6 +59,7 @@ export type Database = {
           timestamp: string
         }
         Insert: {
+          audio_url?: string | null
           chat_id?: string | null
           created_at?: string
           id?: string
@@ -68,6 +70,7 @@ export type Database = {
           timestamp?: string
         }
         Update: {
+          audio_url?: string | null
           chat_id?: string | null
           created_at?: string
           id?: string
