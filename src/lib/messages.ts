@@ -7,6 +7,7 @@ export interface Message {
   message_content: string;
   status: string;
   timestamp: string;
+  audio_url: string | null;
 }
 
 function schoolId(): string {
