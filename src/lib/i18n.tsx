@@ -344,6 +344,11 @@ const translations = {
   "msg.noChatId": { tj: "Chat ID сабт нашудааст", ru: "Chat ID не сохранён", en: "No Chat ID saved" },
   "msg.attach": { tj: "Замима кардани файл", ru: "Прикрепить файл", en: "Attach file" },
   "msg.fileTooBig": { tj: "Ҳаҷми файл аз 5MB зиёд аст", ru: "Размер файла больше 5МБ", en: "File is larger than 5MB" },
+  "msg.record": { tj: "Сабти овоз", ru: "Записать голос", en: "Record" },
+  "msg.stopRec": { tj: "Қатъ кардан", ru: "Остановить", en: "Stop" },
+  "msg.voiceSent": { tj: "Паёми овозӣ фиристода шуд", ru: "Голосовое отправлено", en: "Voice message sent" },
+  "msg.micError": { tj: "Микрофон дастрас нест", ru: "Микрофон недоступен", en: "Microphone unavailable" },
+  "admin.existingPrefixes": { tj: "Префиксҳои мавҷуда", ru: "Существующие префиксы", en: "Existing prefixes" },
 } as const;
 
 type TranslationKey = keyof typeof translations;
