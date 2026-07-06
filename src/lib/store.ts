@@ -95,20 +95,26 @@ function checkDailyReset() {
   }
 }
 
-export function getStudents(): Student[] {
+export function getStudents(includeArchived = false): Student[] {
   checkDailyReset();
+  checkAnnualPromotion();
   const stored = localStorage.getItem(STUDENTS_KEY());
 
   if (stored) {
     const students = normalizeStudents(JSON.parse(stored));
     localStorage.setItem(STUDENTS_KEY(), JSON.stringify(students));
-    return students;
+    return includeArchived ? students : students.filter((s) => !s.archived);
   }
 
   // Seed the default 282 students only for the master ГДБҲ school; other schools start empty.
   const seed = activeId() === 'gdbh' ? normalizeStudents(generateAllStudents()) : [];
   localStorage.setItem(STUDENTS_KEY(), JSON.stringify(seed));
   return seed;
+}
+
+// Students moved to archive (graduated) after finishing the final grade.
+export function getArchivedStudents(): Student[] {
+  return getStudents(true).filter((s) => s.archived);
 }
 
 export function getLogs(): AttendanceLog[] {
