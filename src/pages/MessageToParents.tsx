@@ -89,6 +89,60 @@ export default function MessageToParents() {
     }
   };
 
+  const sendVoiceNote = async (s: Student, blob: Blob) => {
+    const chatId = contacts[s.id]?.chat_id || contacts[s.id]?.phone || "";
+    if (!chatId) { toast.error(t("msg.noChatId")); return; }
+    const base64: string = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+    setSending(s.id);
+    const res = await sendParentMessage(chatId, "", {
+      base64,
+      name: "voice.ogg",
+      type: "audio/ogg",
+    });
+    setSending(null);
+    if (res.ok) {
+      toast.success(t("msg.voiceSent"));
+    } else {
+      toast.error(res.error || t("msg.sendError"));
+      fetchParentContacts().then(setContacts);
+    }
+  };
+
+  const startRecording = async (s: Student) => {
+    if (recordingId) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
+        ? "audio/ogg;codecs=opus"
+        : "audio/webm";
+      const rec = new MediaRecorder(stream, { mimeType: mime });
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      rec.onstop = () => {
+        stream.getTracks().forEach((tk) => tk.stop());
+        const blob = new Blob(chunksRef.current, { type: "audio/ogg" });
+        void sendVoiceNote(s, blob);
+      };
+      mediaRecorderRef.current = rec;
+      rec.start();
+      setRecordingId(s.id);
+    } catch {
+      toast.error(t("msg.micError"));
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+    setRecordingId(null);
+  };
+
+
   return (
     <div className="space-y-4 animate-fade-in">
       <Card className="bg-white dark:bg-card border-slate-200">
