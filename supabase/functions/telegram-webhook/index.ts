@@ -169,6 +169,37 @@ Deno.serve(async (req) => {
     if (!token) return new Response('ok', { status: 200 })
 
     const update = await req.json().catch(() => null)
+
+    // ---- Inline keyboard callback (used by /delete) ----------------------
+    const cq = update?.callback_query
+    if (cq) {
+      const cqChatId = cq.message?.chat?.id
+      const data: string = cq.data ?? ''
+      await answerCallbackQuery(token, cq.id)
+      if (cqChatId && data.startsWith('del:')) {
+        const rowId = data.slice(4)
+        const supabaseCb = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        )
+        try {
+          const { data: row } = await supabaseCb
+            .from('parent_contacts')
+            .select('id, student_name')
+            .eq('id', rowId)
+            .eq('chat_id', String(cqChatId))
+            .maybeSingle()
+          if (row) {
+            await supabaseCb.from('parent_contacts').delete().eq('id', row.id)
+            await sendMessage(token, cqChatId, deleteConfirmed(row.student_name as string))
+          }
+        } catch {
+          // ignore db failures so Telegram never sees a non-2xx response
+        }
+      }
+      return new Response('ok', { status: 200 })
+    }
+
     const message = update?.message ?? update?.edited_message
     const chatId = message?.chat?.id
     const text: string = (message?.text ?? '').trim()
