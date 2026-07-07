@@ -30,8 +30,12 @@ export default function AdminPanelContent({ onChanged }: { onChanged?: () => voi
 
   const refresh = () => { setSchools(getSchools()); onChanged?.(); };
 
+  const prefixTaken = form.prefix.trim().length > 0 &&
+    schools.some((s) => s.prefix.toUpperCase() === form.prefix.trim().toUpperCase());
+
   const handleAdd = () => {
     if (form.website) return;
+    if (prefixTaken) return toast.error(t("admin.prefixExists"));
     const res = addSchool({
       name: form.name, prefix: form.prefix,
       username: form.username, password: form.password || "1234",
