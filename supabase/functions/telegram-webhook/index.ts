@@ -15,15 +15,39 @@ const registered = (name: string, grade: string) =>
 
 const MESSAGE_FORWARDED = '✅ Паёми шумо ба муаллим фиристода шуд.'
 
-async function sendMessage(token: string, chatId: number | string, text: string) {
+const DELETE_NO_CHILDREN = 'Шумо ҳоло ягон фарзанди пайвастшуда надоред.'
+const DELETE_PROMPT = 'Кадом фарзандро аз рӯйхат пок кардан мехоҳед? Лутфан аз рӯйхати зер интихоб кунед:'
+const deleteConfirmed = (name: string) =>
+  `✅ Фарзанди шумо «${name}» бо муваффақият аз рӯйхат пок карда шуд.`
+
+async function sendMessage(
+  token: string,
+  chatId: number | string,
+  text: string,
+  replyMarkup?: unknown,
+) {
   try {
+    const body: Record<string, unknown> = { chat_id: chatId, text }
+    if (replyMarkup) body.reply_markup = replyMarkup
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text }),
+      body: JSON.stringify(body),
     })
   } catch {
     // never let a send failure surface a non-2xx to Telegram
+  }
+}
+
+async function answerCallbackQuery(token: string, callbackQueryId: string) {
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ callback_query_id: callbackQueryId }),
+    })
+  } catch {
+    // ignore
   }
 }
 
