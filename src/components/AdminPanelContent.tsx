@@ -116,28 +116,6 @@ export default function AdminPanelContent({ onChanged }: { onChanged?: () => voi
               ))}
             </div>
           </div>
-          {form.prefix.trim() && (() => {
-            const q = form.prefix.trim().toUpperCase();
-            const matches = schools.filter((s) => s.prefix.toUpperCase().includes(q));
-            if (matches.length === 0) return null;
-            return (
-              <div className="rounded-md border bg-muted/40 p-2 space-y-1">
-                <p className="text-[10px] text-muted-foreground">{t("admin.existingPrefixes")}</p>
-                <div className="flex flex-wrap gap-1">
-                  {matches.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => setForm({ ...form, prefix: s.prefix })}
-                      className="text-[11px] rounded px-1.5 py-0.5 bg-background border hover:bg-accent"
-                    >
-                      {s.prefix} · {s.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
           <Label className="text-xs">{t("login.username")}</Label>
           <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} autoComplete="off" maxLength={64} />
           <Label className="text-xs">{t("login.password")}</Label>
