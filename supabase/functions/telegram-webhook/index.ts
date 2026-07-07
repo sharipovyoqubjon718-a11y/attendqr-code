@@ -259,6 +259,20 @@ Deno.serve(async (req) => {
       return new Response('ok', { status: 200 })
     }
 
+    // ---- /delete command: show inline keyboard of linked children --------
+    if (text.startsWith('/delete')) {
+      if (children.length === 0) {
+        await sendMessage(token, chatId, DELETE_NO_CHILDREN)
+      } else {
+        const keyboard = children.map((c) => [
+          { text: c.student_name || '—', callback_data: `del:${c.id}` },
+        ])
+        await sendMessage(token, chatId, DELETE_PROMPT, { inline_keyboard: keyboard })
+      }
+      return new Response('ok', { status: 200 })
+    }
+
+
     // ---- /reyting (monthly ranking, for administration) ------------------
     if (text.startsWith('/reyting') || text.startsWith('/ranking')) {
       const schoolId = (children[0]?.school_id as string) || 'gdbh'
