@@ -124,7 +124,7 @@ export default function AdminPanelContent({ onChanged }: { onChanged?: () => voi
             <Button type="button" variant="ghost" size="sm" className="flex-1" onClick={() => setShowForm(false)}>
               {t("edit.cancel")}
             </Button>
-            <Button type="submit" size="sm" className="flex-1">{t("edit.save")}</Button>
+            <Button type="submit" size="sm" className="flex-1" disabled={prefixTaken}>{t("edit.save")}</Button>
           </div>
         </form>
       )}
