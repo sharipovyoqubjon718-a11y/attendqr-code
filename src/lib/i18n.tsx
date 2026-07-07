@@ -257,6 +257,7 @@ const translations = {
   "admin.schoolPrefix": { tj: "ID-и мактаб (префикс)", ru: "ID школы (префикс)", en: "School ID (prefix)" },
   "admin.fillAll": { tj: "Лутфан ҳамаи майдонҳоро пур кунед", ru: "Заполните все поля", en: "Please fill all fields" },
   "admin.prefixExists": { tj: "Чунин префикс аллакай вуҷуд дорад", ru: "Такой префикс уже существует", en: "Prefix already exists" },
+  "admin.prefixInUse": { tj: "Ин префикс аллакай истифода шудааст", ru: "Этот префикс уже используется", en: "This prefix is already in use" },
   "admin.usernameExists": { tj: "Чунин логин аллакай вуҷуд дорад", ru: "Такой логин уже существует", en: "Username already exists" },
 
   // Login extras

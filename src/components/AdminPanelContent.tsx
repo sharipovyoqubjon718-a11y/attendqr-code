@@ -30,8 +30,12 @@ export default function AdminPanelContent({ onChanged }: { onChanged?: () => voi
 
   const refresh = () => { setSchools(getSchools()); onChanged?.(); };
 
+  const prefixTaken = form.prefix.trim().length > 0 &&
+    schools.some((s) => s.prefix.toUpperCase() === form.prefix.trim().toUpperCase());
+
   const handleAdd = () => {
     if (form.website) return;
+    if (prefixTaken) return toast.error(t("admin.prefixExists"));
     const res = addSchool({
       name: form.name, prefix: form.prefix,
       username: form.username, password: form.password || "1234",
@@ -88,29 +92,30 @@ export default function AdminPanelContent({ onChanged }: { onChanged?: () => voi
           <Label className="text-xs">{t("admin.schoolName")}</Label>
           <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={120} />
           <Label className="text-xs">{t("admin.schoolPrefix")}</Label>
-          <Input value={form.prefix} onChange={(e) => setForm({ ...form, prefix: e.target.value.toUpperCase() })} maxLength={12} />
-          {form.prefix.trim() && (() => {
-            const q = form.prefix.trim().toUpperCase();
-            const matches = schools.filter((s) => s.prefix.toUpperCase().includes(q));
-            if (matches.length === 0) return null;
-            return (
-              <div className="rounded-md border bg-muted/40 p-2 space-y-1">
-                <p className="text-[10px] text-muted-foreground">{t("admin.existingPrefixes")}</p>
-                <div className="flex flex-wrap gap-1">
-                  {matches.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => setForm({ ...form, prefix: s.prefix })}
-                      className="text-[11px] rounded px-1.5 py-0.5 bg-background border hover:bg-accent"
-                    >
-                      {s.prefix} · {s.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
+          <Input
+            value={form.prefix}
+            onChange={(e) => setForm({ ...form, prefix: e.target.value.toUpperCase() })}
+            maxLength={12}
+            className={prefixTaken ? "border-destructive focus-visible:ring-destructive" : undefined}
+          />
+          {prefixTaken && (
+            <p className="text-[11px] font-medium text-destructive">{t("admin.prefixInUse")}</p>
+          )}
+          <div className="rounded-md border bg-muted/40 p-2 space-y-1">
+            <p className="text-[10px] text-muted-foreground">{t("admin.existingPrefixes")}</p>
+            <div className="flex flex-wrap gap-1">
+              {schools.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, prefix: s.prefix })}
+                  className="text-[11px] rounded px-1.5 py-0.5 bg-background border hover:bg-accent"
+                >
+                  {s.prefix} · {s.name}
+                </button>
+              ))}
+            </div>
+          </div>
           <Label className="text-xs">{t("login.username")}</Label>
           <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} autoComplete="off" maxLength={64} />
           <Label className="text-xs">{t("login.password")}</Label>
@@ -119,7 +124,7 @@ export default function AdminPanelContent({ onChanged }: { onChanged?: () => voi
             <Button type="button" variant="ghost" size="sm" className="flex-1" onClick={() => setShowForm(false)}>
               {t("edit.cancel")}
             </Button>
-            <Button type="submit" size="sm" className="flex-1">{t("edit.save")}</Button>
+            <Button type="submit" size="sm" className="flex-1" disabled={prefixTaken}>{t("edit.save")}</Button>
           </div>
         </form>
       )}
