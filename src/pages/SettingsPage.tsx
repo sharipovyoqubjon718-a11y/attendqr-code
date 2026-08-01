@@ -139,10 +139,16 @@ export default function SettingsPage() {
           className="h-24 w-24 object-contain rounded-full border-2 border-primary/30 bg-card"
         />
         <h2 className="font-display text-lg font-bold text-center">{school.name}</h2>
+        {isMaster && (
+          <Label className="text-xs font-semibold text-primary">{t("brand.globalLogo")}</Label>
+        )}
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onLogo} />
         <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="gap-2">
           <ImageIcon className="h-4 w-4" /> {t("school.uploadLogo")}
         </Button>
+        <p className="text-[10px] text-muted-foreground text-center">
+          {isMaster ? t("brand.globalHint") : t("brand.schoolScopedHint")}
+        </p>
         <p className="text-[10px] text-muted-foreground text-center">{t("school.logoQrHint")}</p>
       </div>
 
