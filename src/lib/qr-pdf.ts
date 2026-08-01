@@ -52,10 +52,13 @@ export async function generateQrPdf({ students, schoolName, logoSrc }: Options) 
 
   const logoData = await loadImageAsDataUrl(logoSrc);
 
-  // Pre-generate all QR codes
+  // Pre-generate all QR codes — payload is strictly [Prefix][Student ID]
+  const qrValues: Record<string, string> = {};
   const qrDataUrls: Record<string, string> = {};
   for (const s of students) {
-    qrDataUrls[s.id] = await QRCode.toDataURL(s.id, {
+    const value = qrValueForStudent(s.id);
+    qrValues[s.id] = value;
+    qrDataUrls[s.id] = await QRCode.toDataURL(value, {
       errorCorrectionLevel: "H",
       margin: 1,
       width: 400,
