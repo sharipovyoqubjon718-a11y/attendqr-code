@@ -3,25 +3,26 @@
   "short_name": "AttendQR",
   "description": "Системаи идоракунии давомот бо сканери QR — Гимназияи давлатии Боғи Ҳабиб",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#b8860b",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/golden-emblem.png",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/golden-emblem.png",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/golden-emblem.png",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

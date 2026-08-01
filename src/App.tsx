@@ -23,8 +23,9 @@ import Journal from "@/pages/Journal";
 import ParentNumbers from "@/pages/ParentNumbers";
 import MessageToParents from "@/pages/MessageToParents";
 import Messages from "@/pages/Messages";
+import Teachers from "@/pages/Teachers";
 import NotFound from "@/pages/NotFound";
-import { setActiveSchoolId, getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import { setActiveSchoolId } from "@/lib/schools";
 import { applyFavicon } from "@/lib/favicon";
 
 const queryClient = new QueryClient();
@@ -38,8 +39,8 @@ const App = () => {
   const [unlocked, setUnlocked] = useState<boolean>(false);
 
   useEffect(() => {
-    const s = getActiveSchool() || getSelectedSchool();
-    applyFavicon(s?.logoDataUrl);
+    // App icon / favicon always follows the GLOBAL brand (master admin only).
+    applyFavicon();
   }, [unlocked]);
 
   const handleLogout = () => {
@@ -80,6 +81,7 @@ const App = () => {
                   <Route path="/parents" element={<ParentNumbers />} />
                   <Route path="/message-parents" element={<MessageToParents />} />
                   <Route path="/messages" element={<Messages />} />
+                  <Route path="/teachers" element={<Teachers />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

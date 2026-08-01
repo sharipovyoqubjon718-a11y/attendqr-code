@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy, Trophy, BookOpen, Phone, MessageSquare, Bell } from "lucide-react";
+import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy, Trophy, BookOpen, Phone, MessageSquare, Bell, GraduationCap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useI18n } from "@/lib/i18n";
 import { getActiveSchool, getSelectedSchool, getActiveSchoolId, getSelectedSchoolId } from "@/lib/schools";
@@ -59,6 +59,7 @@ export function AppSidebar() {
     { title: t("nav.parents"), url: "/parents", icon: Phone },
     { title: t("nav.messageParents"), url: "/message-parents", icon: MessageSquare },
     { title: t("nav.messages"), url: "/messages", icon: Bell, badge: unread },
+    { title: t("nav.teachers"), url: "/teachers", icon: GraduationCap },
     { title: t("nav.blacklist"), url: "/blacklist", icon: ShieldAlert },
     { title: t("nav.about"), url: "/about", icon: Info },
     { title: t("settings.title"), url: "/settings", icon: Settings },

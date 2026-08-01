@@ -4,7 +4,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useI18n } from "@/lib/i18n";
 import {
   getSchools, getSelectedSchoolId, setSelectedSchoolId,
-  tryLogin, type School,
+  tryLogin, getGlobalLogo, type School,
 } from "@/lib/schools";
 import goldenEmblem from "@/assets/golden-emblem.png";
 import {
@@ -120,7 +120,7 @@ export default function LoginScreen({ onUnlock }: LoginScreenProps) {
           aria-label="Logo"
         >
           <img
-            src={goldenEmblem}
+            src={getGlobalLogo() || goldenEmblem}
             alt="Emblem"
             className="h-32 w-32 object-contain drop-shadow-lg mx-auto select-none"
             draggable={false}

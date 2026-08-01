@@ -2,6 +2,7 @@
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 import { registerCyrillicFont } from "./pdf-fonts";
+import { qrValueForStudent } from "./schools";
 
 interface QrStudent {
   id: string;
@@ -52,10 +53,13 @@ export async function generateQrPdf({ students, schoolName, logoSrc }: Options) 
 
   const logoData = await loadImageAsDataUrl(logoSrc);
 
-  // Pre-generate all QR codes
+  // Pre-generate all QR codes — payload is strictly [Prefix][Student ID]
+  const qrValues: Record<string, string> = {};
   const qrDataUrls: Record<string, string> = {};
   for (const s of students) {
-    qrDataUrls[s.id] = await QRCode.toDataURL(s.id, {
+    const value = qrValueForStudent(s.id);
+    qrValues[s.id] = value;
+    qrDataUrls[s.id] = await QRCode.toDataURL(value, {
       errorCorrectionLevel: "H",
       margin: 1,
       width: 400,
@@ -102,7 +106,7 @@ export async function generateQrPdf({ students, schoolName, logoSrc }: Options) 
     pdf.setFont(fontName, "normal");
     pdf.setFontSize(6);
     pdf.setTextColor(100);
-    pdf.text(`${s.id} • ${s.grade}`, x + cardW / 2, textY + 3, { align: "center" });
+    pdf.text(`${qrValues[s.id]} • ${s.grade}`, x + cardW / 2, textY + 3, { align: "center" });
   }
 
   // Header on each page
