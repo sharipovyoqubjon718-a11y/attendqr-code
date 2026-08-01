@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy, Trophy, BookOpen, Phone, MessageSquare, Bell } from "lucide-react";
+import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy, Trophy, BookOpen, Phone, MessageSquare, Bell, GraduationCap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useI18n } from "@/lib/i18n";
 import { getActiveSchool, getSelectedSchool, getActiveSchoolId, getSelectedSchoolId } from "@/lib/schools";
