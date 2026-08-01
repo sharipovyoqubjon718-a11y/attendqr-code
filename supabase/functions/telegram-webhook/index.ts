@@ -15,10 +15,29 @@ const registered = (name: string, grade: string) =>
 
 const MESSAGE_FORWARDED = '✅ Паёми шумо ба муаллим фиристода шуд.'
 
+const CHOOSE_CHILD = 'Шумо якчанд фарзанди пайвастшуда доред. Лутфан интихоб кунед, ки ин паём ба кадом фарзанд тааллуқ дорад:'
+const CHOICE_EXPIRED = 'Вақти интихоб гузашт. Лутфан паёми худро аз нав фиристед.'
+
 const DELETE_NO_CHILDREN = 'Шумо ҳоло ягон фарзанди пайвастшуда надоред.'
 const DELETE_PROMPT = 'Кадом фарзандро аз рӯйхат пок кардан мехоҳед? Лутфан аз рӯйхати зер интихоб кунед:'
 const deleteConfirmed = (name: string) =>
   `✅ Фарзанди шумо «${name}» бо муваффақият аз рӯйхат пок карда шуд.`
+
+// Pending messages awaiting a child selection (multi-child parents).
+// Key = Telegram chat id. Entries expire after 15 minutes.
+type Pending = { text: string; audioUrl: string | null; senderName: string; at: number }
+const pendingByChat = new Map<string, Pending>()
+const PENDING_TTL_MS = 15 * 60 * 1000
+
+function setPending(chatId: string, p: Pending) {
+  pendingByChat.set(chatId, p)
+}
+function takePending(chatId: string): Pending | null {
+  const p = pendingByChat.get(chatId)
+  pendingByChat.delete(chatId)
+  if (!p || Date.now() - p.at > PENDING_TTL_MS) return null
+  return p
+}
 
 async function sendMessage(
   token: string,
