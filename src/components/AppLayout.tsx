@@ -3,8 +3,9 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useI18n } from "@/lib/i18n";
-import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import { getActiveSchool, getSelectedSchool, getGlobalLogo } from "@/lib/schools";
 import goldenEmblem from "@/assets/golden-emblem.png";
 
 interface Props {
@@ -15,7 +16,8 @@ interface Props {
 export function AppLayout({ children, onLogout }: Props) {
   const { t } = useI18n();
   const school = getActiveSchool() || getSelectedSchool();
-  const logoSrc = school.logoDataUrl || goldenEmblem;
+  // Header shows the GLOBAL brand (set by the master admin) for every school.
+  const logoSrc = getGlobalLogo() || goldenEmblem;
 
   return (
     <SidebarProvider>
@@ -30,6 +32,9 @@ export function AppLayout({ children, onLogout }: Props) {
               {school.name}
             </h1>
             <div className="flex items-center gap-2">
+              <div className="hidden sm:block">
+                <LanguageSwitcher />
+              </div>
               <ConnectionStatus />
               <Button variant="ghost" size="icon" onClick={onLogout} title={t("login.logout")}>
                 <LogOut className="h-4 w-4" />
@@ -39,14 +44,19 @@ export function AppLayout({ children, onLogout }: Props) {
           <main className="flex-1 p-4 sm:p-6 overflow-auto print-area">{children}</main>
           <footer className="border-t bg-card/50 px-4 py-3 text-center space-y-1 no-print">
             <p className="text-xs text-muted-foreground">{t("footer")}</p>
-            <a
-              href="https://t.me/Sharipov_Yoqubjon"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block text-[11px] text-primary hover:underline"
-            >
-              📨 {t("support.title")} — @Sharipov_Yoqubjon
-            </a>
+            <div className="flex items-center justify-center gap-3">
+              <a
+                href="https://t.me/Sharipov_Yoqubjon"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block text-[11px] text-primary hover:underline"
+              >
+                📨 {t("support.title")} — @Sharipov_Yoqubjon
+              </a>
+              <div className="sm:hidden">
+                <LanguageSwitcher />
+              </div>
+            </div>
           </footer>
         </div>
       </div>
