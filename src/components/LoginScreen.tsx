@@ -120,7 +120,7 @@ export default function LoginScreen({ onUnlock }: LoginScreenProps) {
           aria-label="Logo"
         >
           <img
-            src={goldenEmblem}
+            src={getGlobalLogo() || goldenEmblem}
             alt="Emblem"
             className="h-32 w-32 object-contain drop-shadow-lg mx-auto select-none"
             draggable={false}
