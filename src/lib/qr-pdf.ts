@@ -2,6 +2,7 @@
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 import { registerCyrillicFont } from "./pdf-fonts";
+import { qrValueForStudent } from "./schools";
 
 interface QrStudent {
   id: string;
