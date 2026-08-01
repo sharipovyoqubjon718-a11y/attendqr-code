@@ -10,7 +10,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useI18n } from "@/lib/i18n";
 import {
   getSelectedSchool, updateSchool, getSelectedSchoolId,
-  defaultShiftForGrade, getShiftForGrade,
+  defaultShiftForGrade, getShiftForGrade, isMasterSchool, setGlobalLogo,
 } from "@/lib/schools";
 import { getStudents } from "@/lib/store";
 import goldenEmblem from "@/assets/golden-emblem.png";
