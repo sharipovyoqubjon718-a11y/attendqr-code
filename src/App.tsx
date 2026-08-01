@@ -81,6 +81,7 @@ const App = () => {
                   <Route path="/parents" element={<ParentNumbers />} />
                   <Route path="/message-parents" element={<MessageToParents />} />
                   <Route path="/messages" element={<Messages />} />
+                  <Route path="/teachers" element={<Teachers />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
