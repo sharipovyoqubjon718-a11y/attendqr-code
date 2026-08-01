@@ -189,14 +189,14 @@ Deno.serve(async (req) => {
 
     const update = await req.json().catch(() => null)
 
-    // ---- Inline keyboard callback (used by /delete) ----------------------
+    // ---- Inline keyboard callbacks (/delete and child selection) ----------
     const cq = update?.callback_query
     if (cq) {
       const cqChatId = cq.message?.chat?.id
       const data: string = cq.data ?? ''
       await answerCallbackQuery(token, cq.id)
-      if (cqChatId && data.startsWith('del:')) {
-        const rowId = data.slice(4)
+      if (cqChatId && (data.startsWith('del:') || data.startsWith('pick:'))) {
+        const rowId = data.slice(data.indexOf(':') + 1)
         const supabaseCb = createClient(
           Deno.env.get('SUPABASE_URL')!,
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -204,13 +204,29 @@ Deno.serve(async (req) => {
         try {
           const { data: row } = await supabaseCb
             .from('parent_contacts')
-            .select('id, student_name')
+            .select('id, school_id, student_name')
             .eq('id', rowId)
             .eq('chat_id', String(cqChatId))
             .maybeSingle()
-          if (row) {
+          if (row && data.startsWith('del:')) {
             await supabaseCb.from('parent_contacts').delete().eq('id', row.id)
             await sendMessage(token, cqChatId, deleteConfirmed(row.student_name as string))
+          } else if (row) {
+            // Child selected — deliver the message the parent sent earlier.
+            const pending = takePending(String(cqChatId))
+            if (!pending) {
+              await sendMessage(token, cqChatId, CHOICE_EXPIRED)
+            } else {
+              await supabaseCb.from('messages').insert({
+                school_id: row.school_id,
+                sender_name: `${pending.senderName} (волиди ${row.student_name})`,
+                message_content: pending.text,
+                audio_url: pending.audioUrl,
+                chat_id: String(cqChatId),
+                status: 'unread',
+              })
+              await sendMessage(token, cqChatId, MESSAGE_FORWARDED)
+            }
           }
         } catch {
           // ignore db failures so Telegram never sees a non-2xx response
