@@ -259,12 +259,30 @@ Deno.serve(async (req) => {
 
     const children = linkedRows ?? []
 
+    // Inline keyboard forcing the parent to pick one of several children.
+    const childKeyboard = () => ({
+      inline_keyboard: children.map((c) => [
+        { text: c.student_name || '—', callback_data: `pick:${c.id}` },
+      ]),
+    })
+
     // ---- Voice / audio message from a registered parent -> forward to app ----
     const voice = message?.voice ?? message?.audio
     if (voice?.file_id && children.length > 0) {
-      const child = children[0]
       const mime = message?.voice ? 'audio/ogg' : (voice?.mime_type || 'audio/mpeg')
       const dataUrl = await downloadFileAsDataUrl(token, voice.file_id, mime)
+      if (children.length > 1) {
+        // More than one child: force an explicit selection first.
+        setPending(chatIdStr, {
+          text: '🎤 Паёми овозӣ',
+          audioUrl: dataUrl,
+          senderName: senderTgName,
+          at: Date.now(),
+        })
+        await sendMessage(token, chatId, CHOOSE_CHILD, childKeyboard())
+        return new Response('ok', { status: 200 })
+      }
+      const child = children[0]
       try {
         await supabase.from('messages').insert({
           school_id: child.school_id,
