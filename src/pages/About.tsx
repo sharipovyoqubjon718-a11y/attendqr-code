@@ -40,16 +40,6 @@ export default function About() {
         </CardContent>
       </Card>
 
-      <Card className="glass-card border-primary/20">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3">
-            <div className="h-3 w-3 rounded-full bg-primary" />
-            <div className="h-3 w-3 rounded-full bg-card border" />
-            <div className="h-3 w-3 rounded-full bg-secondary" />
-            <span className="text-sm text-muted-foreground ml-2">{t("about.flag")}</span>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
