@@ -56,6 +56,8 @@ export default function SettingsPage() {
     localStorage.setItem("sams_theme", next ? "dark" : "light");
   };
 
+  const isMaster = isMasterSchool(school);
+
   const onLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -67,7 +69,11 @@ export default function SettingsPage() {
     reader.onload = () => {
       const dataUrl = String(reader.result);
       updateSchool(getSelectedSchoolId(), { logoDataUrl: dataUrl });
-      applyFavicon(dataUrl);
+      // Only the master administrator (ГДБҲ) sets the GLOBAL brand: app icon,
+      // favicon and header. Other schools stay scoped to their own dashboard/QR.
+      if (isMaster && setGlobalLogo(dataUrl, getSelectedSchoolId())) {
+        applyFavicon();
+      }
       // Mirror the logo to the database so it syncs across devices.
       void syncSchoolCredentials({
         schoolId: getSelectedSchoolId(),
