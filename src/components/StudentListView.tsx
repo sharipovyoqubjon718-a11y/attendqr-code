@@ -6,7 +6,7 @@ import { Download } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EditDeleteActions } from "@/components/EditDeleteActions";
 import { useI18n } from "@/lib/i18n";
-import { getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import { getActiveSchool, getSelectedSchool, qrValueForStudent } from "@/lib/schools";
 import goldenEmblem from "@/assets/golden-emblem.png";
 import type { Student } from "@/lib/store";
 
