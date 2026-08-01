@@ -25,7 +25,7 @@ import MessageToParents from "@/pages/MessageToParents";
 import Messages from "@/pages/Messages";
 import Teachers from "@/pages/Teachers";
 import NotFound from "@/pages/NotFound";
-import { setActiveSchoolId, getActiveSchool, getSelectedSchool } from "@/lib/schools";
+import { setActiveSchoolId } from "@/lib/schools";
 import { applyFavicon } from "@/lib/favicon";
 
 const queryClient = new QueryClient();
