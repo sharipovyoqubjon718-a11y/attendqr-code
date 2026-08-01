@@ -350,6 +350,26 @@ const translations = {
   "msg.voiceSent": { tj: "Паёми овозӣ фиристода шуд", ru: "Голосовое отправлено", en: "Voice message sent" },
   "msg.micError": { tj: "Микрофон дастрас нест", ru: "Микрофон недоступен", en: "Microphone unavailable" },
   "admin.existingPrefixes": { tj: "Префиксҳои мавҷуда", ru: "Существующие префиксы", en: "Existing prefixes" },
+
+  // Teachers & class supervisors
+  "nav.teachers": { tj: "Муаллимон", ru: "Учителя", en: "Teachers" },
+  "teachers.title": { tj: "Муаллимон ва роҳбарони синф", ru: "Учителя и классные руководители", en: "Teachers & class supervisors" },
+  "teachers.subtitle": { tj: "Идоракунии ҳайати муаллимон ва роҳбарони синф", ru: "Управление составом учителей и классных руководителей", en: "Manage teaching staff and class supervisors" },
+  "teachers.add": { tj: "Иловаи муаллим", ru: "Добавить учителя", en: "Add teacher" },
+  "teachers.fullName": { tj: "Ному насаб", ru: "Ф.И.О.", en: "Full name" },
+  "teachers.subject": { tj: "Номи фан", ru: "Предмет", en: "Subject" },
+  "teachers.supervisor": { tj: "Роҳбари синф", ru: "Классный руководитель", en: "Class supervisor" },
+  "teachers.supervisorOf": { tj: "Роҳбари синфи", ru: "Класс", en: "Supervisor of" },
+  "teachers.pickClass": { tj: "Синфро интихоб кунед", ru: "Выберите класс", en: "Select a class" },
+  "teachers.added": { tj: "Муаллим илова шуд", ru: "Учитель добавлен", en: "Teacher added" },
+  "teachers.deleted": { tj: "Муаллим пок карда шуд", ru: "Учитель удалён", en: "Teacher deleted" },
+  "teachers.deleteConfirm": { tj: "Оё шумо воқеан мехоҳед ин муаллимро пок кунед?", ru: "Вы действительно хотите удалить этого учителя?", en: "Are you sure you want to delete this teacher?" },
+  "teachers.empty": { tj: "Ҳоло муаллим илова нашудааст", ru: "Учителя пока не добавлены", en: "No teachers added yet" },
+
+  // Branding
+  "brand.globalLogo": { tj: "Логои умумии барнома", ru: "Глобальный логотип приложения", en: "Global app logo" },
+  "brand.globalHint": { tj: "Ин лого нишонаи барнома, favicon ва сарлавҳаро дар тамоми система иваз мекунад (танҳо маъмури асосӣ).", ru: "Этот логотип меняет иконку приложения, favicon и шапку во всей системе (только главный админ).", en: "This logo replaces the app icon, favicon and header across the whole platform (master admin only)." },
+  "brand.schoolScopedHint": { tj: "Логои шумо танҳо дар панели мактаби шумо ва QR-кодҳои он истифода мешавад.", ru: "Ваш логотип используется только в панели вашей школы и её QR-кодах.", en: "Your logo is used only in your school dashboard and its QR codes." },
 } as const;
 
 type TranslationKey = keyof typeof translations;
