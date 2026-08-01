@@ -106,7 +106,7 @@ export async function generateQrPdf({ students, schoolName, logoSrc }: Options) 
     pdf.setFont(fontName, "normal");
     pdf.setFontSize(6);
     pdf.setTextColor(100);
-    pdf.text(`${s.id} • ${s.grade}`, x + cardW / 2, textY + 3, { align: "center" });
+    pdf.text(`${qrValues[s.id]} • ${s.grade}`, x + cardW / 2, textY + 3, { align: "center" });
   }
 
   // Header on each page
