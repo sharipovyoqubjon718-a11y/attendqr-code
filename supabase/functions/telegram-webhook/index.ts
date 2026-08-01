@@ -343,6 +343,12 @@ Deno.serve(async (req) => {
     // Registered parent sending a free-form message -> forward to the app.
     // A message that doesn't parse as a registration is treated as a chat.
     if (children.length > 0 && !parsed) {
+      if (children.length > 1) {
+        // More than one child: force an explicit selection first.
+        setPending(chatIdStr, { text, audioUrl: null, senderName: senderTgName, at: Date.now() })
+        await sendMessage(token, chatId, CHOOSE_CHILD, childKeyboard())
+        return new Response('ok', { status: 200 })
+      }
       const child = children[0]
       try {
         await supabase.from('messages').insert({
