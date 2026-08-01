@@ -173,3 +173,49 @@ export function scopedKey(base: string): string {
   const id = getActiveSchoolId() || getSelectedSchoolId();
   return `school_${id}_${base}`;
 }
+
+// ---------------------------------------------------------------------------
+// Global brand (app icon / favicon / header) — master school (ГДБҲ) only
+// ---------------------------------------------------------------------------
+export const MASTER_SCHOOL_ID = "gdbh";
+const GLOBAL_LOGO_KEY = "sams_global_logo";
+
+export function isMasterSchool(school?: School | null): boolean {
+  return (school?.id ?? "") === MASTER_SCHOOL_ID;
+}
+
+/** Returns the global brand logo (data URL) or null when the default is used. */
+export function getGlobalLogo(): string | null {
+  try {
+    const v = localStorage.getItem(GLOBAL_LOGO_KEY);
+    return v && v.trim() ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Only the master administrator account may change the global brand. */
+export function setGlobalLogo(dataUrl: string, schoolId: string): boolean {
+  if (schoolId !== MASTER_SCHOOL_ID) return false;
+  localStorage.setItem(GLOBAL_LOGO_KEY, dataUrl);
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// QR payload — strictly [Prefix][Student ID]
+// ---------------------------------------------------------------------------
+/**
+ * Builds the QR payload for a student, always using the prefix that belongs to
+ * the student's own school. Any legacy/foreign prefix baked into the stored id
+ * is stripped so the code always reads `[Prefix][Number]`.
+ */
+export function qrValueForStudent(studentId: string, school?: School | null): string {
+  const s = school ?? getActiveSchool() ?? getSelectedSchool();
+  const prefix = (s?.prefix || "").trim();
+  const raw = String(studentId || "").trim();
+  if (!prefix) return raw;
+  // Number part = trailing digits of the stored id (ignores any old prefix).
+  const digits = raw.match(/(\d+)\s*$/)?.[1];
+  if (!digits) return raw.toUpperCase().startsWith(prefix.toUpperCase()) ? raw : `${prefix}${raw}`;
+  return `${prefix}${digits}`;
+}
