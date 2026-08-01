@@ -49,14 +49,15 @@ function QrCode({ value, size, logoSize, logoSrc }: { value: string; size: numbe
 
 function QrCell({ student, size, logoSize, logoSrc }: { student: Student; size: number; logoSize: number; logoSrc: string }) {
   const ref = useRef<HTMLDivElement>(null);
+  const qrValue = qrValueForStudent(student.id);
   const handleDownload = () => {
     const svg = ref.current?.querySelector("svg") as SVGSVGElement | null;
-    downloadSvg(svg, `QR_${student.name}_${student.id}`);
+    downloadSvg(svg, `QR_${student.name}_${qrValue}`);
   };
   return (
     <div className="flex flex-col items-center gap-1">
       <div ref={ref} className="inline-block">
-        <QrCode value={student.id} size={size} logoSize={logoSize} logoSrc={logoSrc} />
+        <QrCode value={qrValue} size={size} logoSize={logoSize} logoSrc={logoSrc} />
       </div>
       <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleDownload} title="SVG">
         <Download className="h-3.5 w-3.5" />
