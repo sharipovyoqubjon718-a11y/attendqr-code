@@ -59,6 +59,7 @@ export function AppSidebar() {
     { title: t("nav.parents"), url: "/parents", icon: Phone },
     { title: t("nav.messageParents"), url: "/message-parents", icon: MessageSquare },
     { title: t("nav.messages"), url: "/messages", icon: Bell, badge: unread },
+    { title: t("nav.teachers"), url: "/teachers", icon: GraduationCap },
     { title: t("nav.blacklist"), url: "/blacklist", icon: ShieldAlert },
     { title: t("nav.about"), url: "/about", icon: Info },
     { title: t("settings.title"), url: "/settings", icon: Settings },
