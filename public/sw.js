@@ -1,4 +1,4 @@
-const CACHE_NAME = 'attendqr-v2';
+const CACHE_NAME = 'attendqr-v3';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
