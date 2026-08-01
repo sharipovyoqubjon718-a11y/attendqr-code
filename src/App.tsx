@@ -23,6 +23,7 @@ import Journal from "@/pages/Journal";
 import ParentNumbers from "@/pages/ParentNumbers";
 import MessageToParents from "@/pages/MessageToParents";
 import Messages from "@/pages/Messages";
+import Teachers from "@/pages/Teachers";
 import NotFound from "@/pages/NotFound";
 import { setActiveSchoolId, getActiveSchool, getSelectedSchool } from "@/lib/schools";
 import { applyFavicon } from "@/lib/favicon";
