@@ -39,8 +39,8 @@ const App = () => {
   const [unlocked, setUnlocked] = useState<boolean>(false);
 
   useEffect(() => {
-    const s = getActiveSchool() || getSelectedSchool();
-    applyFavicon(s?.logoDataUrl);
+    // App icon / favicon always follows the GLOBAL brand (master admin only).
+    applyFavicon();
   }, [unlocked]);
 
   const handleLogout = () => {
