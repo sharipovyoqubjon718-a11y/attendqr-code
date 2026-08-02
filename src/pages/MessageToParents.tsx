@@ -75,7 +75,7 @@ export default function MessageToParents() {
     // Prevention: never attempt to send when there is no chat_id.
     if (!chatId) { toast.error(t("msg.noChatId")); return; }
     setSending(s.id);
-    const res = await sendParentMessage(chatId, text, file);
+    const res = await sendParentMessage(chatId, text, file, s.name);
     setSending(null);
     if (res.ok) {
       toast.success(t("msg.sent"));
@@ -103,7 +103,7 @@ export default function MessageToParents() {
       base64,
       name: "voice.ogg",
       type: "audio/ogg",
-    });
+    }, s.name);
     setSending(null);
     if (res.ok) {
       toast.success(t("msg.voiceSent"));

@@ -16,28 +16,14 @@ const registered = (name: string, grade: string) =>
 const MESSAGE_FORWARDED = '✅ Паёми шумо ба муаллим фиристода шуд.'
 
 const CHOOSE_CHILD = 'Шумо якчанд фарзанди пайвастшуда доред. Лутфан интихоб кунед, ки ин паём ба кадом фарзанд тааллуқ дорад:'
-const CHOICE_EXPIRED = 'Вақти интихоб гузашт. Лутфан паёми худро аз нав фиристед.'
 
 const DELETE_NO_CHILDREN = 'Шумо ҳоло ягон фарзанди пайвастшуда надоред.'
 const DELETE_PROMPT = 'Кадом фарзандро аз рӯйхат пок кардан мехоҳед? Лутфан аз рӯйхати зер интихоб кунед:'
 const deleteConfirmed = (name: string) =>
   `✅ Фарзанди шумо «${name}» бо муваффақият аз рӯйхат пок карда шуд.`
 
-// Pending messages awaiting a child selection (multi-child parents).
-// Key = Telegram chat id. Entries expire after 15 minutes.
-type Pending = { text: string; audioUrl: string | null; senderName: string; at: number }
-const pendingByChat = new Map<string, Pending>()
-const PENDING_TTL_MS = 15 * 60 * 1000
-
-function setPending(chatId: string, p: Pending) {
-  pendingByChat.set(chatId, p)
-}
-function takePending(chatId: string): Pending | null {
-  const p = pendingByChat.get(chatId)
-  pendingByChat.delete(chatId)
-  if (!p || Date.now() - p.at > PENDING_TTL_MS) return null
-  return p
-}
+// Multi-child parents: the message is stored in the DB immediately and the
+// chosen child is attached later, so inline-keyboard selections NEVER expire.
 
 async function sendMessage(
   token: string,
@@ -179,6 +165,34 @@ async function buildMonthlyRanking(
   return header + '\n' + lines.join('\n')
 }
 
+// Store an incoming parent message right away (child attached after selection).
+async function storePending(
+  supabase: ReturnType<typeof createClient>,
+  schoolId: string,
+  chatIdStr: string,
+  senderName: string,
+  text: string,
+  audioUrl: string | null,
+): Promise<string | null> {
+  try {
+    const { data } = await supabase
+      .from('messages')
+      .insert({
+        school_id: schoolId,
+        sender_name: senderName,
+        message_content: text,
+        audio_url: audioUrl,
+        chat_id: chatIdStr,
+        status: 'unread',
+      })
+      .select('id')
+      .maybeSingle()
+    return (data?.id as string) ?? null
+  } catch {
+    return null
+  }
+}
+
 // IMPORTANT: this handler ALWAYS returns HTTP 200 so Telegram never retries.
 Deno.serve(async (req) => {
   try {
@@ -196,7 +210,9 @@ Deno.serve(async (req) => {
       const data: string = cq.data ?? ''
       await answerCallbackQuery(token, cq.id)
       if (cqChatId && (data.startsWith('del:') || data.startsWith('pick:'))) {
-        const rowId = data.slice(data.indexOf(':') + 1)
+        const parts = data.split(':')
+        const rowId = parts[1] ?? ''
+        const pendingMessageId = parts[2] ?? ''
         const supabaseCb = createClient(
           Deno.env.get('SUPABASE_URL')!,
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -211,22 +227,21 @@ Deno.serve(async (req) => {
           if (row && data.startsWith('del:')) {
             await supabaseCb.from('parent_contacts').delete().eq('id', row.id)
             await sendMessage(token, cqChatId, deleteConfirmed(row.student_name as string))
-          } else if (row) {
-            // Child selected — deliver the message the parent sent earlier.
-            const pending = takePending(String(cqChatId))
-            if (!pending) {
-              await sendMessage(token, cqChatId, CHOICE_EXPIRED)
-            } else {
-              await supabaseCb.from('messages').insert({
-                school_id: row.school_id,
-                sender_name: `${pending.senderName} (волиди ${row.student_name})`,
-                message_content: pending.text,
-                audio_url: pending.audioUrl,
-                chat_id: String(cqChatId),
-                status: 'unread',
-              })
-              await sendMessage(token, cqChatId, MESSAGE_FORWARDED)
+          } else if (row && pendingMessageId) {
+            // Child selected — attach the child's name to the stored message.
+            const { data: msg } = await supabaseCb
+              .from('messages')
+              .select('id, sender_name')
+              .eq('id', pendingMessageId)
+              .maybeSingle()
+            if (msg) {
+              const base = String(msg.sender_name ?? 'Волидайн').replace(/\s*\(волиди.*\)$/, '')
+              await supabaseCb
+                .from('messages')
+                .update({ sender_name: `${base} (волиди ${row.student_name})` })
+                .eq('id', msg.id)
             }
+            await sendMessage(token, cqChatId, MESSAGE_FORWARDED)
           }
         } catch {
           // ignore db failures so Telegram never sees a non-2xx response
@@ -260,9 +275,9 @@ Deno.serve(async (req) => {
     const children = linkedRows ?? []
 
     // Inline keyboard forcing the parent to pick one of several children.
-    const childKeyboard = () => ({
+    const childKeyboard = (messageId: string | null) => ({
       inline_keyboard: children.map((c) => [
-        { text: c.student_name || '—', callback_data: `pick:${c.id}` },
+        { text: c.student_name || '—', callback_data: `pick:${c.id}:${messageId ?? ''}` },
       ]),
     })
 
@@ -272,14 +287,8 @@ Deno.serve(async (req) => {
       const mime = message?.voice ? 'audio/ogg' : (voice?.mime_type || 'audio/mpeg')
       const dataUrl = await downloadFileAsDataUrl(token, voice.file_id, mime)
       if (children.length > 1) {
-        // More than one child: force an explicit selection first.
-        setPending(chatIdStr, {
-          text: '🎤 Паёми овозӣ',
-          audioUrl: dataUrl,
-          senderName: senderTgName,
-          at: Date.now(),
-        })
-        await sendMessage(token, chatId, CHOOSE_CHILD, childKeyboard())
+        const msgId = await storePending(supabase, children[0].school_id as string, chatIdStr, senderTgName, '🎤 Паёми овозӣ', dataUrl)
+        await sendMessage(token, chatId, CHOOSE_CHILD, childKeyboard(msgId))
         return new Response('ok', { status: 200 })
       }
       const child = children[0]
@@ -344,9 +353,8 @@ Deno.serve(async (req) => {
     // A message that doesn't parse as a registration is treated as a chat.
     if (children.length > 0 && !parsed) {
       if (children.length > 1) {
-        // More than one child: force an explicit selection first.
-        setPending(chatIdStr, { text, audioUrl: null, senderName: senderTgName, at: Date.now() })
-        await sendMessage(token, chatId, CHOOSE_CHILD, childKeyboard())
+        const msgId = await storePending(supabase, children[0].school_id as string, chatIdStr, senderTgName, text, null)
+        await sendMessage(token, chatId, CHOOSE_CHILD, childKeyboard(msgId))
         return new Response('ok', { status: 200 })
       }
       const child = children[0]

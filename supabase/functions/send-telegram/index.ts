@@ -15,6 +15,25 @@ async function nullifyChatId(chatId: string) {
   }
 }
 
+// Count how many children are linked to this Telegram chat. Used to add a
+// "Фарзанд: <name>" header so parents with several children always know
+// which child a teacher's message refers to.
+async function countLinkedChildren(chatId: string): Promise<number> {
+  try {
+    const url = Deno.env.get('SUPABASE_URL')
+    const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!url || !key) return 0
+    const supabase = createClient(url, key)
+    const { data } = await supabase
+      .from('parent_contacts')
+      .select('id')
+      .eq('chat_id', chatId)
+    return (data ?? []).length
+  } catch {
+    return 0
+  }
+}
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -49,6 +68,7 @@ Deno.serve(async (req) => {
     const fileBase64 = typeof body?.file_base64 === 'string' ? body.file_base64 : ''
     const fileName = String(body?.file_name ?? 'attachment').trim() || 'attachment'
     const fileType = String(body?.file_type ?? '').trim()
+    const studentName = String(body?.student_name ?? '').trim()
 
     if (!chatId) {
       return json({ ok: false, error: 'chat_id is required' })
@@ -58,6 +78,12 @@ Deno.serve(async (req) => {
     }
     if (text.length > 4000) {
       return json({ ok: false, error: 'text too long' })
+    }
+
+    // Multi-child households: prefix the exact child's name.
+    let outText = text
+    if (studentName && (await countLinkedChildren(chatId)) > 1) {
+      outText = `👦 Фарзанд: ${studentName}\n\n${text}`.trim()
     }
 
     let tgRes: Response
@@ -72,7 +98,7 @@ Deno.serve(async (req) => {
       const field = isImage ? 'photo' : isVoice ? 'voice' : 'document'
       const form = new FormData()
       form.append('chat_id', chatId)
-      if (text) form.append('caption', text)
+      if (outText) form.append('caption', outText)
       form.append(field, new Blob([bytes], { type: fileType || 'application/octet-stream' }), fileName)
 
       tgRes = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
@@ -83,7 +109,7 @@ Deno.serve(async (req) => {
       tgRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+        body: JSON.stringify({ chat_id: chatId, text: outText }),
       })
     }
 

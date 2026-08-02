@@ -130,3 +130,54 @@ export function parseGradeFromString(g: string): { cls: string; letter: string }
 export function lastNameOf(fullName: string): string {
   return fullName.trim().split(/\s+/)[0] || fullName;
 }
+
+// ---- Academic scoring across all journals of the active school -------------
+export interface AcademicScore {
+  total: number;   // number of grades recorded
+  high: number;    // grades >= 8
+  excellent: number; // grades === 10
+  avg: number;     // average grade
+  points: number;  // weighted score used for ranking
+}
+
+/**
+ * Scans every journal stored for the active school (all classes, parallels and
+ * subjects) and aggregates each student's academic performance.
+ */
+export function buildAcademicScores(): Map<string, AcademicScore> {
+  const prefix = `school_${aid()}_journal_`;
+  const subjectsKey = SUBJECTS_KEY();
+  const sums = new Map<string, { sum: number; total: number; high: number; excellent: number }>();
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith(prefix) || key === subjectsKey) continue;
+    let data: JournalData;
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+      data = { grades: parsed.grades || {}, lessons: parsed.lessons || { q1: [], q2: [], q3: [], q4: [] } };
+    } catch {
+      continue;
+    }
+    for (const [studentId, byLesson] of Object.entries(data.grades)) {
+      for (const g of Object.values(byLesson || {})) {
+        if (typeof g !== "number" || !isFinite(g)) continue;
+        const cur = sums.get(studentId) || { sum: 0, total: 0, high: 0, excellent: 0 };
+        cur.sum += g;
+        cur.total += 1;
+        if (g >= 8) cur.high += 1;
+        if (g >= 10) cur.excellent += 1;
+        sums.set(studentId, cur);
+      }
+    }
+  }
+
+  const out = new Map<string, AcademicScore>();
+  for (const [studentId, s] of sums) {
+    const avg = s.total ? Math.round((s.sum / s.total) * 10) / 10 : 0;
+    // Weighted: excellent grades count most, then high grades, then the average.
+    const points = Math.round((s.excellent * 3 + s.high * 2 + avg * 2) * 10) / 10;
+    out.set(studentId, { total: s.total, high: s.high, excellent: s.excellent, avg, points });
+  }
+  return out;
+}
