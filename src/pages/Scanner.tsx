@@ -65,7 +65,7 @@ export default function Scanner() {
       try {
         const chatId = await findChatIdForStudent(student.id, student.name);
         if (chatId) {
-          await sendParentMessage(chatId, parentScanNotice(student.name, formatTajikTime(timestamp), type));
+          await sendParentMessage(chatId, parentScanNotice(student.name, formatTajikTime(timestamp), type), undefined, student.name);
         }
       } catch {
         // ignore notification failures
