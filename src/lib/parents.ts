@@ -111,15 +111,19 @@ export async function findChatIdForStudent(
 
 // Send a Telegram message (optionally with a file attachment) to a student's
 // parent via edge function. `file` is an optional base64 payload.
+// `studentName` lets the bot prefix "Фарзанд: <name>" when the parent has
+// more than one linked child, so they always know which child it concerns.
 export async function sendParentMessage(
   chatId: string,
   text: string,
   file?: { base64: string; name: string; type: string },
+  studentName?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const { data, error } = await supabase.functions.invoke("send-telegram", {
     body: {
       chat_id: chatId,
       text,
+      ...(studentName ? { student_name: studentName } : {}),
       ...(file ? { file_base64: file.base64, file_name: file.name, file_type: file.type } : {}),
     },
   });
