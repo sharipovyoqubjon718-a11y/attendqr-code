@@ -3,6 +3,8 @@ import { BookOpen, Trophy, Medal, Award } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { getStudents } from "@/lib/store";
 import { buildAcademicScores } from "@/lib/journal";
+import { syncAcademicScores } from "@/lib/academic-sync";
+
 
 interface Row {
   id: string;
@@ -60,6 +62,15 @@ export default function ReadingRankings() {
       window.removeEventListener("focus", tick);
     };
   }, []);
+
+  // Mirror the journal-based scores to the database so the Telegram bot's
+  // /reyting command can show the same academic ranking.
+  useEffect(() => {
+    void syncAcademicScores();
+    const id = window.setInterval(() => void syncAcademicScores(), 60000);
+    return () => window.clearInterval(id);
+  }, []);
+
 
   return (
     <div className="space-y-6 animate-fade-in print-area">

@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_scores: {
+        Row: {
+          avg_grade: number
+          created_at: string
+          id: string
+          points: number
+          school_id: string
+          student_id: string
+          student_name: string
+          total_grades: number
+          updated_at: string
+        }
+        Insert: {
+          avg_grade?: number
+          created_at?: string
+          id?: string
+          points?: number
+          school_id: string
+          student_id: string
+          student_name?: string
+          total_grades?: number
+          updated_at?: string
+        }
+        Update: {
+          avg_grade?: number
+          created_at?: string
+          id?: string
+          points?: number
+          school_id?: string
+          student_id?: string
+          student_name?: string
+          total_grades?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       attendance_logs: {
         Row: {
           id: string
