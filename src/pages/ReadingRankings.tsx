@@ -3,6 +3,8 @@ import { BookOpen, Trophy, Medal, Award } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { getStudents } from "@/lib/store";
 import { buildAcademicScores } from "@/lib/journal";
+import { syncAcademicScores } from "@/lib/academic-sync";
+
 
 interface Row {
   id: string;
