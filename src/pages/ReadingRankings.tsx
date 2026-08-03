@@ -61,6 +61,15 @@ export default function ReadingRankings() {
     };
   }, []);
 
+  // Mirror the journal-based scores to the database so the Telegram bot's
+  // /reyting command can show the same academic ranking.
+  useEffect(() => {
+    void syncAcademicScores();
+    const id = window.setInterval(() => void syncAcademicScores(), 60000);
+    return () => window.clearInterval(id);
+  }, []);
+
+
   return (
     <div className="space-y-6 animate-fade-in print-area">
       <div className="flex items-center gap-3">
