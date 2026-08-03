@@ -251,7 +251,33 @@ Deno.serve(async (req) => {
       const cqChatId = cq.message?.chat?.id
       const data: string = cq.data ?? ''
       await answerCallbackQuery(token, cq.id)
+
+      // Ranking selection — never expires.
+      if (cqChatId && data.startsWith('rey:')) {
+        const supabaseRey = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        )
+        let schoolId = 'gdbh'
+        try {
+          const { data: row } = await supabaseRey
+            .from('parent_contacts')
+            .select('school_id')
+            .eq('chat_id', String(cqChatId))
+            .limit(1)
+            .maybeSingle()
+          if (row?.school_id) schoolId = row.school_id as string
+        } catch {
+          // keep the default school
+        }
+        const limit = data === 'rey:top3' ? 3 : null
+        const reply = await buildRankingReply(supabaseRey, schoolId, limit)
+        await sendMessage(token, cqChatId, reply)
+        return new Response('ok', { status: 200 })
+      }
+
       if (cqChatId && (data.startsWith('del:') || data.startsWith('pick:'))) {
+
         const parts = data.split(':')
         const rowId = parts[1] ?? ''
         const pendingMessageId = parts[2] ?? ''
