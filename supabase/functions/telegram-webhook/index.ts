@@ -114,18 +114,60 @@ function makeGrade(cls: string, letter: string): string {
   return `${cls}-${letter}`
 }
 
-// Build the monthly attendance ranking (Tajik) for a school.
-async function buildMonthlyRanking(
+const MONTH_NAMES = [
+  'Январ', 'Феврал', 'Март', 'Апрел', 'Май', 'Июн',
+  'Июл', 'Август', 'Сентябр', 'Октябр', 'Ноябр', 'Декабр',
+]
+
+const RANKING_PROMPT = '📊 Рейтингро интихоб кунед:'
+const rankingKeyboard = () => ({
+  inline_keyboard: [
+    [{ text: '#Топ 3', callback_data: 'rey:top3' }],
+    [{ text: 'Ҳаммаҷой', callback_data: 'rey:all' }],
+  ],
+})
+
+function medalLine(i: number, text: string): string {
+  const medals = ['🥇', '🥈', '🥉']
+  return `${medals[i] ?? `${i + 1}.`} ${text}`
+}
+
+// Academic ranking ("Беҳтарин хонандагон") from the electronic grade journal.
+async function buildAcademicRanking(
   supabase: ReturnType<typeof createClient>,
   schoolId: string,
+  limit: number | null,
+): Promise<string> {
+  const header = '📚 Беҳтарин хонандагон\n'
+  try {
+    const { data } = await supabase
+      .from('academic_scores')
+      .select('student_name, points, avg_grade, total_grades')
+      .eq('school_id', schoolId)
+      .order('points', { ascending: false })
+      .limit(limit ?? 200)
+    const rows = data ?? []
+    if (rows.length === 0) return header + '\nҲоло маълумоти журнал мавҷуд нест.'
+    const lines = rows.map((r, i) =>
+      medalLine(i, `${r.student_name} — ${r.points} хол (миёна ${r.avg_grade})`),
+    )
+    return header + '\n' + lines.join('\n')
+  } catch {
+    return header + '\nМаълумот дастрас нест.'
+  }
+}
+
+// Attendance ranking ("Беҳтарин иштироккунандагони дарс") for the current month.
+async function buildAttendanceRanking(
+  supabase: ReturnType<typeof createClient>,
+  _schoolId: string,
+  limit: number | null,
 ): Promise<string> {
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+  const header = `🏃 Беҳтарин иштироккунандагони дарс — ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}\n`
 
-  const { data: students } = await supabase
-    .from('students')
-    .select('id, name')
-
+  const { data: students } = await supabase.from('students').select('id, name')
   const { data: logs } = await supabase
     .from('attendance_logs')
     .select('student_id, type, timestamp')
@@ -135,35 +177,35 @@ async function buildMonthlyRanking(
   const nameById = new Map<string, string>()
   for (const s of students ?? []) nameById.set(s.id as string, s.name as string)
 
-  const counts = new Map<string, number>()
+  const days = new Map<string, Set<string>>()
   for (const l of logs ?? []) {
     const sid = l.student_id as string
-    if (!nameById.has(sid)) continue // limit to real students of the roster
-    counts.set(sid, (counts.get(sid) ?? 0) + 1)
+    if (!nameById.has(sid)) continue
+    const dayKey = String(l.timestamp).slice(0, 10)
+    if (!days.has(sid)) days.set(sid, new Set())
+    days.get(sid)!.add(dayKey)
   }
 
-  const ranked = [...counts.entries()]
-    .map(([sid, count]) => ({ name: nameById.get(sid) ?? sid, count }))
+  const ranked = [...days.entries()]
+    .map(([sid, set]) => ({ name: nameById.get(sid) ?? sid, count: set.size }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 15)
 
-  const monthNames = [
-    'Январ', 'Феврал', 'Март', 'Апрел', 'Май', 'Июн',
-    'Июл', 'Август', 'Сентябр', 'Октябр', 'Ноябр', 'Декабр',
-  ]
-  const header = `🏆 Рейтинги ҳузури хонандагон — ${monthNames[now.getMonth()]} ${now.getFullYear()}\n`
-
-  if (ranked.length === 0) {
-    return header + '\nҲоло барои ин моҳ маълумоти ҳузур мавҷуд нест.'
-  }
-
-  const medals = ['🥇', '🥈', '🥉']
-  const lines = ranked.map((r, i) => {
-    const prefix = medals[i] ?? `${i + 1}.`
-    return `${prefix} ${r.name} — ${r.count} рӯз`
-  })
-  return header + '\n' + lines.join('\n')
+  if (ranked.length === 0) return header + '\nҲоло барои ин моҳ маълумоти ҳузур мавҷуд нест.'
+  const list = limit ? ranked.slice(0, limit) : ranked
+  return header + '\n' + list.map((r, i) => medalLine(i, `${r.name} — ${r.count} рӯз`)).join('\n')
 }
+
+async function buildRankingReply(
+  supabase: ReturnType<typeof createClient>,
+  schoolId: string,
+  limit: number | null,
+): Promise<string> {
+  const academic = await buildAcademicRanking(supabase, schoolId, limit)
+  const attendance = await buildAttendanceRanking(supabase, schoolId, limit)
+  const title = limit ? '🏆 #Топ 3\n\n' : '🏆 Рейтинги пурра (Ҳаммаҷой)\n\n'
+  return title + academic + '\n\n' + attendance
+}
+
 
 // Store an incoming parent message right away (child attached after selection).
 async function storePending(
