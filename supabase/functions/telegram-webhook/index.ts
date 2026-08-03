@@ -377,13 +377,12 @@ Deno.serve(async (req) => {
     }
 
 
-    // ---- /reyting (monthly ranking, for administration) ------------------
+    // ---- /reyting: offer "#Топ 3" or "Ҳаммаҷой" via inline keyboard --------
     if (text.startsWith('/reyting') || text.startsWith('/ranking')) {
-      const schoolId = (children[0]?.school_id as string) || 'gdbh'
-      const ranking = await buildMonthlyRanking(supabase, schoolId)
-      await sendMessage(token, chatId, ranking)
+      await sendMessage(token, chatId, RANKING_PROMPT, rankingKeyboard())
       return new Response('ok', { status: 200 })
     }
+
 
     // Ignore any other slash command.
     if (text.startsWith('/')) return new Response('ok', { status: 200 })
