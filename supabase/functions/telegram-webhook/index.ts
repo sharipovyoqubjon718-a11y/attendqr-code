@@ -418,13 +418,26 @@ Deno.serve(async (req) => {
 
 
     // ---- Registration: parse "[Name] [Class] [Parallel]" -----------------
-    const parsed = parseRegistration(text)
+    const rawParsed = parseRegistration(text)
+    // Only treat the text as a NEW-CHILD registration when it strictly matches
+    // "[Ном] [Насаб?] [Синф] [Параллел?]": every name token must be a real word
+    // (letters only, 2+ chars) and the class must be 1..11.
+    const looksLikeRegistration =
+      !!rawParsed &&
+      !text.startsWith('/') &&
+      Number(rawParsed.cls) >= 1 &&
+      Number(rawParsed.cls) <= 11 &&
+      rawParsed.name
+        .split(/\s+/)
+        .every((t) => /^[A-Za-zА-Яа-яЁёӮӯҚқҲҳҶҷҒғӢӣЪъ'’-]{2,}$/.test(t))
+    const parsed = looksLikeRegistration ? rawParsed : null
 
     // MULTI-CHILD INTERCEPTION: a parent with 2+ linked children never gets
     // their message forwarded straight away. Anything that is not a known bot
-    // command (and not a new-child registration) is stored as a pending row
-    // and answered with the child-selection keyboard. No timeouts.
+    // command handled above (and not a new-child registration) is stored as a
+    // pending row and answered with the child-selection keyboard. No timeouts.
     if (children.length > 1 && !parsed) {
+      console.log('multi-child interception', { chatIdStr, children: children.length, text })
       const msgId = await storePending(
         supabase,
         children[0].school_id as string,
@@ -436,6 +449,7 @@ Deno.serve(async (req) => {
       await sendMessage(token, chatId, CHOOSE_CHILD, childKeyboard(msgId))
       return new Response('ok', { status: 200 })
     }
+
 
     // Ignore any other slash command (single-child / unlinked chats).
     if (text.startsWith('/')) return new Response('ok', { status: 200 })
