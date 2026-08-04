@@ -207,7 +207,9 @@ async function buildRankingReply(
 }
 
 
-// Store an incoming parent message right away (child attached after selection).
+// Store an incoming parent message as a PENDING row (hidden from the app) so
+// the parent's child selection can be attached later. There is no timeout:
+// the row stays pending until the parent taps one of the inline buttons.
 async function storePending(
   supabase: ReturnType<typeof createClient>,
   schoolId: string,
@@ -225,7 +227,7 @@ async function storePending(
         message_content: text,
         audio_url: audioUrl,
         chat_id: chatIdStr,
-        status: 'unread',
+        status: 'pending',
       })
       .select('id')
       .maybeSingle()
@@ -296,7 +298,8 @@ Deno.serve(async (req) => {
             await supabaseCb.from('parent_contacts').delete().eq('id', row.id)
             await sendMessage(token, cqChatId, deleteConfirmed(row.student_name as string))
           } else if (row && pendingMessageId) {
-            // Child selected — attach the child's name to the stored message.
+            // Child selected — attach the child's name to the stored pending
+            // message and release it to the app (status: unread).
             const { data: msg } = await supabaseCb
               .from('messages')
               .select('id, sender_name')
@@ -306,7 +309,11 @@ Deno.serve(async (req) => {
               const base = String(msg.sender_name ?? 'Волидайн').replace(/\s*\(волиди.*\)$/, '')
               await supabaseCb
                 .from('messages')
-                .update({ sender_name: `${base} (волиди ${row.student_name})` })
+                .update({
+                  sender_name: `${base} (волиди ${row.student_name})`,
+                  school_id: row.school_id,
+                  status: 'unread',
+                })
                 .eq('id', msg.id)
             }
             await sendMessage(token, cqChatId, MESSAGE_FORWARDED)
@@ -410,20 +417,31 @@ Deno.serve(async (req) => {
     }
 
 
-    // Ignore any other slash command.
-    if (text.startsWith('/')) return new Response('ok', { status: 200 })
-
     // ---- Registration: parse "[Name] [Class] [Parallel]" -----------------
     const parsed = parseRegistration(text)
 
-    // Registered parent sending a free-form message -> forward to the app.
-    // A message that doesn't parse as a registration is treated as a chat.
+    // MULTI-CHILD INTERCEPTION: a parent with 2+ linked children never gets
+    // their message forwarded straight away. Anything that is not a known bot
+    // command (and not a new-child registration) is stored as a pending row
+    // and answered with the child-selection keyboard. No timeouts.
+    if (children.length > 1 && !parsed) {
+      const msgId = await storePending(
+        supabase,
+        children[0].school_id as string,
+        chatIdStr,
+        senderTgName,
+        text || '📎 Паём',
+        null,
+      )
+      await sendMessage(token, chatId, CHOOSE_CHILD, childKeyboard(msgId))
+      return new Response('ok', { status: 200 })
+    }
+
+    // Ignore any other slash command (single-child / unlinked chats).
+    if (text.startsWith('/')) return new Response('ok', { status: 200 })
+
+    // Registered parent (single child) sending a free-form message.
     if (children.length > 0 && !parsed) {
-      if (children.length > 1) {
-        const msgId = await storePending(supabase, children[0].school_id as string, chatIdStr, senderTgName, text, null)
-        await sendMessage(token, chatId, CHOOSE_CHILD, childKeyboard(msgId))
-        return new Response('ok', { status: 200 })
-      }
       const child = children[0]
       try {
         await supabase.from('messages').insert({
@@ -444,6 +462,7 @@ Deno.serve(async (req) => {
       await sendMessage(token, chatId, REGISTER_HELP)
       return new Response('ok', { status: 200 })
     }
+
 
     const grade = makeGrade(parsed.cls, parsed.letter)
     const schoolId = (children[0]?.school_id as string) || 'gdbh'
