@@ -417,20 +417,31 @@ Deno.serve(async (req) => {
     }
 
 
-    // Ignore any other slash command.
-    if (text.startsWith('/')) return new Response('ok', { status: 200 })
-
     // ---- Registration: parse "[Name] [Class] [Parallel]" -----------------
     const parsed = parseRegistration(text)
 
-    // Registered parent sending a free-form message -> forward to the app.
-    // A message that doesn't parse as a registration is treated as a chat.
+    // MULTI-CHILD INTERCEPTION: a parent with 2+ linked children never gets
+    // their message forwarded straight away. Anything that is not a known bot
+    // command (and not a new-child registration) is stored as a pending row
+    // and answered with the child-selection keyboard. No timeouts.
+    if (children.length > 1 && !parsed) {
+      const msgId = await storePending(
+        supabase,
+        children[0].school_id as string,
+        chatIdStr,
+        senderTgName,
+        text || '📎 Паём',
+        null,
+      )
+      await sendMessage(token, chatId, CHOOSE_CHILD, childKeyboard(msgId))
+      return new Response('ok', { status: 200 })
+    }
+
+    // Ignore any other slash command (single-child / unlinked chats).
+    if (text.startsWith('/')) return new Response('ok', { status: 200 })
+
+    // Registered parent (single child) sending a free-form message.
     if (children.length > 0 && !parsed) {
-      if (children.length > 1) {
-        const msgId = await storePending(supabase, children[0].school_id as string, chatIdStr, senderTgName, text, null)
-        await sendMessage(token, chatId, CHOOSE_CHILD, childKeyboard(msgId))
-        return new Response('ok', { status: 200 })
-      }
       const child = children[0]
       try {
         await supabase.from('messages').insert({
@@ -451,6 +462,7 @@ Deno.serve(async (req) => {
       await sendMessage(token, chatId, REGISTER_HELP)
       return new Response('ok', { status: 200 })
     }
+
 
     const grade = makeGrade(parsed.cls, parsed.letter)
     const schoolId = (children[0]?.school_id as string) || 'gdbh'
