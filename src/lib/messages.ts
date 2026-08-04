@@ -19,6 +19,7 @@ export async function fetchMessages(): Promise<Message[]> {
     .from("messages")
     .select("id, sender_name, message_content, status, timestamp, audio_url")
     .eq("school_id", schoolId())
+    .neq("status", "pending")
     .order("timestamp", { ascending: false })
     .limit(200);
   if (error) throw error;
