@@ -298,7 +298,8 @@ Deno.serve(async (req) => {
             await supabaseCb.from('parent_contacts').delete().eq('id', row.id)
             await sendMessage(token, cqChatId, deleteConfirmed(row.student_name as string))
           } else if (row && pendingMessageId) {
-            // Child selected — attach the child's name to the stored message.
+            // Child selected — attach the child's name to the stored pending
+            // message and release it to the app (status: unread).
             const { data: msg } = await supabaseCb
               .from('messages')
               .select('id, sender_name')
@@ -308,7 +309,11 @@ Deno.serve(async (req) => {
               const base = String(msg.sender_name ?? 'Волидайн').replace(/\s*\(волиди.*\)$/, '')
               await supabaseCb
                 .from('messages')
-                .update({ sender_name: `${base} (волиди ${row.student_name})` })
+                .update({
+                  sender_name: `${base} (волиди ${row.student_name})`,
+                  school_id: row.school_id,
+                  status: 'unread',
+                })
                 .eq('id', msg.id)
             }
             await sendMessage(token, cqChatId, MESSAGE_FORWARDED)
