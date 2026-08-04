@@ -207,7 +207,9 @@ async function buildRankingReply(
 }
 
 
-// Store an incoming parent message right away (child attached after selection).
+// Store an incoming parent message as a PENDING row (hidden from the app) so
+// the parent's child selection can be attached later. There is no timeout:
+// the row stays pending until the parent taps one of the inline buttons.
 async function storePending(
   supabase: ReturnType<typeof createClient>,
   schoolId: string,
@@ -225,7 +227,7 @@ async function storePending(
         message_content: text,
         audio_url: audioUrl,
         chat_id: chatIdStr,
-        status: 'unread',
+        status: 'pending',
       })
       .select('id')
       .maybeSingle()
