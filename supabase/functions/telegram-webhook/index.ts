@@ -355,7 +355,7 @@ Deno.serve(async (req) => {
 
     if (text.startsWith('/delete')) {
       if (children.length === 0) await sendMessage(chatId, DELETE_NO_CHILDREN)
-      else await sendMessage(chatId, DELETE_PROMPT, childKeyboard(children, null, 'del'))
+      else await sendMessage(chatId, DELETE_PROMPT, childKeyboard(children, 'd'))
       return new Response('ok', { status: 200 })
     }
 
@@ -378,7 +378,7 @@ Deno.serve(async (req) => {
           chat_id: chatIdStr,
           status: 'pending',
         })
-        await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children, msgId))
+        await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children))
         return new Response('ok', { status: 200 })
       }
       const child = children[0]
@@ -409,7 +409,7 @@ Deno.serve(async (req) => {
         chat_id: chatIdStr,
         status: 'pending',
       })
-      await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children, msgId))
+      await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children))
       return new Response('ok', { status: 200 })
     }
 
