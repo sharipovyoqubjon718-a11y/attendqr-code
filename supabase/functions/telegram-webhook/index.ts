@@ -219,11 +219,16 @@ async function insertMessage(
   return (data?.id as string) ?? null
 }
 
-const childKeyboard = (children: Child[], messageId: string | null, prefix = 'pick') => ({
-  inline_keyboard: children.map((c) => [
-    { text: c.student_name || '—', callback_data: `${prefix}:${c.id}:${messageId ?? ''}` },
+// Telegram limits callback_data to 64 bytes, so we never put UUIDs in it.
+// We send only a short index into the (stably ordered) children list.
+const childKeyboard = (children: Child[], prefix: 'p' | 'd' = 'p') => ({
+  inline_keyboard: children.map((c, i) => [
+    { text: c.student_name || '—', callback_data: `${prefix}:${i}` },
   ]),
 })
+
+const sortChildren = (children: Child[]) =>
+  [...children].sort((a, b) => a.id.localeCompare(b.id))
 
 // ------------------------------------------------------------------ handlers --
 async function handleCallback(supabase: DB, cq: Record<string, any>) {
@@ -231,6 +236,7 @@ async function handleCallback(supabase: DB, cq: Record<string, any>) {
   const data: string = cq.data ?? ''
   await answerCallback(cq.id)
   if (!chatId) return
+  console.log('callback', { chatId: String(chatId), data })
 
   if (data.startsWith('rey:')) {
     let schoolId = 'gdbh'
@@ -245,40 +251,37 @@ async function handleCallback(supabase: DB, cq: Record<string, any>) {
     return
   }
 
-  if (!data.startsWith('del:') && !data.startsWith('pick:')) return
+  if (!data.startsWith('d:') && !data.startsWith('p:')) return
 
-  const [, rowId = '', pendingMessageId = ''] = data.split(':')
-  const { data: child, error } = await supabase
-    .from('parent_contacts')
-    .select('id, school_id, student_name')
-    .eq('id', rowId)
-    .eq('chat_id', String(chatId))
-    .maybeSingle()
-  if (error) {
-    console.error('callback lookup failed', error.message)
+  const idx = Number(data.split(':')[1])
+  const children = sortChildren(await getChildren(supabase, String(chatId)))
+  const child = Number.isInteger(idx) ? children[idx] : undefined
+  if (!child) {
     await sendMessage(chatId, ERROR_GENERIC)
     return
   }
-  if (!child) return
 
-  if (data.startsWith('del:')) {
+  if (data.startsWith('d:')) {
     const { error: delErr } = await supabase.from('parent_contacts').delete().eq('id', child.id)
     if (delErr) {
       console.error('delete child failed', delErr.message)
       await sendMessage(chatId, ERROR_GENERIC)
       return
     }
-    await sendMessage(chatId, deleteConfirmed(child.student_name as string))
+    await sendMessage(chatId, deleteConfirmed(child.student_name))
     return
   }
 
-  // pick: attach the chosen child to the pending message and release it
-  if (!pendingMessageId) return
-  const { data: msg } = await supabase
+  // p: attach the chosen child to the newest pending message of this chat
+  const { data: msg, error: msgErr } = await supabase
     .from('messages')
     .select('id, sender_name')
-    .eq('id', pendingMessageId)
+    .eq('chat_id', String(chatId))
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
+  if (msgErr) console.error('pending lookup failed', msgErr.message)
   if (msg) {
     const base = String(msg.sender_name ?? 'Волидайн').replace(/\s*\(волиди.*\)$/, '')
     const { error: upErr } = await supabase
