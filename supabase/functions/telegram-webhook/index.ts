@@ -334,8 +334,13 @@ Deno.serve(async (req) => {
       message?.from?.username ||
       'Волидайн'
 
-    const children = await getChildren(supabase, chatIdStr)
-    console.log('update', { chatIdStr, children: children.length, text: text.slice(0, 60) })
+    const children = sortChildren(await getChildren(supabase, chatIdStr))
+    console.log('update parsed', {
+      chatIdStr,
+      children: children.length,
+      isCommand: text.startsWith('/'),
+      text: text.slice(0, 60),
+    })
 
     // ---- commands --------------------------------------------------------
     if (text.startsWith('/start')) {
