@@ -305,8 +305,18 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const update = await req.json().catch(() => null)
-    if (!update) return new Response('ok', { status: 200 })
+    const rawBody = await req.text()
+    console.log('incoming update raw', rawBody.slice(0, 1500))
+    let update: any = null
+    try {
+      update = JSON.parse(rawBody)
+    } catch {
+      update = null
+    }
+    if (!update) {
+      console.error('unparsable update body')
+      return new Response('ok', { status: 200 })
+    }
     const supabase = db()
 
     if (update.callback_query) {
