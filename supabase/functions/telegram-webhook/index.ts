@@ -370,7 +370,7 @@ Deno.serve(async (req) => {
       const mime = message?.voice ? 'audio/ogg' : (voice.mime_type || 'audio/mpeg')
       const audioUrl = await downloadFileAsDataUrl(voice.file_id, mime)
       if (children.length > 1) {
-        const msgId = await insertMessage(supabase, {
+        await insertMessage(supabase, {
           school_id: children[0].school_id,
           sender_name: senderName,
           message_content: '🎤 Паёми овозӣ',
@@ -402,7 +402,7 @@ Deno.serve(async (req) => {
     // pending row (hidden from the app) and answered with the child keyboard.
     // No timeouts: the buttons stay valid forever.
     if (children.length > 1 && !parsed) {
-      const msgId = await insertMessage(supabase, {
+      await insertMessage(supabase, {
         school_id: children[0].school_id,
         sender_name: senderName,
         message_content: text || '📎 Паём',
