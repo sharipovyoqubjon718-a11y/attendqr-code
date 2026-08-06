@@ -480,24 +480,19 @@ Deno.serve(async (req) => {
 
     // ---- perform registration -------------------------------------------
     const grade = makeGrade(parsed.cls, parsed.letter)
-    const schoolId = children[0]?.school_id || 'gdbh'
-    const nameNorm = parsed.name.trim().toLowerCase().replace(/\s+/g, ' ')
-
-    const { data: existing, error: exErr } = await supabase
-      .from('parent_contacts')
-      .select('id, student_name')
-      .eq('school_id', schoolId)
-    if (exErr) console.error('registration lookup failed', exErr.message)
-
-    const match = (existing ?? []).find(
-      (r) => (r.student_name ?? '').trim().toLowerCase().replace(/\s+/g, ' ') === nameNorm,
+    // Resolve the institution from the student itself, not from a default.
+    const { schoolId, existingId } = await resolveSchoolId(
+      supabase,
+      parsed.name,
+      children.map((c) => c.school_id),
     )
+    console.log('registration resolved school', { chatIdStr, schoolId, existingId })
 
-    if (match) {
+    if (existingId) {
       const { error } = await supabase
         .from('parent_contacts')
         .update({ chat_id: chatIdStr, grade })
-        .eq('id', match.id)
+        .eq('id', existingId)
       if (error) console.error('link existing student failed', error.message)
     } else {
       const { error } = await supabase.from('parent_contacts').insert({
