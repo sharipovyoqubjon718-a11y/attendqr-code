@@ -91,6 +91,46 @@ type DB = ReturnType<typeof db>
 
 interface Child { id: string; school_id: string; student_id: string; student_name: string }
 
+const normalize = (s: string) => (s || '').trim().toLowerCase().replace(/\s+/g, ' ')
+
+// Resolve which institution a student belongs to, so a Telegram account is
+// never silently attached to the default school.
+// Priority: existing contact row for that name -> academic scores (journal)
+// -> the school of this parent's already-linked children -> configured school.
+async function resolveSchoolId(
+  supabase: DB,
+  studentName: string,
+  fallbacks: string[],
+): Promise<{ schoolId: string; existingId: string | null }> {
+  const target = normalize(studentName)
+
+  const { data: contacts, error: cErr } = await supabase
+    .from('parent_contacts')
+    .select('id, school_id, student_name')
+  if (cErr) console.error('resolveSchoolId contacts failed', cErr.message)
+  const contactMatch = (contacts ?? []).find((r) => normalize(r.student_name as string) === target)
+  if (contactMatch) {
+    return { schoolId: contactMatch.school_id as string, existingId: contactMatch.id as string }
+  }
+
+  const { data: scores, error: sErr } = await supabase
+    .from('academic_scores')
+    .select('school_id, student_name')
+  if (sErr) console.error('resolveSchoolId scores failed', sErr.message)
+  const scoreMatch = (scores ?? []).find((r) => normalize(r.student_name as string) === target)
+  if (scoreMatch) return { schoolId: scoreMatch.school_id as string, existingId: null }
+
+  for (const f of fallbacks) if (f) return { schoolId: f, existingId: null }
+
+  const { data: school } = await supabase
+    .from('school_credentials')
+    .select('school_id')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+  return { schoolId: (school?.school_id as string) ?? 'gdbh', existingId: null }
+}
+
 async function getChildren(supabase: DB, chatId: string): Promise<Child[]> {
   const { data, error } = await supabase
     .from('parent_contacts')
@@ -239,17 +279,25 @@ async function handleCallback(supabase: DB, cq: Record<string, any>) {
   console.log('callback', { chatId: String(chatId), data })
 
   if (data.startsWith('rey:')) {
-    let schoolId = 'gdbh'
-    const { data: row } = await supabase
-      .from('parent_contacts')
-      .select('school_id')
-      .eq('chat_id', String(chatId))
-      .limit(1)
-      .maybeSingle()
-    if (row?.school_id) schoolId = row.school_id as string
-    await sendMessage(chatId, await buildRankingReply(supabase, schoolId, data === 'rey:top3' ? 3 : null))
+    const limit = data === 'rey:top3' ? 3 : null
+    const children = await getChildren(supabase, String(chatId))
+    const schools = [...new Set(children.map((c) => c.school_id).filter(Boolean))]
+    if (schools.length === 0) {
+      const { data: school } = await supabase
+        .from('school_credentials')
+        .select('school_id')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      if (school?.school_id) schools.push(school.school_id as string)
+    }
+    for (const schoolId of schools) {
+      await sendMessage(chatId, await buildRankingReply(supabase, schoolId, limit))
+    }
+    if (schools.length === 0) await sendMessage(chatId, ERROR_GENERIC)
     return
   }
+
 
   if (!data.startsWith('d:') && !data.startsWith('p:')) return
 
@@ -440,24 +488,19 @@ Deno.serve(async (req) => {
 
     // ---- perform registration -------------------------------------------
     const grade = makeGrade(parsed.cls, parsed.letter)
-    const schoolId = children[0]?.school_id || 'gdbh'
-    const nameNorm = parsed.name.trim().toLowerCase().replace(/\s+/g, ' ')
-
-    const { data: existing, error: exErr } = await supabase
-      .from('parent_contacts')
-      .select('id, student_name')
-      .eq('school_id', schoolId)
-    if (exErr) console.error('registration lookup failed', exErr.message)
-
-    const match = (existing ?? []).find(
-      (r) => (r.student_name ?? '').trim().toLowerCase().replace(/\s+/g, ' ') === nameNorm,
+    // Resolve the institution from the student itself, not from a default.
+    const { schoolId, existingId } = await resolveSchoolId(
+      supabase,
+      parsed.name,
+      children.map((c) => c.school_id),
     )
+    console.log('registration resolved school', { chatIdStr, schoolId, existingId })
 
-    if (match) {
+    if (existingId) {
       const { error } = await supabase
         .from('parent_contacts')
         .update({ chat_id: chatIdStr, grade })
-        .eq('id', match.id)
+        .eq('id', existingId)
       if (error) console.error('link existing student failed', error.message)
     } else {
       const { error } = await supabase.from('parent_contacts').insert({
