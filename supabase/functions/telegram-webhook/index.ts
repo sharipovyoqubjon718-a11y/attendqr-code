@@ -1,4 +1,10 @@
-// AttendQR Telegram bot — clean rewrite.
+// AttendQR Telegram bot — unified webhook router.
+//
+// Routing contract:
+//   Telegram chat id  ->  parent_contacts rows (children)
+//   child             ->  school_id (never a hardcoded default)
+//   message           ->  messages row scoped to that child's school_id
+//
 // Always returns HTTP 200 so Telegram never retries deliveries.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -27,11 +33,14 @@ const registered = (name: string, grade: string) =>
 const MESSAGE_FORWARDED = '✅ Паёми шумо ба муаллим фиристода шуд.'
 const CHOOSE_CHILD =
   'Шумо якчанд фарзанди пайвастшуда доред. Лутфан интихоб кунед, ки ин паём ба кадом фарзанд тааллуқ дорад:'
+const CHOOSE_CHILD_RANKING = 'Рейтинги кадом фарзандро дидан мехоҳед?'
 const DELETE_NO_CHILDREN = 'Шумо ҳоло ягон фарзанди пайвастшуда надоред.'
 const DELETE_PROMPT = 'Кадом фарзандро аз рӯйхат пок кардан мехоҳед?'
 const deleteConfirmed = (name: string) =>
   `✅ Фарзанди шумо «${name}» бо муваффақият аз рӯйхат пок карда шуд.`
 const RANKING_PROMPT = '📊 Рейтингро интихоб кунед:'
+const RANKING_NO_CHILDREN =
+  'Барои дидани рейтинг аввал фарзанди худро пайваст кунед: [Ному насаб] [Синф] [Параллел]'
 const ERROR_GENERIC = '⚠️ Хатои техникӣ. Лутфан баъдтар кӯшиш кунед.'
 
 const MONTH_NAMES = [
@@ -93,15 +102,28 @@ interface Child { id: string; school_id: string; student_id: string; student_nam
 
 const normalize = (s: string) => (s || '').trim().toLowerCase().replace(/\s+/g, ' ')
 
-// Resolve which institution a student belongs to, so a Telegram account is
-// never silently attached to the default school.
-// Priority: existing contact row for that name -> academic scores (journal)
-// -> the school of this parent's already-linked children -> configured school.
+// Children of one Telegram account, stably ordered so keyboard indices are safe.
+async function getChildren(supabase: DB, chatId: string): Promise<Child[]> {
+  const { data, error } = await supabase
+    .from('parent_contacts')
+    .select('id, school_id, student_id, student_name')
+    .eq('chat_id', chatId)
+    .order('id', { ascending: true })
+  if (error) {
+    console.error('getChildren failed', error.message)
+    return []
+  }
+  return (data ?? []) as unknown as Child[]
+}
+
+// Resolve a student's institution from the data itself — no hardcoded school.
+// Priority: existing contact row for that name -> journal scores -> the school
+// of this parent's already-linked children -> oldest configured school.
 async function resolveSchoolId(
   supabase: DB,
   studentName: string,
   fallbacks: string[],
-): Promise<{ schoolId: string; existingId: string | null }> {
+): Promise<{ schoolId: string | null; existingId: string | null }> {
   const target = normalize(studentName)
 
   const { data: contacts, error: cErr } = await supabase
@@ -128,19 +150,7 @@ async function resolveSchoolId(
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle()
-  return { schoolId: (school?.school_id as string) ?? 'gdbh', existingId: null }
-}
-
-async function getChildren(supabase: DB, chatId: string): Promise<Child[]> {
-  const { data, error } = await supabase
-    .from('parent_contacts')
-    .select('id, school_id, student_id, student_name')
-    .eq('chat_id', chatId)
-  if (error) {
-    console.error('getChildren failed', error.message)
-    return []
-  }
-  return (data ?? []) as unknown as Child[]
+  return { schoolId: (school?.school_id as string) ?? null, existingId: null }
 }
 
 // ------------------------------------------------------------- registration --
@@ -171,14 +181,22 @@ function isRegistration(text: string): { name: string; cls: string; letter: stri
 
 const makeGrade = (cls: string, letter: string) => (!letter || letter === '-' ? cls : `${cls}-${letter}`)
 
-// ----------------------------------------------------------------- rankings --
-const rankingKeyboard = () => ({
+// ----------------------------------------------------------------- keyboards --
+// Telegram caps callback_data at 64 bytes, so payloads carry only short indices.
+const rankingKeyboard = (childIdx: number) => ({
   inline_keyboard: [
-    [{ text: '#Топ 3', callback_data: 'rey:top3' }],
-    [{ text: 'Ҳаммаҷой', callback_data: 'rey:all' }],
+    [{ text: '#Топ 3', callback_data: `r:${childIdx}:3` }],
+    [{ text: 'Ҳаммаҷой', callback_data: `r:${childIdx}:0` }],
   ],
 })
 
+const childKeyboard = (children: Child[], prefix: 'p' | 'd' | 'c') => ({
+  inline_keyboard: children.map((c, i) => [
+    { text: c.student_name || '—', callback_data: `${prefix}:${i}` },
+  ]),
+})
+
+// ----------------------------------------------------------------- rankings --
 const medalLine = (i: number, text: string) => `${['🥇', '🥈', '🥉'][i] ?? `${i + 1}.`} ${text}`
 
 async function buildAcademicRanking(supabase: DB, schoolId: string, limit: number | null) {
@@ -237,20 +255,17 @@ async function buildAttendanceRanking(supabase: DB, limit: number | null) {
   return header + '\n' + list.map((r, i) => medalLine(i, `${r.name} — ${r.count} рӯз`)).join('\n')
 }
 
-async function buildRankingReply(supabase: DB, schoolId: string, limit: number | null) {
+async function sendRanking(supabase: DB, chatId: number | string, child: Child, limit: number | null) {
   const [academic, attendance] = await Promise.all([
-    buildAcademicRanking(supabase, schoolId, limit),
+    buildAcademicRanking(supabase, child.school_id, limit),
     buildAttendanceRanking(supabase, limit),
   ])
-  const title = limit ? '🏆 #Топ 3\n\n' : '🏆 Рейтинги пурра (Ҳаммаҷой)\n\n'
-  return title + academic + '\n\n' + attendance
+  const title = limit ? '🏆 #Топ 3' : '🏆 Рейтинги пурра (Ҳаммаҷой)'
+  await sendMessage(chatId, `${title} — ${child.student_name}\n\n${academic}\n\n${attendance}`)
 }
 
 // ------------------------------------------------------------ message store --
-async function insertMessage(
-  supabase: DB,
-  row: Record<string, unknown>,
-): Promise<string | null> {
+async function insertMessage(supabase: DB, row: Record<string, unknown>): Promise<string | null> {
   const { data, error } = await supabase.from('messages').insert(row).select('id').maybeSingle()
   if (error) {
     console.error('insertMessage failed', error.message)
@@ -259,16 +274,33 @@ async function insertMessage(
   return (data?.id as string) ?? null
 }
 
-// Telegram limits callback_data to 64 bytes, so we never put UUIDs in it.
-// We send only a short index into the (stably ordered) children list.
-const childKeyboard = (children: Child[], prefix: 'p' | 'd' = 'p') => ({
-  inline_keyboard: children.map((c, i) => [
-    { text: c.student_name || '—', callback_data: `${prefix}:${i}` },
-  ]),
-})
-
-const sortChildren = (children: Child[]) =>
-  [...children].sort((a, b) => a.id.localeCompare(b.id))
+// Attach the newest pending message of this chat to the chosen child + school.
+async function releasePending(supabase: DB, chatId: string, child: Child) {
+  const { data: msg, error } = await supabase
+    .from('messages')
+    .select('id, sender_name')
+    .eq('chat_id', chatId)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) console.error('pending lookup failed', error.message)
+  if (!msg) return false
+  const base = String(msg.sender_name ?? 'Волидайн').replace(/\s*\(волиди.*\)$/, '')
+  const { error: upErr } = await supabase
+    .from('messages')
+    .update({
+      sender_name: `${base} (волиди ${child.student_name})`,
+      school_id: child.school_id,
+      status: 'unread',
+    })
+    .eq('id', msg.id)
+  if (upErr) {
+    console.error('release pending message failed', upErr.message)
+    return false
+  }
+  return true
+}
 
 // ------------------------------------------------------------------ handlers --
 async function handleCallback(supabase: DB, cq: Record<string, any>) {
@@ -276,43 +308,44 @@ async function handleCallback(supabase: DB, cq: Record<string, any>) {
   const data: string = cq.data ?? ''
   await answerCallback(cq.id)
   if (!chatId) return
-  console.log('callback', { chatId: String(chatId), data })
+  const chatIdStr = String(chatId)
+  console.log('callback', { chatIdStr, data })
 
-  if (data.startsWith('rey:')) {
-    const limit = data === 'rey:top3' ? 3 : null
-    const children = await getChildren(supabase, String(chatId))
-    const schools = [...new Set(children.map((c) => c.school_id).filter(Boolean))]
-    if (schools.length === 0) {
-      const { data: school } = await supabase
-        .from('school_credentials')
-        .select('school_id')
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle()
-      if (school?.school_id) schools.push(school.school_id as string)
-    }
-    for (const schoolId of schools) {
-      await sendMessage(chatId, await buildRankingReply(supabase, schoolId, limit))
-    }
-    if (schools.length === 0) await sendMessage(chatId, ERROR_GENERIC)
+  const children = await getChildren(supabase, chatIdStr)
+  const childAt = (raw: string) => {
+    const i = Number(raw)
+    return Number.isInteger(i) ? children[i] : undefined
+  }
+
+  // r:<childIdx>:<limit>  -> ranking for one child's school
+  if (data.startsWith('r:')) {
+    const [, idxRaw, limitRaw] = data.split(':')
+    const child = childAt(idxRaw)
+    if (!child) return void sendMessage(chatId, RANKING_NO_CHILDREN)
+    const limit = Number(limitRaw) > 0 ? Number(limitRaw) : null
+    await sendRanking(supabase, chatId, child, limit)
     return
   }
 
+  // c:<childIdx> -> child picked for /reyting, now ask for the scope
+  if (data.startsWith('c:')) {
+    const [, idxRaw] = data.split(':')
+    const child = childAt(idxRaw)
+    if (!child) return void sendMessage(chatId, RANKING_NO_CHILDREN)
+    await sendMessage(chatId, RANKING_PROMPT, rankingKeyboard(Number(idxRaw)))
+    return
+  }
 
   if (!data.startsWith('d:') && !data.startsWith('p:')) return
 
-  const idx = Number(data.split(':')[1])
-  const children = sortChildren(await getChildren(supabase, String(chatId)))
-  const child = Number.isInteger(idx) ? children[idx] : undefined
-  if (!child) {
-    await sendMessage(chatId, ERROR_GENERIC)
-    return
-  }
+  const child = childAt(data.split(':')[1])
+  if (!child) return void sendMessage(chatId, ERROR_GENERIC)
 
+  // d:<childIdx> -> unlink child
   if (data.startsWith('d:')) {
-    const { error: delErr } = await supabase.from('parent_contacts').delete().eq('id', child.id)
-    if (delErr) {
-      console.error('delete child failed', delErr.message)
+    const { error } = await supabase.from('parent_contacts').delete().eq('id', child.id)
+    if (error) {
+      console.error('delete child failed', error.message)
       await sendMessage(chatId, ERROR_GENERIC)
       return
     }
@@ -320,28 +353,8 @@ async function handleCallback(supabase: DB, cq: Record<string, any>) {
     return
   }
 
-  // p: attach the chosen child to the newest pending message of this chat
-  const { data: msg, error: msgErr } = await supabase
-    .from('messages')
-    .select('id, sender_name')
-    .eq('chat_id', String(chatId))
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-  if (msgErr) console.error('pending lookup failed', msgErr.message)
-  if (msg) {
-    const base = String(msg.sender_name ?? 'Волидайн').replace(/\s*\(волиди.*\)$/, '')
-    const { error: upErr } = await supabase
-      .from('messages')
-      .update({
-        sender_name: `${base} (волиди ${child.student_name})`,
-        school_id: child.school_id,
-        status: 'unread',
-      })
-      .eq('id', msg.id)
-    if (upErr) console.error('release pending message failed', upErr.message)
-  }
+  // p:<childIdx> -> route the pending message to that child / school
+  await releasePending(supabase, chatIdStr, child)
   await sendMessage(chatId, MESSAGE_FORWARDED)
 }
 
@@ -382,7 +395,7 @@ Deno.serve(async (req) => {
       message?.from?.username ||
       'Волидайн'
 
-    const children = sortChildren(await getChildren(supabase, chatIdStr))
+    const children = await getChildren(supabase, chatIdStr)
     console.log('update parsed', {
       chatIdStr,
       children: children.length,
@@ -391,7 +404,7 @@ Deno.serve(async (req) => {
     })
 
     // ---- commands --------------------------------------------------------
-    if (text.startsWith('/start')) {
+    if (text.startsWith('/start') || text.startsWith('/help')) {
       await sendMessage(
         chatId,
         children.length === 0
@@ -408,7 +421,9 @@ Deno.serve(async (req) => {
     }
 
     if (text.startsWith('/reyting') || text.startsWith('/ranking')) {
-      await sendMessage(chatId, RANKING_PROMPT, rankingKeyboard())
+      if (children.length === 0) await sendMessage(chatId, RANKING_NO_CHILDREN)
+      else if (children.length === 1) await sendMessage(chatId, RANKING_PROMPT, rankingKeyboard(0))
+      else await sendMessage(chatId, CHOOSE_CHILD_RANKING, childKeyboard(children, 'c'))
       return new Response('ok', { status: 200 })
     }
 
@@ -417,38 +432,26 @@ Deno.serve(async (req) => {
     if (voice?.file_id && children.length > 0) {
       const mime = message?.voice ? 'audio/ogg' : (voice.mime_type || 'audio/mpeg')
       const audioUrl = await downloadFileAsDataUrl(voice.file_id, mime)
-      if (children.length > 1) {
-        await insertMessage(supabase, {
-          school_id: children[0].school_id,
-          sender_name: senderName,
-          message_content: '🎤 Паёми овозӣ',
-          audio_url: audioUrl,
-          chat_id: chatIdStr,
-          status: 'pending',
-        })
-        await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children))
-        return new Response('ok', { status: 200 })
-      }
+      const multi = children.length > 1
       const child = children[0]
       await insertMessage(supabase, {
         school_id: child.school_id,
-        sender_name: `${senderName} (волиди ${child.student_name})`,
+        sender_name: multi ? senderName : `${senderName} (волиди ${child.student_name})`,
         message_content: '🎤 Паёми овозӣ',
         audio_url: audioUrl,
         chat_id: chatIdStr,
-        status: 'unread',
+        status: multi ? 'pending' : 'unread',
       })
-      await sendMessage(chatId, MESSAGE_FORWARDED)
+      if (multi) await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children, 'p'))
+      else await sendMessage(chatId, MESSAGE_FORWARDED)
       return new Response('ok', { status: 200 })
     }
 
     // ---- new-child registration (strict format) --------------------------
     const parsed = isRegistration(text)
 
-    // ---- MULTI-CHILD INTERCEPTION ---------------------------------------
-    // Any non-command text from a parent with 2+ children is stored as a
-    // pending row (hidden from the app) and answered with the child keyboard.
-    // No timeouts: the buttons stay valid forever.
+    // Any non-registration text from a parent with 2+ children is stored as a
+    // hidden pending row and answered with a child keyboard that never expires.
     if (children.length > 1 && !parsed) {
       await insertMessage(supabase, {
         school_id: children[0].school_id,
@@ -457,18 +460,18 @@ Deno.serve(async (req) => {
         chat_id: chatIdStr,
         status: 'pending',
       })
-      await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children))
+      await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children, 'p'))
       return new Response('ok', { status: 200 })
     }
 
-    // Ignore unknown slash commands for single-child / unlinked chats.
+    // Unknown slash commands for single-child / unlinked chats.
     if (text.startsWith('/')) {
       await sendMessage(chatId, HELP)
       return new Response('ok', { status: 200 })
     }
 
     // ---- single child free-form message ---------------------------------
-    if (children.length > 0 && !parsed) {
+    if (children.length === 1 && !parsed) {
       const child = children[0]
       await insertMessage(supabase, {
         school_id: child.school_id,
@@ -488,7 +491,6 @@ Deno.serve(async (req) => {
 
     // ---- perform registration -------------------------------------------
     const grade = makeGrade(parsed.cls, parsed.letter)
-    // Resolve the institution from the student itself, not from a default.
     const { schoolId, existingId } = await resolveSchoolId(
       supabase,
       parsed.name,
@@ -496,12 +498,21 @@ Deno.serve(async (req) => {
     )
     console.log('registration resolved school', { chatIdStr, schoolId, existingId })
 
+    if (!schoolId) {
+      await sendMessage(chatId, ERROR_GENERIC)
+      return new Response('ok', { status: 200 })
+    }
+
     if (existingId) {
       const { error } = await supabase
         .from('parent_contacts')
         .update({ chat_id: chatIdStr, grade })
         .eq('id', existingId)
-      if (error) console.error('link existing student failed', error.message)
+      if (error) {
+        console.error('link existing student failed', error.message)
+        await sendMessage(chatId, ERROR_GENERIC)
+        return new Response('ok', { status: 200 })
+      }
     } else {
       const { error } = await supabase.from('parent_contacts').insert({
         school_id: schoolId,
