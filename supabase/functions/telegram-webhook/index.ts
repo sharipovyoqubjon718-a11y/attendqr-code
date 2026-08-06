@@ -279,17 +279,25 @@ async function handleCallback(supabase: DB, cq: Record<string, any>) {
   console.log('callback', { chatId: String(chatId), data })
 
   if (data.startsWith('rey:')) {
-    let schoolId = 'gdbh'
-    const { data: row } = await supabase
-      .from('parent_contacts')
-      .select('school_id')
-      .eq('chat_id', String(chatId))
-      .limit(1)
-      .maybeSingle()
-    if (row?.school_id) schoolId = row.school_id as string
-    await sendMessage(chatId, await buildRankingReply(supabase, schoolId, data === 'rey:top3' ? 3 : null))
+    const limit = data === 'rey:top3' ? 3 : null
+    const children = await getChildren(supabase, String(chatId))
+    const schools = [...new Set(children.map((c) => c.school_id).filter(Boolean))]
+    if (schools.length === 0) {
+      const { data: school } = await supabase
+        .from('school_credentials')
+        .select('school_id')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      if (school?.school_id) schools.push(school.school_id as string)
+    }
+    for (const schoolId of schools) {
+      await sendMessage(chatId, await buildRankingReply(supabase, schoolId, limit))
+    }
+    if (schools.length === 0) await sendMessage(chatId, ERROR_GENERIC)
     return
   }
+
 
   if (!data.startsWith('d:') && !data.startsWith('p:')) return
 
