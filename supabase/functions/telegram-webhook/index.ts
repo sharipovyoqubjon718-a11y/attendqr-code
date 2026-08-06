@@ -91,6 +91,46 @@ type DB = ReturnType<typeof db>
 
 interface Child { id: string; school_id: string; student_id: string; student_name: string }
 
+const normalize = (s: string) => (s || '').trim().toLowerCase().replace(/\s+/g, ' ')
+
+// Resolve which institution a student belongs to, so a Telegram account is
+// never silently attached to the default school.
+// Priority: existing contact row for that name -> academic scores (journal)
+// -> the school of this parent's already-linked children -> configured school.
+async function resolveSchoolId(
+  supabase: DB,
+  studentName: string,
+  fallbacks: string[],
+): Promise<{ schoolId: string; existingId: string | null }> {
+  const target = normalize(studentName)
+
+  const { data: contacts, error: cErr } = await supabase
+    .from('parent_contacts')
+    .select('id, school_id, student_name')
+  if (cErr) console.error('resolveSchoolId contacts failed', cErr.message)
+  const contactMatch = (contacts ?? []).find((r) => normalize(r.student_name as string) === target)
+  if (contactMatch) {
+    return { schoolId: contactMatch.school_id as string, existingId: contactMatch.id as string }
+  }
+
+  const { data: scores, error: sErr } = await supabase
+    .from('academic_scores')
+    .select('school_id, student_name')
+  if (sErr) console.error('resolveSchoolId scores failed', sErr.message)
+  const scoreMatch = (scores ?? []).find((r) => normalize(r.student_name as string) === target)
+  if (scoreMatch) return { schoolId: scoreMatch.school_id as string, existingId: null }
+
+  for (const f of fallbacks) if (f) return { schoolId: f, existingId: null }
+
+  const { data: school } = await supabase
+    .from('school_credentials')
+    .select('school_id')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+  return { schoolId: (school?.school_id as string) ?? 'gdbh', existingId: null }
+}
+
 async function getChildren(supabase: DB, chatId: string): Promise<Child[]> {
   const { data, error } = await supabase
     .from('parent_contacts')
