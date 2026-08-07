@@ -381,7 +381,42 @@ async function handleCallback(supabase: DB, cq: Record<string, any>) {
     return
   }
 
+  // s:<schoolIdx> -> finish a parked registration by binding it to one school
+  if (data.startsWith('s:')) {
+    const schools = await listSchools(supabase)
+    const schoolId = schools[Number(data.split(':')[1])]
+    if (!schoolId) return void sendMessage(chatId, ERROR_GENERIC)
+    const { data: parked, error: pErr } = await supabase
+      .from('parent_contacts')
+      .select('id, student_name, grade')
+      .eq('chat_id', chatIdStr)
+      .eq('school_id', '')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (pErr) console.error('parked lookup failed', pErr.message)
+    if (!parked) return void sendMessage(chatId, REGISTER_HELP)
+    const { error } = await supabase
+      .from('parent_contacts')
+      .update({ school_id: schoolId })
+      .eq('id', parked.id)
+    if (error) {
+      console.error('bind parked registration failed', error.message)
+      return void sendMessage(chatId, ERROR_GENERIC)
+    }
+    await sendMessage(
+      chatId,
+      schoolLinked(
+        String(parked.student_name ?? ''),
+        String(parked.grade ?? ''),
+        await schoolLabel(supabase, schoolId),
+      ),
+    )
+    return
+  }
+
   if (!data.startsWith('d:') && !data.startsWith('p:')) return
+
 
   const child = childAt(data.split(':')[1])
   if (!child) return void sendMessage(chatId, ERROR_GENERIC)
