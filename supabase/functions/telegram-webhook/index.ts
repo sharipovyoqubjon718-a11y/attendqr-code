@@ -543,10 +543,32 @@ Deno.serve(async (req) => {
     )
     console.log('registration resolved school', { chatIdStr, schoolId, existingId })
 
+    // Ambiguous institution: park the registration (school_id = '') and let the
+    // parent pick the school, so nothing lands in a default school's dashboard.
     if (!schoolId) {
-      await sendMessage(chatId, ERROR_GENERIC)
+      const schools = await listSchools(supabase)
+      if (schools.length === 0) {
+        await sendMessage(chatId, ERROR_GENERIC)
+        return new Response('ok', { status: 200 })
+      }
+      await supabase.from('parent_contacts').delete().eq('chat_id', chatIdStr).eq('school_id', '')
+      const { error } = await supabase.from('parent_contacts').insert({
+        school_id: '',
+        student_id: `TG-${chatIdStr}-${Date.now()}`,
+        student_name: parsed.name,
+        chat_id: chatIdStr,
+        grade,
+      })
+      if (error) {
+        console.error('park pending registration failed', error.message)
+        await sendMessage(chatId, ERROR_GENERIC)
+        return new Response('ok', { status: 200 })
+      }
+      const labels = await Promise.all(schools.map((s) => schoolLabel(supabase, s)))
+      await sendMessage(chatId, CHOOSE_SCHOOL, schoolKeyboard(labels))
       return new Response('ok', { status: 200 })
     }
+
 
     if (existingId) {
       const { error } = await supabase
