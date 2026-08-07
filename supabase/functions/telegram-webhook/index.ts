@@ -232,6 +232,15 @@ const childKeyboard = (children: Child[], prefix: 'p' | 'd' | 'c') => ({
   ]),
 })
 
+const schoolKeyboard = (labels: string[]) => ({
+  inline_keyboard: labels.map((label, i) => [{ text: label, callback_data: `s:${i}` }]),
+})
+
+const CHOOSE_SCHOOL = 'Лутфан мактаби фарзанди худро интихоб кунед:'
+const schoolLinked = (name: string, grade: string, school: string) =>
+  `✅ Хонанда «${name}» (синфи ${grade}) ба мактаби «${school}» пайваст карда шуд.`
+
+
 // ----------------------------------------------------------------- rankings --
 const medalLine = (i: number, text: string) => `${['🥇', '🥈', '🥉'][i] ?? `${i + 1}.`} ${text}`
 
