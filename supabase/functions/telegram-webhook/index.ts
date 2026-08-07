@@ -103,11 +103,14 @@ interface Child { id: string; school_id: string; student_id: string; student_nam
 const normalize = (s: string) => (s || '').trim().toLowerCase().replace(/\s+/g, ' ')
 
 // Children of one Telegram account, stably ordered so keyboard indices are safe.
+// Rows with an empty school_id are half-finished registrations awaiting the
+// parent's school choice, so they are never treated as linked children.
 async function getChildren(supabase: DB, chatId: string): Promise<Child[]> {
   const { data, error } = await supabase
     .from('parent_contacts')
     .select('id, school_id, student_id, student_name')
     .eq('chat_id', chatId)
+    .neq('school_id', '')
     .order('id', { ascending: true })
   if (error) {
     console.error('getChildren failed', error.message)
@@ -115,6 +118,7 @@ async function getChildren(supabase: DB, chatId: string): Promise<Child[]> {
   }
   return (data ?? []) as unknown as Child[]
 }
+
 
 // Every school id known to the system (credentials + any data rows), stably
 // ordered so keyboard indices are safe.
