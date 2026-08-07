@@ -103,11 +103,14 @@ interface Child { id: string; school_id: string; student_id: string; student_nam
 const normalize = (s: string) => (s || '').trim().toLowerCase().replace(/\s+/g, ' ')
 
 // Children of one Telegram account, stably ordered so keyboard indices are safe.
+// Rows with an empty school_id are half-finished registrations awaiting the
+// parent's school choice, so they are never treated as linked children.
 async function getChildren(supabase: DB, chatId: string): Promise<Child[]> {
   const { data, error } = await supabase
     .from('parent_contacts')
     .select('id, school_id, student_id, student_name')
     .eq('chat_id', chatId)
+    .neq('school_id', '')
     .order('id', { ascending: true })
   if (error) {
     console.error('getChildren failed', error.message)
@@ -116,13 +119,40 @@ async function getChildren(supabase: DB, chatId: string): Promise<Child[]> {
   return (data ?? []) as unknown as Child[]
 }
 
+
+// Every school id known to the system (credentials + any data rows), stably
+// ordered so keyboard indices are safe.
+async function listSchools(supabase: DB): Promise<string[]> {
+  const [{ data: creds }, { data: contacts }, { data: scores }] = await Promise.all([
+    supabase.from('school_credentials').select('school_id').order('created_at', { ascending: true }),
+    supabase.from('parent_contacts').select('school_id'),
+    supabase.from('academic_scores').select('school_id'),
+  ])
+  const ids: string[] = []
+  for (const row of [...(creds ?? []), ...(contacts ?? []), ...(scores ?? [])]) {
+    const id = row.school_id as string
+    if (id && !ids.includes(id)) ids.push(id)
+  }
+  return ids
+}
+
+async function schoolLabel(supabase: DB, schoolId: string): Promise<string> {
+  const { data } = await supabase
+    .from('school_credentials')
+    .select('name')
+    .eq('school_id', schoolId)
+    .maybeSingle()
+  const name = (data?.name as string) || ''
+  return name.trim() || schoolId
+}
+
 // Resolve a student's institution from the data itself — no hardcoded school.
-// Priority: existing contact row for that name -> journal scores -> the school
-// of this parent's already-linked children -> oldest configured school.
+// Priority: the school of this parent's already-linked children -> an existing
+// contact row for that name -> journal scores -> ask the parent (null).
 async function resolveSchoolId(
   supabase: DB,
   studentName: string,
-  fallbacks: string[],
+  parentSchools: string[],
 ): Promise<{ schoolId: string | null; existingId: string | null }> {
   const target = normalize(studentName)
 
@@ -130,7 +160,11 @@ async function resolveSchoolId(
     .from('parent_contacts')
     .select('id, school_id, student_name')
   if (cErr) console.error('resolveSchoolId contacts failed', cErr.message)
-  const contactMatch = (contacts ?? []).find((r) => normalize(r.student_name as string) === target)
+  const matches = (contacts ?? []).filter((r) => normalize(r.student_name as string) === target)
+
+  // Same name in several schools: prefer the school this parent already uses.
+  const own = matches.find((r) => parentSchools.includes(r.school_id as string))
+  const contactMatch = own ?? (matches.length === 1 ? matches[0] : undefined)
   if (contactMatch) {
     return { schoolId: contactMatch.school_id as string, existingId: contactMatch.id as string }
   }
@@ -139,19 +173,21 @@ async function resolveSchoolId(
     .from('academic_scores')
     .select('school_id, student_name')
   if (sErr) console.error('resolveSchoolId scores failed', sErr.message)
-  const scoreMatch = (scores ?? []).find((r) => normalize(r.student_name as string) === target)
+  const scoreMatches = (scores ?? []).filter((r) => normalize(r.student_name as string) === target)
+  const ownScore = scoreMatches.find((r) => parentSchools.includes(r.school_id as string))
+  const scoreMatch = ownScore ?? (scoreMatches.length === 1 ? scoreMatches[0] : undefined)
   if (scoreMatch) return { schoolId: scoreMatch.school_id as string, existingId: null }
 
-  for (const f of fallbacks) if (f) return { schoolId: f, existingId: null }
+  // Unknown student: only assume a school when there is exactly one candidate.
+  const uniqueParentSchools = [...new Set(parentSchools.filter(Boolean))]
+  if (uniqueParentSchools.length === 1) return { schoolId: uniqueParentSchools[0], existingId: null }
 
-  const { data: school } = await supabase
-    .from('school_credentials')
-    .select('school_id')
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .maybeSingle()
-  return { schoolId: (school?.school_id as string) ?? null, existingId: null }
+  const schools = await listSchools(supabase)
+  if (schools.length === 1) return { schoolId: schools[0], existingId: null }
+  return { schoolId: null, existingId: null }
 }
+
+
 
 // ------------------------------------------------------------- registration --
 function parseRegistration(text: string): { name: string; cls: string; letter: string } | null {
@@ -195,6 +231,15 @@ const childKeyboard = (children: Child[], prefix: 'p' | 'd' | 'c') => ({
     { text: c.student_name || '—', callback_data: `${prefix}:${i}` },
   ]),
 })
+
+const schoolKeyboard = (labels: string[]) => ({
+  inline_keyboard: labels.map((label, i) => [{ text: label, callback_data: `s:${i}` }]),
+})
+
+const CHOOSE_SCHOOL = 'Лутфан мактаби фарзанди худро интихоб кунед:'
+const schoolLinked = (name: string, grade: string, school: string) =>
+  `✅ Хонанда «${name}» (синфи ${grade}) ба мактаби «${school}» пайваст карда шуд.`
+
 
 // ----------------------------------------------------------------- rankings --
 const medalLine = (i: number, text: string) => `${['🥇', '🥈', '🥉'][i] ?? `${i + 1}.`} ${text}`
@@ -336,7 +381,42 @@ async function handleCallback(supabase: DB, cq: Record<string, any>) {
     return
   }
 
+  // s:<schoolIdx> -> finish a parked registration by binding it to one school
+  if (data.startsWith('s:')) {
+    const schools = await listSchools(supabase)
+    const schoolId = schools[Number(data.split(':')[1])]
+    if (!schoolId) return void sendMessage(chatId, ERROR_GENERIC)
+    const { data: parked, error: pErr } = await supabase
+      .from('parent_contacts')
+      .select('id, student_name, grade')
+      .eq('chat_id', chatIdStr)
+      .eq('school_id', '')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (pErr) console.error('parked lookup failed', pErr.message)
+    if (!parked) return void sendMessage(chatId, REGISTER_HELP)
+    const { error } = await supabase
+      .from('parent_contacts')
+      .update({ school_id: schoolId })
+      .eq('id', parked.id)
+    if (error) {
+      console.error('bind parked registration failed', error.message)
+      return void sendMessage(chatId, ERROR_GENERIC)
+    }
+    await sendMessage(
+      chatId,
+      schoolLinked(
+        String(parked.student_name ?? ''),
+        String(parked.grade ?? ''),
+        await schoolLabel(supabase, schoolId),
+      ),
+    )
+    return
+  }
+
   if (!data.startsWith('d:') && !data.startsWith('p:')) return
+
 
   const child = childAt(data.split(':')[1])
   if (!child) return void sendMessage(chatId, ERROR_GENERIC)
@@ -498,10 +578,32 @@ Deno.serve(async (req) => {
     )
     console.log('registration resolved school', { chatIdStr, schoolId, existingId })
 
+    // Ambiguous institution: park the registration (school_id = '') and let the
+    // parent pick the school, so nothing lands in a default school's dashboard.
     if (!schoolId) {
-      await sendMessage(chatId, ERROR_GENERIC)
+      const schools = await listSchools(supabase)
+      if (schools.length === 0) {
+        await sendMessage(chatId, ERROR_GENERIC)
+        return new Response('ok', { status: 200 })
+      }
+      await supabase.from('parent_contacts').delete().eq('chat_id', chatIdStr).eq('school_id', '')
+      const { error } = await supabase.from('parent_contacts').insert({
+        school_id: '',
+        student_id: `TG-${chatIdStr}-${Date.now()}`,
+        student_name: parsed.name,
+        chat_id: chatIdStr,
+        grade,
+      })
+      if (error) {
+        console.error('park pending registration failed', error.message)
+        await sendMessage(chatId, ERROR_GENERIC)
+        return new Response('ok', { status: 200 })
+      }
+      const labels = await Promise.all(schools.map((s) => schoolLabel(supabase, s)))
+      await sendMessage(chatId, CHOOSE_SCHOOL, schoolKeyboard(labels))
       return new Response('ok', { status: 200 })
     }
+
 
     if (existingId) {
       const { error } = await supabase
