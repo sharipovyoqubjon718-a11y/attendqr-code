@@ -116,13 +116,39 @@ async function getChildren(supabase: DB, chatId: string): Promise<Child[]> {
   return (data ?? []) as unknown as Child[]
 }
 
+// Every school id known to the system (credentials + any data rows), stably
+// ordered so keyboard indices are safe.
+async function listSchools(supabase: DB): Promise<string[]> {
+  const [{ data: creds }, { data: contacts }, { data: scores }] = await Promise.all([
+    supabase.from('school_credentials').select('school_id').order('created_at', { ascending: true }),
+    supabase.from('parent_contacts').select('school_id'),
+    supabase.from('academic_scores').select('school_id'),
+  ])
+  const ids: string[] = []
+  for (const row of [...(creds ?? []), ...(contacts ?? []), ...(scores ?? [])]) {
+    const id = row.school_id as string
+    if (id && !ids.includes(id)) ids.push(id)
+  }
+  return ids
+}
+
+async function schoolLabel(supabase: DB, schoolId: string): Promise<string> {
+  const { data } = await supabase
+    .from('school_credentials')
+    .select('name')
+    .eq('school_id', schoolId)
+    .maybeSingle()
+  const name = (data?.name as string) || ''
+  return name.trim() || schoolId
+}
+
 // Resolve a student's institution from the data itself — no hardcoded school.
-// Priority: existing contact row for that name -> journal scores -> the school
-// of this parent's already-linked children -> oldest configured school.
+// Priority: the school of this parent's already-linked children -> an existing
+// contact row for that name -> journal scores -> ask the parent (null).
 async function resolveSchoolId(
   supabase: DB,
   studentName: string,
-  fallbacks: string[],
+  parentSchools: string[],
 ): Promise<{ schoolId: string | null; existingId: string | null }> {
   const target = normalize(studentName)
 
@@ -130,7 +156,11 @@ async function resolveSchoolId(
     .from('parent_contacts')
     .select('id, school_id, student_name')
   if (cErr) console.error('resolveSchoolId contacts failed', cErr.message)
-  const contactMatch = (contacts ?? []).find((r) => normalize(r.student_name as string) === target)
+  const matches = (contacts ?? []).filter((r) => normalize(r.student_name as string) === target)
+
+  // Same name in several schools: prefer the school this parent already uses.
+  const own = matches.find((r) => parentSchools.includes(r.school_id as string))
+  const contactMatch = own ?? (matches.length === 1 ? matches[0] : undefined)
   if (contactMatch) {
     return { schoolId: contactMatch.school_id as string, existingId: contactMatch.id as string }
   }
@@ -139,19 +169,21 @@ async function resolveSchoolId(
     .from('academic_scores')
     .select('school_id, student_name')
   if (sErr) console.error('resolveSchoolId scores failed', sErr.message)
-  const scoreMatch = (scores ?? []).find((r) => normalize(r.student_name as string) === target)
+  const scoreMatches = (scores ?? []).filter((r) => normalize(r.student_name as string) === target)
+  const ownScore = scoreMatches.find((r) => parentSchools.includes(r.school_id as string))
+  const scoreMatch = ownScore ?? (scoreMatches.length === 1 ? scoreMatches[0] : undefined)
   if (scoreMatch) return { schoolId: scoreMatch.school_id as string, existingId: null }
 
-  for (const f of fallbacks) if (f) return { schoolId: f, existingId: null }
+  // Unknown student: only assume a school when there is exactly one candidate.
+  const uniqueParentSchools = [...new Set(parentSchools.filter(Boolean))]
+  if (uniqueParentSchools.length === 1) return { schoolId: uniqueParentSchools[0], existingId: null }
 
-  const { data: school } = await supabase
-    .from('school_credentials')
-    .select('school_id')
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .maybeSingle()
-  return { schoolId: (school?.school_id as string) ?? null, existingId: null }
+  const schools = await listSchools(supabase)
+  if (schools.length === 1) return { schoolId: schools[0], existingId: null }
+  return { schoolId: null, existingId: null }
 }
+
+
 
 // ------------------------------------------------------------- registration --
 function parseRegistration(text: string): { name: string; cls: string; letter: string } | null {
