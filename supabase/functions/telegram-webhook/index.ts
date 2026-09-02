@@ -14,15 +14,14 @@ const HELP =
   'Фармонҳои дастрас:\n' +
   '/start — оғоз ва маълумот\n' +
   '/delete — пок кардани фарзанд аз рӯйхат\n' +
-  '/reyting — рейтинги хонандагон\n' +
-  '/farzand — интихоби фарзанди фаъол\n\n' +
+  '/reyting — рейтинги хонандагон\n\n' +
   'Барои пайваст кардани фарзанд маълумоти ӯро нависед: [Ному насаб] [Синф] [Параллел]\n' +
   '(Намуна: Алиев Аҳмад 5 А)'
 
 const helpWithChildren = (names: string[]) =>
   `👋 Салом! Рӯйхати фарзандони шумо: ${names.join(', ')}.\n\n` +
   'Ҳар паёме, ки шумо ин ҷо менависед, ба муаллим фиристода мешавад.\n\n' +
-  'Фармонҳо: /start, /farzand, /delete, /reyting\n' +
+  'Фармонҳо: /start, /delete, /reyting\n' +
   'Барои иловаи фарзанди нав: [Ному насаб] [Синф] [Параллел]'
 
 const REGISTER_HELP =
@@ -289,9 +288,8 @@ const makeGrade = (cls: string, letter: string) => (!letter || letter === '-' ? 
 const CHOOSE_ACTIVE_CHILD =
   'Лутфан интихоб кунед, ки ин амал ба кадом фарзанди шумо тааллуқ дорад:'
 const activeChildSet = (name: string) =>
-  `👤 Фарзанди фаъол: «${name}». Ҳамаи паёмҳо ба мактаби ҳамин фарзанд мераванд.\n` +
-  'Барои иваз кардан: /farzand'
-const activeChildLine = (name: string) => `👤 Фарзанди фаъол: «${name}» (иваз: /farzand)`
+  `👤 Фарзанди интихобшуда: «${name}». Паём ба мактаби ҳамин фарзанд фиристода мешавад.`
+const activeChildLine = (name: string) => `👤 Фарзанди интихобшуда: «${name}»`
 
 
 // ----------------------------------------------------------------- keyboards --
@@ -589,16 +587,10 @@ Deno.serve(async (req) => {
           chatId,
           helpWithChildren(children.map((c) => c.student_name).filter(Boolean)),
         )
-        if (active) await sendMessage(chatId, activeChildLine(active.student_name))
-        else await sendMessage(chatId, CHOOSE_ACTIVE_CHILD, childKeyboard(children, 'a'))
+        if (children.length > 1)
+          await sendMessage(chatId, CHOOSE_ACTIVE_CHILD, childKeyboard(children, 'a'))
+        else if (active) await sendMessage(chatId, activeChildLine(active.student_name))
       }
-      return new Response('ok', { status: 200 })
-    }
-
-    // Explicit child switch.
-    if (text.startsWith('/farzand') || text.startsWith('/switch') || text.startsWith('/child')) {
-      if (children.length === 0) await sendMessage(chatId, DELETE_NO_CHILDREN)
-      else await sendMessage(chatId, CHOOSE_ACTIVE_CHILD, childKeyboard(children, 'a'))
       return new Response('ok', { status: 200 })
     }
 
@@ -610,8 +602,9 @@ Deno.serve(async (req) => {
 
     if (text.startsWith('/reyting') || text.startsWith('/ranking')) {
       if (children.length === 0) await sendMessage(chatId, RANKING_NO_CHILDREN)
+      else if (children.length > 1)
+        await sendMessage(chatId, CHOOSE_CHILD_RANKING, childKeyboard(children, 'c'))
       else if (active) await sendMessage(chatId, RANKING_PROMPT, rankingKeyboard(activeIdx))
-      else await sendMessage(chatId, CHOOSE_CHILD_RANKING, childKeyboard(children, 'c'))
       return new Response('ok', { status: 200 })
     }
 
@@ -620,15 +613,16 @@ Deno.serve(async (req) => {
     if (voice?.file_id && children.length > 0) {
       const mime = message?.voice ? 'audio/ogg' : (voice.mime_type || 'audio/mpeg')
       const audioUrl = await downloadFileAsDataUrl(voice.file_id, mime)
+      const single = children.length === 1 ? active : null
       await insertMessage(supabase, {
-        school_id: active ? active.school_id : children[0].school_id,
-        sender_name: active ? `${senderName} (волиди ${active.student_name})` : senderName,
+        school_id: single ? single.school_id : children[0].school_id,
+        sender_name: single ? `${senderName} (волиди ${single.student_name})` : senderName,
         message_content: '🎤 Паёми овозӣ',
         audio_url: audioUrl,
         chat_id: chatIdStr,
-        status: active ? 'unread' : 'pending',
+        status: single ? 'unread' : 'pending',
       })
-      if (active) await sendMessage(chatId, MESSAGE_FORWARDED)
+      if (single) await sendMessage(chatId, MESSAGE_FORWARDED)
       else await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children, 'p'))
       return new Response('ok', { status: 200 })
     }
@@ -638,7 +632,7 @@ Deno.serve(async (req) => {
 
     // A parent with 2+ children and no active selection yet: park the message
     // and ask which child it belongs to (the keyboard never expires).
-    if (children.length > 1 && !active && !parsed) {
+    if (children.length > 1 && !parsed) {
       await insertMessage(supabase, {
         school_id: children[0].school_id,
         sender_name: senderName,
