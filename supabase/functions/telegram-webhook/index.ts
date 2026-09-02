@@ -14,14 +14,15 @@ const HELP =
   'Фармонҳои дастрас:\n' +
   '/start — оғоз ва маълумот\n' +
   '/delete — пок кардани фарзанд аз рӯйхат\n' +
-  '/reyting — рейтинги хонандагон\n\n' +
+  '/reyting — рейтинги хонандагон\n' +
+  '/farzand — интихоби фарзанди фаъол\n\n' +
   'Барои пайваст кардани фарзанд маълумоти ӯро нависед: [Ному насаб] [Синф] [Параллел]\n' +
   '(Намуна: Алиев Аҳмад 5 А)'
 
 const helpWithChildren = (names: string[]) =>
   `👋 Салом! Рӯйхати фарзандони шумо: ${names.join(', ')}.\n\n` +
   'Ҳар паёме, ки шумо ин ҷо менависед, ба муаллим фиристода мешавад.\n\n' +
-  'Фармонҳо: /start, /delete, /reyting\n' +
+  'Фармонҳо: /start, /farzand, /delete, /reyting\n' +
   'Барои иловаи фарзанди нав: [Ному насаб] [Синф] [Параллел]'
 
 const REGISTER_HELP =
@@ -132,7 +133,74 @@ async function listSchools(supabase: DB): Promise<string[]> {
   for (const row of [...(creds ?? []), ...(contacts ?? []), ...(scores ?? [])]) {
     const id = row.school_id as string
     if (id && !ids.includes(id)) ids.push(id)
+}
+
+// ------------------------------------------------------------------ session --
+// Active child session: which child (and therefore which school) every action
+// of this Telegram account is routed to. Persisted, so it never expires.
+interface Session {
+  child_contact_id: string | null
+  school_id: string | null
+  student_id: string | null
+  student_name: string
+  grade: string
+}
+
+async function getSession(supabase: DB, chatId: string): Promise<Session | null> {
+  const { data, error } = await supabase
+    .from('telegram_sessions')
+    .select('child_contact_id, school_id, student_id, student_name, grade')
+    .eq('chat_id', chatId)
+    .maybeSingle()
+  if (error) {
+    console.error('getSession failed', error.message)
+    return null
   }
+  return (data as unknown as Session) ?? null
+}
+
+async function setSession(supabase: DB, chatId: string, child: Child) {
+  const { error } = await supabase.from('telegram_sessions').upsert(
+    {
+      chat_id: chatId,
+      child_contact_id: child.id,
+      school_id: child.school_id,
+      student_id: child.student_id,
+      student_name: child.student_name,
+    },
+    { onConflict: 'chat_id' },
+  )
+  if (error) console.error('setSession failed', error.message)
+}
+
+async function clearSession(supabase: DB, chatId: string) {
+  const { error } = await supabase.from('telegram_sessions').delete().eq('chat_id', chatId)
+  if (error) console.error('clearSession failed', error.message)
+}
+
+// The child this account is currently acting for. Auto-selects the only child,
+// re-validates a stored selection against the live children list, and returns
+// null when the parent still has to choose.
+async function activeChild(
+  supabase: DB,
+  chatId: string,
+  children: Child[],
+): Promise<Child | null> {
+  if (children.length === 0) return null
+  if (children.length === 1) {
+    await setSession(supabase, chatId, children[0])
+    return children[0]
+  }
+  const session = await getSession(supabase, chatId)
+  if (!session?.child_contact_id) return null
+  const match = children.find((c) => c.id === session.child_contact_id)
+  if (!match) {
+    await clearSession(supabase, chatId)
+    return null
+  }
+  return match
+}
+
   return ids
 }
 
@@ -217,6 +285,15 @@ function isRegistration(text: string): { name: string; cls: string; letter: stri
 
 const makeGrade = (cls: string, letter: string) => (!letter || letter === '-' ? cls : `${cls}-${letter}`)
 
+// -------------------------------------------------------------- session text --
+const CHOOSE_ACTIVE_CHILD =
+  'Лутфан интихоб кунед, ки ин амал ба кадом фарзанди шумо тааллуқ дорад:'
+const activeChildSet = (name: string) =>
+  `👤 Фарзанди фаъол: «${name}». Ҳамаи паёмҳо ба мактаби ҳамин фарзанд мераванд.\n` +
+  'Барои иваз кардан: /farzand'
+const activeChildLine = (name: string) => `👤 Фарзанди фаъол: «${name}» (иваз: /farzand)`
+
+
 // ----------------------------------------------------------------- keyboards --
 // Telegram caps callback_data at 64 bytes, so payloads carry only short indices.
 const rankingKeyboard = (childIdx: number) => ({
@@ -226,11 +303,12 @@ const rankingKeyboard = (childIdx: number) => ({
   ],
 })
 
-const childKeyboard = (children: Child[], prefix: 'p' | 'd' | 'c') => ({
+const childKeyboard = (children: Child[], prefix: 'p' | 'd' | 'c' | 'a') => ({
   inline_keyboard: children.map((c, i) => [
     { text: c.student_name || '—', callback_data: `${prefix}:${i}` },
   ]),
 })
+
 
 const schoolKeyboard = (labels: string[]) => ({
   inline_keyboard: labels.map((label, i) => [{ text: label, callback_data: `s:${i}` }]),
@@ -377,9 +455,20 @@ async function handleCallback(supabase: DB, cq: Record<string, any>) {
     const [, idxRaw] = data.split(':')
     const child = childAt(idxRaw)
     if (!child) return void sendMessage(chatId, RANKING_NO_CHILDREN)
+    await setSession(supabase, chatIdStr, child)
     await sendMessage(chatId, RANKING_PROMPT, rankingKeyboard(Number(idxRaw)))
     return
   }
+
+  // a:<childIdx> -> make this child the active session child
+  if (data.startsWith('a:')) {
+    const child = childAt(data.split(':')[1])
+    if (!child) return void sendMessage(chatId, ERROR_GENERIC)
+    await setSession(supabase, chatIdStr, child)
+    await sendMessage(chatId, activeChildSet(child.student_name))
+    return
+  }
+
 
   // s:<schoolIdx> -> finish a parked registration by binding it to one school
   if (data.startsWith('s:')) {
@@ -429,14 +518,18 @@ async function handleCallback(supabase: DB, cq: Record<string, any>) {
       await sendMessage(chatId, ERROR_GENERIC)
       return
     }
+    const session = await getSession(supabase, chatIdStr)
+    if (session?.child_contact_id === child.id) await clearSession(supabase, chatIdStr)
     await sendMessage(chatId, deleteConfirmed(child.student_name))
     return
   }
 
-  // p:<childIdx> -> route the pending message to that child / school
+  // p:<childIdx> -> remember the choice and route the pending message there
+  await setSession(supabase, chatIdStr, child)
   await releasePending(supabase, chatIdStr, child)
-  await sendMessage(chatId, MESSAGE_FORWARDED)
+  await sendMessage(chatId, `${MESSAGE_FORWARDED}\n${activeChildLine(child.student_name)}`)
 }
+
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('ok', { status: 200 })
@@ -483,14 +576,29 @@ Deno.serve(async (req) => {
       text: text.slice(0, 60),
     })
 
+    // Active session child (auto-selected when only one child is linked).
+    const active = await activeChild(supabase, chatIdStr, children)
+    const activeIdx = active ? children.findIndex((c) => c.id === active.id) : -1
+
     // ---- commands --------------------------------------------------------
     if (text.startsWith('/start') || text.startsWith('/help')) {
-      await sendMessage(
-        chatId,
-        children.length === 0
-          ? HELP
-          : helpWithChildren(children.map((c) => c.student_name).filter(Boolean)),
-      )
+      if (children.length === 0) {
+        await sendMessage(chatId, HELP)
+      } else {
+        await sendMessage(
+          chatId,
+          helpWithChildren(children.map((c) => c.student_name).filter(Boolean)),
+        )
+        if (active) await sendMessage(chatId, activeChildLine(active.student_name))
+        else await sendMessage(chatId, CHOOSE_ACTIVE_CHILD, childKeyboard(children, 'a'))
+      }
+      return new Response('ok', { status: 200 })
+    }
+
+    // Explicit child switch.
+    if (text.startsWith('/farzand') || text.startsWith('/switch') || text.startsWith('/child')) {
+      if (children.length === 0) await sendMessage(chatId, DELETE_NO_CHILDREN)
+      else await sendMessage(chatId, CHOOSE_ACTIVE_CHILD, childKeyboard(children, 'a'))
       return new Response('ok', { status: 200 })
     }
 
@@ -502,7 +610,7 @@ Deno.serve(async (req) => {
 
     if (text.startsWith('/reyting') || text.startsWith('/ranking')) {
       if (children.length === 0) await sendMessage(chatId, RANKING_NO_CHILDREN)
-      else if (children.length === 1) await sendMessage(chatId, RANKING_PROMPT, rankingKeyboard(0))
+      else if (active) await sendMessage(chatId, RANKING_PROMPT, rankingKeyboard(activeIdx))
       else await sendMessage(chatId, CHOOSE_CHILD_RANKING, childKeyboard(children, 'c'))
       return new Response('ok', { status: 200 })
     }
@@ -512,27 +620,25 @@ Deno.serve(async (req) => {
     if (voice?.file_id && children.length > 0) {
       const mime = message?.voice ? 'audio/ogg' : (voice.mime_type || 'audio/mpeg')
       const audioUrl = await downloadFileAsDataUrl(voice.file_id, mime)
-      const multi = children.length > 1
-      const child = children[0]
       await insertMessage(supabase, {
-        school_id: child.school_id,
-        sender_name: multi ? senderName : `${senderName} (волиди ${child.student_name})`,
+        school_id: active ? active.school_id : children[0].school_id,
+        sender_name: active ? `${senderName} (волиди ${active.student_name})` : senderName,
         message_content: '🎤 Паёми овозӣ',
         audio_url: audioUrl,
         chat_id: chatIdStr,
-        status: multi ? 'pending' : 'unread',
+        status: active ? 'unread' : 'pending',
       })
-      if (multi) await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children, 'p'))
-      else await sendMessage(chatId, MESSAGE_FORWARDED)
+      if (active) await sendMessage(chatId, MESSAGE_FORWARDED)
+      else await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children, 'p'))
       return new Response('ok', { status: 200 })
     }
 
     // ---- new-child registration (strict format) --------------------------
     const parsed = isRegistration(text)
 
-    // Any non-registration text from a parent with 2+ children is stored as a
-    // hidden pending row and answered with a child keyboard that never expires.
-    if (children.length > 1 && !parsed) {
+    // A parent with 2+ children and no active selection yet: park the message
+    // and ask which child it belongs to (the keyboard never expires).
+    if (children.length > 1 && !active && !parsed) {
       await insertMessage(supabase, {
         school_id: children[0].school_id,
         sender_name: senderName,
@@ -544,18 +650,18 @@ Deno.serve(async (req) => {
       return new Response('ok', { status: 200 })
     }
 
+
     // Unknown slash commands for single-child / unlinked chats.
     if (text.startsWith('/')) {
       await sendMessage(chatId, HELP)
       return new Response('ok', { status: 200 })
     }
 
-    // ---- single child free-form message ---------------------------------
-    if (children.length === 1 && !parsed) {
-      const child = children[0]
+    // ---- free-form message routed to the active session child ------------
+    if (active && !parsed) {
       await insertMessage(supabase, {
-        school_id: child.school_id,
-        sender_name: `${senderName} (волиди ${child.student_name})`,
+        school_id: active.school_id,
+        sender_name: `${senderName} (волиди ${active.student_name})`,
         message_content: text,
         chat_id: chatIdStr,
         status: 'unread',
@@ -563,6 +669,7 @@ Deno.serve(async (req) => {
       await sendMessage(chatId, MESSAGE_FORWARDED)
       return new Response('ok', { status: 200 })
     }
+
 
     if (!parsed) {
       await sendMessage(chatId, REGISTER_HELP)
