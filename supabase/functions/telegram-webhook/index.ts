@@ -293,11 +293,12 @@ const rankingKeyboard = (childIdx: number) => ({
   ],
 })
 
-const childKeyboard = (children: Child[], prefix: 'p' | 'd' | 'c') => ({
+const childKeyboard = (children: Child[], prefix: 'p' | 'd' | 'c' | 'a') => ({
   inline_keyboard: children.map((c, i) => [
     { text: c.student_name || '—', callback_data: `${prefix}:${i}` },
   ]),
 })
+
 
 const schoolKeyboard = (labels: string[]) => ({
   inline_keyboard: labels.map((label, i) => [{ text: label, callback_data: `s:${i}` }]),
