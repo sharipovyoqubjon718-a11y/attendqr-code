@@ -211,6 +211,39 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_sessions: {
+        Row: {
+          chat_id: string
+          child_contact_id: string | null
+          created_at: string
+          grade: string
+          school_id: string | null
+          student_id: string | null
+          student_name: string
+          updated_at: string
+        }
+        Insert: {
+          chat_id: string
+          child_contact_id?: string | null
+          created_at?: string
+          grade?: string
+          school_id?: string | null
+          student_id?: string | null
+          student_name?: string
+          updated_at?: string
+        }
+        Update: {
+          chat_id?: string
+          child_contact_id?: string | null
+          created_at?: string
+          grade?: string
+          school_id?: string | null
+          student_id?: string | null
+          student_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
