@@ -575,14 +575,29 @@ Deno.serve(async (req) => {
       text: text.slice(0, 60),
     })
 
+    // Active session child (auto-selected when only one child is linked).
+    const active = await activeChild(supabase, chatIdStr, children)
+    const activeIdx = active ? children.findIndex((c) => c.id === active.id) : -1
+
     // ---- commands --------------------------------------------------------
     if (text.startsWith('/start') || text.startsWith('/help')) {
-      await sendMessage(
-        chatId,
-        children.length === 0
-          ? HELP
-          : helpWithChildren(children.map((c) => c.student_name).filter(Boolean)),
-      )
+      if (children.length === 0) {
+        await sendMessage(chatId, HELP)
+      } else {
+        await sendMessage(
+          chatId,
+          helpWithChildren(children.map((c) => c.student_name).filter(Boolean)),
+        )
+        if (active) await sendMessage(chatId, activeChildLine(active.student_name))
+        else await sendMessage(chatId, CHOOSE_ACTIVE_CHILD, childKeyboard(children, 'a'))
+      }
+      return new Response('ok', { status: 200 })
+    }
+
+    // Explicit child switch.
+    if (text.startsWith('/farzand') || text.startsWith('/switch') || text.startsWith('/child')) {
+      if (children.length === 0) await sendMessage(chatId, DELETE_NO_CHILDREN)
+      else await sendMessage(chatId, CHOOSE_ACTIVE_CHILD, childKeyboard(children, 'a'))
       return new Response('ok', { status: 200 })
     }
 
@@ -594,7 +609,7 @@ Deno.serve(async (req) => {
 
     if (text.startsWith('/reyting') || text.startsWith('/ranking')) {
       if (children.length === 0) await sendMessage(chatId, RANKING_NO_CHILDREN)
-      else if (children.length === 1) await sendMessage(chatId, RANKING_PROMPT, rankingKeyboard(0))
+      else if (active) await sendMessage(chatId, RANKING_PROMPT, rankingKeyboard(activeIdx))
       else await sendMessage(chatId, CHOOSE_CHILD_RANKING, childKeyboard(children, 'c'))
       return new Response('ok', { status: 200 })
     }
@@ -604,27 +619,25 @@ Deno.serve(async (req) => {
     if (voice?.file_id && children.length > 0) {
       const mime = message?.voice ? 'audio/ogg' : (voice.mime_type || 'audio/mpeg')
       const audioUrl = await downloadFileAsDataUrl(voice.file_id, mime)
-      const multi = children.length > 1
-      const child = children[0]
       await insertMessage(supabase, {
-        school_id: child.school_id,
-        sender_name: multi ? senderName : `${senderName} (волиди ${child.student_name})`,
+        school_id: active ? active.school_id : children[0].school_id,
+        sender_name: active ? `${senderName} (волиди ${active.student_name})` : senderName,
         message_content: '🎤 Паёми овозӣ',
         audio_url: audioUrl,
         chat_id: chatIdStr,
-        status: multi ? 'pending' : 'unread',
+        status: active ? 'unread' : 'pending',
       })
-      if (multi) await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children, 'p'))
-      else await sendMessage(chatId, MESSAGE_FORWARDED)
+      if (active) await sendMessage(chatId, MESSAGE_FORWARDED)
+      else await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children, 'p'))
       return new Response('ok', { status: 200 })
     }
 
     // ---- new-child registration (strict format) --------------------------
     const parsed = isRegistration(text)
 
-    // Any non-registration text from a parent with 2+ children is stored as a
-    // hidden pending row and answered with a child keyboard that never expires.
-    if (children.length > 1 && !parsed) {
+    // A parent with 2+ children and no active selection yet: park the message
+    // and ask which child it belongs to (the keyboard never expires).
+    if (children.length > 1 && !active && !parsed) {
       await insertMessage(supabase, {
         school_id: children[0].school_id,
         sender_name: senderName,
@@ -635,6 +648,7 @@ Deno.serve(async (req) => {
       await sendMessage(chatId, CHOOSE_CHILD, childKeyboard(children, 'p'))
       return new Response('ok', { status: 200 })
     }
+
 
     // Unknown slash commands for single-child / unlinked chats.
     if (text.startsWith('/')) {
