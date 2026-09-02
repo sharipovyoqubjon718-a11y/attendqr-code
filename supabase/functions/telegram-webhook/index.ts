@@ -454,9 +454,20 @@ async function handleCallback(supabase: DB, cq: Record<string, any>) {
     const [, idxRaw] = data.split(':')
     const child = childAt(idxRaw)
     if (!child) return void sendMessage(chatId, RANKING_NO_CHILDREN)
+    await setSession(supabase, chatIdStr, child)
     await sendMessage(chatId, RANKING_PROMPT, rankingKeyboard(Number(idxRaw)))
     return
   }
+
+  // a:<childIdx> -> make this child the active session child
+  if (data.startsWith('a:')) {
+    const child = childAt(data.split(':')[1])
+    if (!child) return void sendMessage(chatId, ERROR_GENERIC)
+    await setSession(supabase, chatIdStr, child)
+    await sendMessage(chatId, activeChildSet(child.student_name))
+    return
+  }
+
 
   // s:<schoolIdx> -> finish a parked registration by binding it to one school
   if (data.startsWith('s:')) {
