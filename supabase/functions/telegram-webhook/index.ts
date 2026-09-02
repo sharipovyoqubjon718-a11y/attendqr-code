@@ -284,6 +284,15 @@ function isRegistration(text: string): { name: string; cls: string; letter: stri
 
 const makeGrade = (cls: string, letter: string) => (!letter || letter === '-' ? cls : `${cls}-${letter}`)
 
+// -------------------------------------------------------------- session text --
+const CHOOSE_ACTIVE_CHILD =
+  'Лутфан интихоб кунед, ки ин амал ба кадом фарзанди шумо тааллуқ дорад:'
+const activeChildSet = (name: string) =>
+  `👤 Фарзанди фаъол: «${name}». Ҳамаи паёмҳо ба мактаби ҳамин фарзанд мераванд.\n` +
+  'Барои иваз кардан: /farzand'
+const activeChildLine = (name: string) => `👤 Фарзанди фаъол: «${name}» (иваз: /farzand)`
+
+
 // ----------------------------------------------------------------- keyboards --
 // Telegram caps callback_data at 64 bytes, so payloads carry only short indices.
 const rankingKeyboard = (childIdx: number) => ({
