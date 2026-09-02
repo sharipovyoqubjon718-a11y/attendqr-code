@@ -132,7 +132,74 @@ async function listSchools(supabase: DB): Promise<string[]> {
   for (const row of [...(creds ?? []), ...(contacts ?? []), ...(scores ?? [])]) {
     const id = row.school_id as string
     if (id && !ids.includes(id)) ids.push(id)
+}
+
+// ------------------------------------------------------------------ session --
+// Active child session: which child (and therefore which school) every action
+// of this Telegram account is routed to. Persisted, so it never expires.
+interface Session {
+  child_contact_id: string | null
+  school_id: string | null
+  student_id: string | null
+  student_name: string
+  grade: string
+}
+
+async function getSession(supabase: DB, chatId: string): Promise<Session | null> {
+  const { data, error } = await supabase
+    .from('telegram_sessions')
+    .select('child_contact_id, school_id, student_id, student_name, grade')
+    .eq('chat_id', chatId)
+    .maybeSingle()
+  if (error) {
+    console.error('getSession failed', error.message)
+    return null
   }
+  return (data as unknown as Session) ?? null
+}
+
+async function setSession(supabase: DB, chatId: string, child: Child) {
+  const { error } = await supabase.from('telegram_sessions').upsert(
+    {
+      chat_id: chatId,
+      child_contact_id: child.id,
+      school_id: child.school_id,
+      student_id: child.student_id,
+      student_name: child.student_name,
+    },
+    { onConflict: 'chat_id' },
+  )
+  if (error) console.error('setSession failed', error.message)
+}
+
+async function clearSession(supabase: DB, chatId: string) {
+  const { error } = await supabase.from('telegram_sessions').delete().eq('chat_id', chatId)
+  if (error) console.error('clearSession failed', error.message)
+}
+
+// The child this account is currently acting for. Auto-selects the only child,
+// re-validates a stored selection against the live children list, and returns
+// null when the parent still has to choose.
+async function activeChild(
+  supabase: DB,
+  chatId: string,
+  children: Child[],
+): Promise<Child | null> {
+  if (children.length === 0) return null
+  if (children.length === 1) {
+    await setSession(supabase, chatId, children[0])
+    return children[0]
+  }
+  const session = await getSession(supabase, chatId)
+  if (!session?.child_contact_id) return null
+  const match = children.find((c) => c.id === session.child_contact_id)
+  if (!match) {
+    await clearSession(supabase, chatId)
+    return null
+  }
+  return match
+}
+
   return ids
 }
 
