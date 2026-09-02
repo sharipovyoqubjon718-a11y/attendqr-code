@@ -656,12 +656,11 @@ Deno.serve(async (req) => {
       return new Response('ok', { status: 200 })
     }
 
-    // ---- single child free-form message ---------------------------------
-    if (children.length === 1 && !parsed) {
-      const child = children[0]
+    // ---- free-form message routed to the active session child ------------
+    if (active && !parsed) {
       await insertMessage(supabase, {
-        school_id: child.school_id,
-        sender_name: `${senderName} (волиди ${child.student_name})`,
+        school_id: active.school_id,
+        sender_name: `${senderName} (волиди ${active.student_name})`,
         message_content: text,
         chat_id: chatIdStr,
         status: 'unread',
@@ -669,6 +668,7 @@ Deno.serve(async (req) => {
       await sendMessage(chatId, MESSAGE_FORWARDED)
       return new Response('ok', { status: 200 })
     }
+
 
     if (!parsed) {
       await sendMessage(chatId, REGISTER_HELP)
