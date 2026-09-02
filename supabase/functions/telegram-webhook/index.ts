@@ -517,14 +517,18 @@ async function handleCallback(supabase: DB, cq: Record<string, any>) {
       await sendMessage(chatId, ERROR_GENERIC)
       return
     }
+    const session = await getSession(supabase, chatIdStr)
+    if (session?.child_contact_id === child.id) await clearSession(supabase, chatIdStr)
     await sendMessage(chatId, deleteConfirmed(child.student_name))
     return
   }
 
-  // p:<childIdx> -> route the pending message to that child / school
+  // p:<childIdx> -> remember the choice and route the pending message there
+  await setSession(supabase, chatIdStr, child)
   await releasePending(supabase, chatIdStr, child)
-  await sendMessage(chatId, MESSAGE_FORWARDED)
+  await sendMessage(chatId, `${MESSAGE_FORWARDED}\n${activeChildLine(child.student_name)}`)
 }
+
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('ok', { status: 200 })
