@@ -132,7 +132,11 @@ async function listSchools(supabase: DB): Promise<string[]> {
   for (const row of [...(creds ?? []), ...(contacts ?? []), ...(scores ?? [])]) {
     const id = row.school_id as string
     if (id && !ids.includes(id)) ids.push(id)
+  }
+  return ids
 }
+
+
 
 // ------------------------------------------------------------------ session --
 // Active child session: which child (and therefore which school) every action
