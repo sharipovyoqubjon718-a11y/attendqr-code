@@ -204,8 +204,7 @@ async function activeChild(
   return match
 }
 
-  return ids
-}
+
 
 async function schoolLabel(supabase: DB, schoolId: string): Promise<string> {
   const { data } = await supabase
