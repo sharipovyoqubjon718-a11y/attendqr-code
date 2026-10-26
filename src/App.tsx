@@ -25,6 +25,7 @@ import MessageToParents from "@/pages/MessageToParents";
 import Messages from "@/pages/Messages";
 import Teachers from "@/pages/Teachers";
 import NotFound from "@/pages/NotFound";
+import Donishafruz from "@/pages/Donishafruz";
 import { setActiveSchoolId } from "@/lib/schools";
 import { applyFavicon } from "@/lib/favicon";
 
@@ -83,6 +84,7 @@ const App = () => {
                   <Route path="/messages" element={<Messages />} />
                   <Route path="/teachers" element={<Teachers />} />
                   <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/donishafruz" element={<Donishafruz />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </AppLayout>
