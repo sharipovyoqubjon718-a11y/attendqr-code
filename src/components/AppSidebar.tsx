@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy, Trophy, BookOpen, Phone, MessageSquare, Bell, GraduationCap } from "lucide-react";
+import { LayoutDashboard, QrCode, ClipboardList, ShieldAlert, UserPlus, BarChart3, Info, Sun, Moon, Settings, LifeBuoy, Trophy, BookOpen, Phone, MessageSquare, Bell, GraduationCap, BrainCircuit } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useI18n } from "@/lib/i18n";
 import { getActiveSchool, getSelectedSchool, getActiveSchoolId, getSelectedSchoolId } from "@/lib/schools";
@@ -106,6 +106,15 @@ export function AppSidebar() {
       </SidebarContent>
       {!collapsed && (
         <SidebarFooter className="p-4 space-y-2">
+          <NavLink
+            to="/donishafruz"
+            className="flex items-center gap-2 text-xs px-2 py-2 rounded-md bg-violet-600/20 border border-violet-500/40 text-violet-300 hover:bg-violet-600/40 shadow-[0_0_12px_hsl(270_90%_60%/0.35)] transition-colors"
+            activeClassName="bg-violet-600/50 text-white"
+          >
+            <BrainCircuit className="h-4 w-4 text-violet-400" />
+            <span className="font-semibold">Донишафрӯз</span>
+            <span className="ml-auto rounded-full bg-violet-500 px-1.5 text-[9px] font-bold text-white">AI</span>
+          </NavLink>
           <a
             href="https://t.me/Sharipov_Yoqubjon"
             target="_blank"
